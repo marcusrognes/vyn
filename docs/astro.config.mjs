@@ -4,12 +4,14 @@ import starlight from '@astrojs/starlight';
 
 // https://astro.build/config
 export default defineConfig({
+	site: 'https://marcusrognes.github.io',
+	base: '/vyn',
 	integrations: [
 		starlight({
 			title: 'Vyn',
 			description: 'A small full-stack TypeScript framework for Deno and Node.',
 			social: [
-				{ icon: 'github', label: 'GitHub', href: 'https://github.com/vyn-dev/vyn' },
+				{ icon: 'github', label: 'GitHub', href: 'https://github.com/marcusrognes/vyn' },
 			],
 			sidebar: [
 				{
