@@ -10,6 +10,8 @@ export {
 	createJob,
 	createNotification,
 	inboxAdapter,
+	installBackgroundCtx,
+	getBackgroundCtx,
 	type RunOpts,
 	type QueryAction,
 	type MutationAction,

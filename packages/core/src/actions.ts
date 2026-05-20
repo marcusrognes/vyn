@@ -435,6 +435,13 @@ export function createJob<I = unknown, C = unknown>(def: JobDef<I, C>): JobActio
 	return action;
 }
 
+// Background ctx that serve() registers at boot so jobs + worker-
+// driven notifications can access staticContext + adapters even
+// though they don't run in a request.
+let backgroundCtx: object = {};
+export function installBackgroundCtx(ctx: object) { backgroundCtx = ctx; }
+export function getBackgroundCtx(): object { return backgroundCtx; }
+
 // In-process worker — runs immediately when enqueued.
 // In production this is a separate worker process; for testing,
 // we run synchronously after the scheduled time.
@@ -466,7 +473,7 @@ async function runJob<I, C>(action: JobAction<I, C>, rec: JobRecord) {
 	try {
 		const result = await action.run({
 			input:  rec.input as I,
-			ctx:    {} as C, // ctx injected by the worker in real implementation
+			ctx:    backgroundCtx as C,
 			job:    { id: rec.id, attempt: rec.attempt - 1, scheduledAt: rec.scheduledAt },
 			tick:   (payload) => rec.ticks.push(payload),
 		} as any);
@@ -545,7 +552,7 @@ export type NotificationAction<I, C> = Action & {
 	schedule?: CronOrInterval;
 	getUserId: ((input: I) => string) | null;
 
-	send(input: I, opts?: { channels?: string[] }): Promise<Record<string, string>>;
+	send(input: I, opts?: { channels?: string[]; ctx?: unknown }): Promise<Record<string, string>>;
 	preview(input: I): Promise<Record<string, unknown>>;
 	run(opts: RunOpts<I, C>): Promise<void>;
 	now(input: I): Promise<Record<string, string>>;
@@ -607,7 +614,7 @@ export function createNotification<I = unknown, C = unknown>(
 					getUserId: getUserId as any,
 				},
 				input:    parsedInput,
-				ctx:      {},
+				ctx:      opts.ctx ?? {},
 				channels: opts.channels,
 			});
 		},

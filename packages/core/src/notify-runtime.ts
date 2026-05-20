@@ -147,7 +147,7 @@ export async function dispatchNotification(opts: {
 			const payload = declared.render ? await declared.render({ input, ctx }) : input;
 			const id = `${notification.name}.${channelName}.${now.getTime()}`;
 			result[channelName] = id;
-			void deliver(channelName, payload, ctx);
+			void deliver(channelName, payload, { ...(ctx as object), userId });
 			continue;
 		}
 

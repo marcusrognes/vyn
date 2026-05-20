@@ -8,9 +8,10 @@
 		"start": "node --experimental-strip-types server.ts"
 	},
 	"dependencies": {
-		"@vyn/core":   "*",
-		"@vyn/server": "*",
-		"@vyn/client": "*",
-		"superjson":   "^2.2.2"
+		"@vyn/core":          "*",
+		"@vyn/server":        "*",
+		"@vyn/client":        "*",
+		"@vyn/notify-inbox":  "*",
+		"superjson":          "^2.2.2"
 	}
 }
