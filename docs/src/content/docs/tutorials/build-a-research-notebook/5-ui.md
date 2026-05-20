@@ -71,7 +71,7 @@ it once you add a toggle.
 ```
 
 ```ts
-// public/routes/index.ts
+// public/routes/index.js
 import { createApp, $, html, render } from "@vyn/client";
 import { transformer } from "../../transform.ts";
 import type { AppRouter } from "../../_vyn.gen.ts";
@@ -181,7 +181,7 @@ redirects to the run viewer, which we build next.
 ```
 
 ```ts
-// public/routes/research/[runId].ts
+// public/routes/research/[runId].js
 import { createApp, $, html, render, useParams } from "@vyn/client";
 import { transformer } from "../../../transform.ts";
 import type { AppRouter } from "../../../_vyn.gen.ts";
@@ -257,7 +257,7 @@ it is.
 
 ## Single note view
 
-This page is mostly the same as the auth tutorial's `[noteId].ts`,
+This page is mostly the same as the auth tutorial's `[noteId].js`,
 restyled with Tailwind:
 
 ```html

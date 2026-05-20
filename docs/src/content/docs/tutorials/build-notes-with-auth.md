@@ -63,7 +63,7 @@ notes/                                    project root
         ├── signup.ts
         └── notes/
             ├── [noteId].html             /notes/:noteId
-            └── [noteId].ts
+            └── [noteId].js
 ```
 
 Files at the root and inside `features/` are imported by name — Vyn's
@@ -568,7 +568,7 @@ size.
 ```
 
 ```ts
-// public/routes/index.ts
+// public/routes/index.js
 import { createApp, $, html, render } from "@vyn/client";
 import type { AppRouter } from "../../_vyn.gen.ts";
 import type { Note } from "../../features/notes/note.ts";
@@ -634,7 +634,7 @@ Login and signup both render a small form inline. They differ only in
 which mutation they call, so we extract the form helper:
 
 ```ts
-// public/routes/_auth-form.ts (route-local helper, prefixed with _ so
+// public/routes/_auth-form.js (route-local helper, prefixed with _ so
 // the framework doesn't treat it as a route)
 import { $, html, render } from "@vyn/client";
 
@@ -670,10 +670,10 @@ export function mountAuthForm(
 ```
 
 ```ts
-// public/routes/login.ts
+// public/routes/login.js
 import { createApp, $ } from "@vyn/client";
 import type { AppRouter } from "../../_vyn.gen.ts";
-import { mountAuthForm } from "./_auth-form.ts";
+import { mountAuthForm } from "./_auth-form.js";
 
 const { rpc } = createApp<AppRouter>();
 
@@ -689,10 +689,10 @@ mountAuthForm($("#root"), "Sign in", async creds => {
 ```
 
 ```ts
-// public/routes/signup.ts
+// public/routes/signup.js
 import { createApp, $ } from "@vyn/client";
 import type { AppRouter } from "../../_vyn.gen.ts";
-import { mountAuthForm } from "./_auth-form.ts";
+import { mountAuthForm } from "./_auth-form.js";
 
 const { rpc } = createApp<AppRouter>();
 
@@ -710,7 +710,7 @@ mountAuthForm($("#root"), "Sign up", async creds => {
 ```
 
 ```ts
-// public/routes/notes/[noteId].ts
+// public/routes/notes/[noteId].js
 import { createApp, $, useParams } from "@vyn/client";
 import type { AppRouter } from "../../../_vyn.gen.ts";
 
@@ -735,7 +735,7 @@ titleEl.addEventListener("blur", save);
 bodyEl.addEventListener("blur", save);
 ```
 
-The `_auth-form.ts` underscore-prefixed file is invisible to route
+The `_auth-form.js` underscore-prefixed file is invisible to route
 discovery; it's a plain module that login and signup both import.
 This is the canonical pattern for sharing UI code: a regular function
 in a regular file. No custom-element registration overhead.

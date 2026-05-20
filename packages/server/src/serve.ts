@@ -31,6 +31,10 @@ export type ServeOpts<S extends object = {}, D extends object = {}> = {
 		coalesceWindowMs?: number;
 	};
 	mcp?: boolean;
+	// CLI subcommands (vyn mcp --stdio, vyn worker) set this so serve()
+	// runs all the boot-time wiring (staticContext, installNotify,
+	// installBackgroundCtx) without binding to a port.
+	noListen?: boolean;
 };
 
 export async function serve<S extends object = {}, D extends object = {}>(opts: ServeOpts<S, D>) {
@@ -140,12 +144,23 @@ export async function serve<S extends object = {}, D extends object = {}>(opts: 
 		}
 	});
 
+	if (opts.noListen) {
+		console.log(`[vyn] boot-only mode (noListen) — actions registered, no HTTP bind`);
+		return {
+			close: async () => { shutdownNotify(); },
+			bus,
+			staticCtx,
+		};
+	}
+
 	await new Promise<void>((resolve) => {
 		server.listen(opts.port, opts.host ?? "0.0.0.0", () => resolve());
 	});
 
+	const { registry } = await import("@vyn/core");
+	const counts = registry.list().reduce((acc, a) => { acc[a.kind] = (acc[a.kind] ?? 0) + 1; return acc; }, {} as Record<string, number>);
 	const url = `http://${opts.host ?? "localhost"}:${opts.port}`;
-	console.log(`[vyn] listening on ${url}`);
+	console.log(`[vyn] listening on ${url} — ${registry.list().length} actions registered (${Object.entries(counts).map(([k, v]) => `${v} ${k}`).join(", ")})`);
 	await opts.onReady?.({ url });
 
 	return {

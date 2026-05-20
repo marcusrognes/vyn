@@ -30,6 +30,17 @@ We'll use a small in-memory store so the tutorial stays focused on
 Vyn's shape. Swapping to SQLite (or any other store) is a one-file
 change once you finish; see the [Next steps](#next-steps) section.
 
+:::note
+**Server vs browser code.** Files under `features/` and `server.ts`
+run on Node — write them as `.ts` and Node 22+'s
+`--experimental-strip-types` flag executes them directly. Files
+under `public/` ship to the browser; write them as `.js` so the
+browser can load them without a build step (the framework ships
+`@vyn/client` at `/_vyn/client.js` for import). The completed
+example lives in
+[`examples/todo`](https://github.com/marcusrognes/vyn/tree/main/examples/todo).
+:::
+
 ## A note on layout
 
 This tutorial uses the **feature-folder layout**: everything that
@@ -66,7 +77,7 @@ todo/                                     project root
     ├── style.css                         a little polish
     └── routes/
         ├── index.html                    page content for `/`
-        └── index.ts                      page logic for `/`
+        └── index.js                      page logic for `/`
 ```
 
 The whole "todos" feature is one directory: model and actions.
@@ -74,7 +85,7 @@ Routes live under `public/routes/` — each `.html` is a page, the
 sibling `.ts` runs on navigation to that page. Vyn handles both
 kinds of discovery; you don't write a router config.
 
-The todo row's UI lives inline in `routes/index.ts` because this app
+The todo row's UI lives inline in `routes/index.js` because this app
 has exactly one route that renders it. When a second route would
 reuse the same markup, extract it into a
 `features/todos/todo-row.component.ts`. See [Components](/guide/components/).
@@ -284,13 +295,13 @@ button { background: none; border: 0; cursor: pointer; padding: .25rem; }
 
 ## Step 5 — the route module
 
-The route at `/` is `public/routes/index.ts`. Vyn runs it when the
+The route at `/` is `public/routes/index.js`. Vyn runs it when the
 user navigates to `/` because it sits next to `index.html`. This file
 renders the list, hooks the form, subscribes to changes, and
 delegates clicks for toggle/remove.
 
 ```ts
-// public/routes/index.ts
+// public/routes/index.js
 import { createApp, $, html, render } from "@vyn/client";
 import type { AppRouter } from "../../_vyn.gen.ts";
 import type { Todo } from "../../features/todos/todo.ts";

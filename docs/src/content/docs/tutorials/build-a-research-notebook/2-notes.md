@@ -184,7 +184,7 @@ Things to notice:
 ## What the client sees
 
 ```ts
-// public/routes/index.ts
+// public/routes/index.js
 import { createApp } from "@vyn/client";
 import { transformer } from "../../transform.ts";
 import type { AppRouter } from "../../_vyn.gen.ts";
