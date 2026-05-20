@@ -8,6 +8,7 @@
 import { v, type Schema } from "./v.ts";
 import { registry, anonymousName, type Action, type ToolSpec } from "./registry.ts";
 import { RpcError, isPermanent } from "./errors.ts";
+import { dispatchNotification } from "./notify-runtime.ts";
 
 // ─── shared types ────────────────────────────────────────────────────
 
@@ -599,26 +600,16 @@ export function createNotification<I = unknown, C = unknown>(
 
 		async send(input, opts = {}) {
 			const parsedInput = (input ? this.input!.parse(input) : input) as I;
-			const target = opts.channels ?? Object.keys(channels);
-			const result: Record<string, string> = {};
-			for (const channelName of target) {
-				const ch = channels[channelName];
-				if (!ch) continue;
-				const ctx = {} as unknown;
-				if (ch.mode === "instant") {
-					if (ch.render) await ch.render({ input: parsedInput, ctx });
-					result[channelName] = `${name}.${channelName}.${Date.now()}`;
-				} else if (ch.mode === "deferred") {
-					const id = `${name}.${channelName}.${Date.now()}`;
-					setTimeout(() => { if (ch.render) ch.render({ input: parsedInput, ctx }); }, ch.delay ?? 0);
-					result[channelName] = id;
-				} else {
-					// digest — accumulate (in-memory placeholder)
-					const id = `${name}.${channelName}.${Date.now()}`;
-					result[channelName] = id;
-				}
-			}
-			return result;
+			return dispatchNotification({
+				notification: {
+					name,
+					channels:  channels as any,
+					getUserId: getUserId as any,
+				},
+				input:    parsedInput,
+				ctx:      {},
+				channels: opts.channels,
+			});
 		},
 
 		async now(input) { return this.send(input); },

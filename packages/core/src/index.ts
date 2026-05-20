@@ -21,5 +21,18 @@ export {
 	type BundleItem,
 } from "./actions.ts";
 
+export { parseCron, previousTick, nextTick, type CronExpression } from "./cron.ts";
+export {
+	installNotify,
+	shutdownNotify,
+	flushNow,
+	dispatchNotification,
+	_resetNotifyRuntime,
+	_getQueueSize,
+	type NotificationAdapter,
+	type PreferencesResolver,
+	type ChannelPreference,
+} from "./notify-runtime.ts";
+
 // Re-export v.Infer alias as the canonical type helper.
 export type { VInfer as Infer } from "./v.ts";
