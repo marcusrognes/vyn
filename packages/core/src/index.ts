@@ -1,51 +1,25 @@
-// @vyn/core public API. Implementation lands per the contracts the
-// test suite enforces. Every export here is a stub until then;
-// `npm test` runs the contracts as failing tests and turns them green
-// as the implementation is written.
+// @vyn/core public API.
 
-export function createQuery(_opts: unknown): never {
-	throw new Error("@vyn/core: createQuery not implemented");
-}
+export { v, ValidationError, type Schema, type ObjectSchema, type StringSchema, type NumberSchema, type ArraySchema, type Constraint, type VInfer } from "./v.ts";
+export { RpcError, categoryToStatus, isPermanent, type ErrorCategory } from "./errors.ts";
+export { registry, type Action, type ActionKind, type ToolSpec } from "./registry.ts";
+export {
+	createQuery,
+	createMutation,
+	createSubscription,
+	createJob,
+	createNotification,
+	inboxAdapter,
+	type RunOpts,
+	type QueryAction,
+	type MutationAction,
+	type SubscriptionAction,
+	type JobAction,
+	type JobStatus,
+	type JobWatchEvent,
+	type NotificationAction,
+	type BundleItem,
+} from "./actions.ts";
 
-export function createMutation(_opts: unknown): never {
-	throw new Error("@vyn/core: createMutation not implemented");
-}
-
-export function createSubscription(_opts: unknown): never {
-	throw new Error("@vyn/core: createSubscription not implemented");
-}
-
-export function createJob(_opts: unknown): never {
-	throw new Error("@vyn/core: createJob not implemented");
-}
-
-export function createNotification(_opts: unknown): never {
-	throw new Error("@vyn/core: createNotification not implemented");
-}
-
-export function inboxAdapter(_opts: unknown): never {
-	throw new Error("@vyn/core: inboxAdapter not implemented");
-}
-
-export const v = new Proxy({} as Record<string, unknown>, {
-	get() {
-		throw new Error("@vyn/core: v.* validators not implemented");
-	},
-});
-
-export class RpcError extends Error {
-	category: string;
-	details?: unknown;
-	constructor(category: string, message: string, details?: unknown) {
-		super(message);
-		this.category = category;
-		this.details = details;
-		this.name = "RpcError";
-	}
-}
-
-export const registry = new Proxy({} as Record<string, unknown>, {
-	get() {
-		throw new Error("@vyn/core: registry not implemented");
-	},
-});
+// Re-export v.Infer alias as the canonical type helper.
+export type { VInfer as Infer } from "./v.ts";
