@@ -1,0 +1,47 @@
+---
+// LiveExample — embeds an interactive HTML preview inside a doc page.
+// The HTML mounts in a sandboxed iframe so its scripts don't conflict
+// with Starlight. Source is shown side-by-side with the rendered widget.
+//
+// Usage in MDX:
+//   import LiveExample from "../../components/LiveExample.astro";
+//   <LiveExample title="Single-select listbox" srcdoc={`
+//     <ul role="listbox" data-keyboard-nav data-select>
+//       <li role="option" data-value="a">Alpha</li>
+//       <li role="option" data-value="b">Bravo</li>
+//     </ul>
+//     <script type="module">
+//       import "/_vyn/ui.js";
+//     </script>
+//   `} height="120px" />
+
+interface Props {
+	title?:  string;
+	srcdoc:  string;
+	height?: string;
+}
+
+const { title, srcdoc, height = "200px" } = Astro.props;
+---
+
+<figure class="live-example">
+	{title && <figcaption>{title}</figcaption>}
+	<iframe
+		srcdoc={srcdoc}
+		sandbox="allow-scripts"
+		style={`width:100%;height:${height};border:1px solid var(--sl-color-gray-5);border-radius:0.5rem`}
+		loading="lazy"
+	></iframe>
+	<details>
+		<summary>View source</summary>
+		<pre><code>{srcdoc}</code></pre>
+	</details>
+</figure>
+
+<style>
+	.live-example { margin: 1.5rem 0; }
+	.live-example figcaption { font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--sl-color-gray-2); }
+	.live-example details { margin-top: 0.5rem; }
+	.live-example summary { cursor: pointer; font-size: 0.875rem; color: var(--sl-color-gray-3); }
+	.live-example pre { font-size: 0.75rem; padding: 0.75rem; background: var(--sl-color-gray-6); border-radius: 0.375rem; overflow-x: auto; }
+</style>

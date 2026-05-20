@@ -1,0 +1,17 @@
+{
+	"name": "@vyn/example-notes-sqlite",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"scripts": {
+		"dev":   "node --experimental-strip-types --watch server.ts",
+		"start": "node --experimental-strip-types server.ts"
+	},
+	"dependencies": {
+		"@vyn/core":      "*",
+		"@vyn/server":    "*",
+		"@vyn/client":    "*",
+		"@vyn/auth":      "*",
+		"@vyn/db-sqlite": "*"
+	}
+}

@@ -10,4 +10,6 @@ export default defineWorkspace([
 	"packages/auth",
 	"packages/cli",
 	"packages/ui",
+	"packages/db-sqlite",
+	"packages/db-mongo",
 ]);

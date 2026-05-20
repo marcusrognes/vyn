@@ -9,11 +9,13 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { handleRpc } from "./rpc.ts";
+import { handleMcp } from "./mcp.ts";
 import { attachWebSocket } from "./ws.ts";
 import { tryStatic } from "./static.ts";
 import { identityTransformer, type Transformer } from "./transformer.ts";
 import { EventBus, type BaseCtx, type CookieOpts } from "./ctx.ts";
 import { parseCookies, serializeCookie } from "./cookies.ts";
+import { installNotify, shutdownNotify, type NotificationAdapter, type PreferencesResolver } from "@vyn/core";
 
 export type ServeOpts<S extends object = {}, D extends object = {}> = {
 	port:           number;
@@ -23,6 +25,12 @@ export type ServeOpts<S extends object = {}, D extends object = {}> = {
 	staticContext?: () => Promise<S> | S;
 	createContext?: (opts: { req: Request; staticCtx: S; baseCtx: BaseCtx }) => Promise<D> | D;
 	onReady?:       (opts: { url: string }) => void | Promise<void>;
+	notify?: {
+		adapters?:         Record<string, NotificationAdapter>;
+		preferences?:      PreferencesResolver;
+		coalesceWindowMs?: number;
+	};
+	mcp?: boolean;
 };
 
 export async function serve<S extends object = {}, D extends object = {}>(opts: ServeOpts<S, D>) {
@@ -31,6 +39,8 @@ export async function serve<S extends object = {}, D extends object = {}>(opts: 
 	const staticCtx   = (opts.staticContext ? await opts.staticContext() : ({} as S));
 	const indexHtml   = await readFile(join(publicDir, "index.html"), "utf-8").catch(() => undefined);
 	const bus         = new EventBus();
+
+	if (opts.notify) installNotify(opts.notify);
 
 	const server = createServer(async (req, res) => {
 		const url     = `http://${req.headers.host}${req.url}`;
@@ -61,6 +71,13 @@ export async function serve<S extends object = {}, D extends object = {}>(opts: 
 						: ({} as D);
 					return { ...staticCtx, ...dyn };
 				}, transformer);
+			} else if (url2.pathname === "/mcp" && opts.mcp) {
+				response = await handleMcp(request, async () => {
+					const dyn = opts.createContext
+						? await opts.createContext({ req: request, staticCtx, baseCtx })
+						: ({} as D);
+					return { ...staticCtx, ...dyn, ...baseCtx };
+				});
 			} else if (url2.pathname === "/_vyn/client.js") {
 				response = await serveClientBundle();
 			} else {
@@ -125,7 +142,7 @@ export async function serve<S extends object = {}, D extends object = {}>(opts: 
 	await opts.onReady?.({ url });
 
 	return {
-		close: () => new Promise<void>((r) => server.close(() => r())),
+		close: () => new Promise<void>((r) => { shutdownNotify(); server.close(() => r()); }),
 		bus,
 		staticCtx,
 	};

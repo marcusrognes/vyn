@@ -1,7 +1,7 @@
 # Implementation status
 
 Snapshot of what's actually built vs. what's still documented but not
-implemented. Updated 2026-05-21.
+implemented. Updated 2026-05-21 (round 2).
 
 ## Working end-to-end
 
@@ -16,8 +16,10 @@ implemented. Updated 2026-05-21.
 | `createMutation`                                  | ✅ same as Query, rejects `invalidates` field |
 | `createSubscription`                              | ✅ async-generator run / `opts.events` AsyncIterable / `.emit` / signal abort propagation / eager queue registration so emits between run() and first iter.next() aren't lost |
 | `createJob`                                       | ✅ in-memory store / .now/.at/.in/.cancel/.status/.watch/.result / retries + backoff (exponential/linear/custom) / timeout / RpcError-category retry rules (permanent vs transient) |
-| `createNotification`                              | 🟡 .send fan-out + .preview + .run + .now/.at/.in works for **instant** mode. Deferred/digest queue exists but uses `setTimeout` not a worker; no cross-notification bundling, no coalescing window, no per-user cron flushWhen |
+| `createNotification`                              | ✅ instant + deferred + digest modes. Routes through the notification runtime (notify-runtime.ts). |
 | `inboxAdapter`                                    | 🟡 stub that writes to a `collection.insertOne` if provided; no built-in list/count/markRead/markAllRead actions yet |
+| `cron`                                            | ✅ parser + previousTick + nextTick, timezone-aware via Intl.DateTimeFormat, POSIX dom/dow OR semantics |
+| notification runtime                              | ✅ installNotify({ adapters, preferences, coalesceWindowMs }) + flush loop. Per-channel queues, per-user cron-driven digest flush, coalesce window for cross-notification bundling, preferences resolver overrides mode/digest |
 
 ### `@vyn/server`
 
@@ -62,21 +64,31 @@ implemented. Updated 2026-05-21.
 | `vyn build`                                        | 🟡 placeholder — strip-types runs sources directly |
 | `vyn check`                                        | ✅ runs `tsc --noEmit` |
 | `vyn gen`                                          | ✅ scans features/*.actions.ts + public/routes/*.html → `_vyn.gen.ts` |
-| `vyn mcp --stdio`                                  | ❌ not implemented |
-| `vyn worker`                                       | ❌ not implemented (jobs run in-process) |
+| `vyn mcp --stdio`                                  | ✅ boots app, exposes initialize/tools/list/tools/call over stdin/stdout |
+| `vyn worker`                                       | ✅ boots app + runs forever; notification flush loop is in-process by default but can stand alone via this subcommand |
 
 ### `@vyn/ui`
 
 | Behavior | State |
 |---|---|
 | `keyboard-nav`                                     | ✅ roving-tabindex + arrows/Home/End + activate event |
+| `typeahead`                                        | ✅ letter buffer with idle reset; cycles same-letter |
 | `select` (single / multi)                          | ✅ data-value + aria-selected + change event |
 | `dismiss`                                          | ✅ esc / outside / focus-out triggers with cancelable event |
+| `focus-trap`                                       | ✅ tab cycling, focus restoration, MutationObserver for visibility |
 | `anchor`                                           | ✅ JS fallback positioning with viewport clamping |
-| `live(message)`                                    | ✅ singleton aria-live regions, throttled |
+| `popover`                                          | ✅ wraps native `popover` attribute, falls back to JS dismiss + outside-click |
+| `tooltip`                                          | ✅ hover-delayed, focus-immediate, esc-dismiss |
+| `scroll-into-view`                                 | ✅ container-level focus / selected / custom-attr trigger |
+| `sort`                                             | ✅ thead-container behavior cycles asc→desc→unsorted, multi mode |
+| `auto-resize`                                      | ✅ textarea grows with content, respects min/max rows |
+| `aria-describedby`                                 | ✅ pairs + optional invalid-only mode |
 | `copy`                                             | ✅ data-copy='selector' → clipboard + data-state='copied' flash |
-| 13 other behaviors documented                      | 🟡 documented; not yet implemented |
-| 4 widgets (`<v-grid>`, `<v-table>`, `<v-combobox>`, `<v-toaster>`) | 🟡 documented; not yet implemented |
+| `live(message)`                                    | ✅ singleton aria-live regions, throttled |
+| `<v-toaster>`                                      | ✅ custom element + global `vynToast({ body, kind, timeout })` helper |
+| `form-associated`                                  | 🟡 documented; use native ElementInternals — examples deferred |
+| `sortable` / `drag-drop` / `edit`                  | 🟡 documented; not yet implemented |
+| `<v-grid>`, `<v-table>`, `<v-combobox>`            | 🟡 documented; not yet implemented |
 
 ## Tests
 
@@ -93,9 +105,10 @@ built by following the matching tutorial. See
 
 | App | What it demonstrates | Built? |
 |---|---|---|
-| `todo`        | five-primitive realtime app                                | ✅ end-to-end |
-| `notes-auth`  | per-user data scoping, sessions, requireSession guard      | ✅ end-to-end (in-memory store, not SQLite as the tutorial suggests) |
-| `research`    | streaming agent via `opts.tick`, SuperJSON, jobs, mock LLM | ✅ end-to-end (mock LLM; no real Anthropic call) |
+| `todo`         | five-primitive realtime app + MCP                          | ✅ end-to-end |
+| `notes-auth`   | per-user data scoping, sessions, requireSession guard      | ✅ end-to-end (in-memory store) |
+| `notes-sqlite` | same as notes-auth but persisted via `@vyn/db-sqlite`      | ✅ end-to-end — notes survive server restart |
+| `research`     | streaming agent via `opts.tick`, SuperJSON, jobs, mock LLM | ✅ end-to-end (mock LLM; no real Anthropic call) |
 
 ## Known divergences from the docs
 
@@ -110,14 +123,20 @@ built by following the matching tutorial. See
 4. **Tailwind in the research-notebook tutorial** isn't reproduced in
    the example — plain CSS instead.
 
+## Tests
+
+- 218 passing (was 202 last round)
+- 18 todo (worker / bundling / adapter edge cases that need an
+  integration harness)
+
 ## Next session priorities
 
-1. Notification worker subsystem: per-channel queue with cron-driven
-   flushes that honor per-user preferences + the coalescing window
-   for cross-notification bundling.
-2. MCP server surface (`vyn mcp --stdio` + HTTP at `/mcp`).
-3. `vyn worker` standalone process for jobs.
-4. Remaining 13 UI behaviors + 4 widgets.
-5. SQLite + MongoDB adapters as `@vyn/db-sqlite` / `@vyn/db-mongo`.
-6. Live `<LiveExample>` MDX component in the docs so behavior pages
-   demonstrate themselves.
+1. Wire `<LiveExample>` into a couple of UI pages now that the
+   widgets work in a browser.
+2. Implement remaining UI: sortable, drag-drop, edit, form-associated,
+   v-grid, v-table, v-combobox.
+3. Build the inbox actions (`inbox.list / count / markRead /
+   markAllRead / onNew`) so the in-app channel has a complete UI
+   pattern out of the box.
+4. Real LLM integration in `examples/research` (drop the mock).
+5. MongoDB integration test using a docker-compose harness.

@@ -113,11 +113,64 @@ async function check() {
 }
 
 async function mcp() {
-	console.log("[vyn] mcp: --stdio mode not implemented in this iteration. See docs/guide/mcp.");
+	const stdio = argv.includes("--stdio");
+	if (!stdio) {
+		console.log("[vyn] usage: vyn mcp --stdio");
+		process.exit(1);
+	}
+	// Boot the app's server.ts so actions register, but never bind a port —
+	// we run the MCP loop over stdin/stdout instead.
+	process.env.VYN_MCP_STDIO = "1";
+	process.env.PORT          = "0";
+	const serverModule = await import(`${cwd}/server.ts`);
+	void serverModule;
+
+	const { registry } = await import("@vyn/core");
+	const readline = await import("node:readline");
+	const rl = readline.createInterface({ input: process.stdin });
+	for await (const line of rl) {
+		try {
+			const req = JSON.parse(line);
+			const res = await handleStdioFrame(req, registry);
+			process.stdout.write(JSON.stringify(res) + "\n");
+		} catch (e) {
+			process.stdout.write(JSON.stringify({ jsonrpc: "2.0", id: null, error: { code: -32603, message: (e as Error).message } }) + "\n");
+		}
+	}
+}
+
+async function handleStdioFrame(req: any, registry: any) {
+	const id = req?.id;
+	if (req?.method === "initialize") {
+		return { jsonrpc: "2.0", id, result: { protocolVersion: "2024-11-05", capabilities: { tools: {} }, serverInfo: { name: "@vyn/cli mcp", version: "0.0.0" } } };
+	}
+	if (req?.method === "tools/list") {
+		const tools = registry.list().filter((a: any) => a.tool && !a.tool.hidden).map((a: any) => ({
+			name: a.name, description: a.description ?? "",
+			inputSchema:  a.input?.schema  ?? { type: "object" },
+			outputSchema: a.output?.schema ?? { type: "null" },
+		}));
+		return { jsonrpc: "2.0", id, result: { tools } };
+	}
+	if (req?.method === "tools/call") {
+		const name = req.params?.name;
+		const args = req.params?.arguments;
+		const action = registry.get(name);
+		if (!action) return { jsonrpc: "2.0", id, error: { code: -32601, message: `unknown tool: ${name}` } };
+		const result = await action.run({ input: args, ctx: {} });
+		return { jsonrpc: "2.0", id, result: { content: [{ type: "text", text: JSON.stringify(result) }], structuredContent: result } };
+	}
+	return { jsonrpc: "2.0", id, error: { code: -32601, message: `unknown method: ${req?.method}` } };
 }
 
 async function worker() {
-	console.log("[vyn] worker: standalone-process mode not implemented in this iteration. Jobs run in-process for now.");
+	console.log("[vyn] worker: booting app and running flush loop");
+	process.env.VYN_WORKER = "1";
+	await import(`${cwd}/server.ts`);
+	// flushNow lives on the notification runtime; the worker process just
+	// imports server.ts to wire installNotify(...) and then runs forever.
+	process.on("SIGTERM", () => { console.log("[vyn worker] shutting down"); process.exit(0); });
+	await new Promise(() => undefined);
 }
 
 // ─── gen — scan filesystem, emit _vyn.gen.ts ─────────────────────────
