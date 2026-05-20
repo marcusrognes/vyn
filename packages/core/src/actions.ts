@@ -442,6 +442,49 @@ let backgroundCtx: object = {};
 export function installBackgroundCtx(ctx: object) { backgroundCtx = ctx; }
 export function getBackgroundCtx(): object { return backgroundCtx; }
 
+// Registry of running cron schedules so we don't double-install on
+// HMR / multiple serve() calls.
+const scheduledTimers = new Map<string, ReturnType<typeof setInterval>>();
+
+// Called by serve() at boot. Walks every job with a schedule and
+// arranges a periodic firing per the cron / interval. Interval-based
+// schedules fire by setInterval; cron-based ones use a 60-second
+// pulse + previous-tick comparison so each cron fires at most once
+// per minute.
+export function startCronJobs(): void {
+	const jobs = registry.byKind("job") as JobAction<unknown, unknown>[];
+	for (const job of jobs) {
+		if (!job.schedule) continue;
+		if (scheduledTimers.has(job.name)) continue;
+
+		if (typeof job.schedule.interval === "number") {
+			const t = setInterval(() => { void job.now({} as unknown); }, job.schedule.interval);
+			scheduledTimers.set(job.name, t);
+			continue;
+		}
+
+		if (job.schedule.cron) {
+			let lastFired: number | undefined;
+			const tz = job.schedule.timezone ?? "UTC";
+			const cron = job.schedule.cron;
+			const t = setInterval(async () => {
+				const { parseCron, previousTick } = await import("./cron.ts");
+				const tick = previousTick(parseCron(cron), new Date(), tz, 2 * 60_000);
+				if (!tick) return;
+				if (lastFired && lastFired >= tick.getTime()) return;
+				lastFired = tick.getTime();
+				void job.now({} as unknown);
+			}, 60_000);
+			scheduledTimers.set(job.name, t);
+		}
+	}
+}
+
+export function stopCronJobs(): void {
+	for (const t of scheduledTimers.values()) clearInterval(t);
+	scheduledTimers.clear();
+}
+
 // In-process worker — runs immediately when enqueued.
 // In production this is a separate worker process; for testing,
 // we run synchronously after the scheduled time.

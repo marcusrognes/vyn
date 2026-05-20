@@ -93,11 +93,27 @@ serve({ port: Number(process.env.PORT ?? 8000) });
 async function dev() {
 	await gen();
 	const port = process.env.PORT ?? "8000";
+
+	// Watch features/ + public/routes/ for new files; re-run gen.
+	const fs = await import("node:fs");
+	const watchTargets = [join(cwd, "features"), join(cwd, "public", "routes")].filter((p) => existsSync(p));
+	const watchers: import("node:fs").FSWatcher[] = [];
+	let pending: ReturnType<typeof setTimeout> | undefined;
+	for (const target of watchTargets) {
+		const w = fs.watch(target, { recursive: true }, (_event, filename) => {
+			if (!filename) return;
+			if (!/\.(actions\.ts|html)$/.test(filename)) return;
+			if (pending) clearTimeout(pending);
+			pending = setTimeout(() => { void gen(); }, 100);
+		});
+		watchers.push(w);
+	}
+
 	const proc = spawn("node", ["--experimental-strip-types", "--watch", "server.ts"], {
 		stdio: "inherit",
 		env:   { ...process.env, PORT: port, NODE_ENV: "development" },
 	});
-	proc.on("exit", (code) => process.exit(code ?? 0));
+	proc.on("exit", (code) => { watchers.forEach((w) => w.close()); process.exit(code ?? 0); });
 }
 
 // ─── build / check / mcp / worker ────────────────────────────────────

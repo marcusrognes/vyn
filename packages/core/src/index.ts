@@ -12,6 +12,8 @@ export {
 	inboxAdapter,
 	installBackgroundCtx,
 	getBackgroundCtx,
+	startCronJobs,
+	stopCronJobs,
 	type RunOpts,
 	type QueryAction,
 	type MutationAction,

@@ -15,7 +15,7 @@ import { tryStatic } from "./static.ts";
 import { identityTransformer, type Transformer } from "./transformer.ts";
 import { EventBus, type BaseCtx, type CookieOpts } from "./ctx.ts";
 import { parseCookies, serializeCookie } from "./cookies.ts";
-import { installNotify, shutdownNotify, installBackgroundCtx, type NotificationAdapter, type PreferencesResolver } from "@vyn/core";
+import { installNotify, shutdownNotify, installBackgroundCtx, startCronJobs, stopCronJobs, type NotificationAdapter, type PreferencesResolver } from "@vyn/core";
 
 export type ServeOpts<S extends object = {}, D extends object = {}> = {
 	port:           number;
@@ -50,6 +50,7 @@ export async function serve<S extends object = {}, D extends object = {}>(opts: 
 	// so the framework copies the staticCtx into a module-level slot they
 	// can reach.
 	installBackgroundCtx(staticCtx);
+	startCronJobs();
 
 	const server = createServer(async (req, res) => {
 		const url     = `http://${req.headers.host}${req.url}`;
@@ -164,7 +165,7 @@ export async function serve<S extends object = {}, D extends object = {}>(opts: 
 	await opts.onReady?.({ url });
 
 	return {
-		close: () => new Promise<void>((r) => { shutdownNotify(); server.close(() => r()); }),
+		close: () => new Promise<void>((r) => { stopCronJobs(); shutdownNotify(); server.close(() => r()); }),
 		bus,
 		staticCtx,
 	};
