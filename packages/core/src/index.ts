@@ -23,6 +23,10 @@ export function createNotification(_opts: unknown): never {
 	throw new Error("@vyn/core: createNotification not implemented");
 }
 
+export function inboxAdapter(_opts: unknown): never {
+	throw new Error("@vyn/core: inboxAdapter not implemented");
+}
+
 export const v = new Proxy({} as Record<string, unknown>, {
 	get() {
 		throw new Error("@vyn/core: v.* validators not implemented");

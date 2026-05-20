@@ -259,6 +259,237 @@ type DigestPreference = {
 Set to `null` (or omit the channel) to disable the digest for that
 user.
 
+## Cross-notification bundling
+
+When a non-instant delivery is about to fire for a user+channel, the
+framework looks at everything else **due** for the same user+channel
+across every notification and bundles them into one delivery. Three
+deferred items + a digest's worth of items, all arriving in the same
+flush window, become **one email**, **one in-app entry**, or **one
+collapsed push** — never three.
+
+The framework defines "due" as:
+
+- Digest items whose cron tick has elapsed since `lastFlushAt`
+- Deferred items whose `delay` has elapsed
+- Either of the above plus a small **coalescing window** (default
+  **60 seconds**) so a deferred item arriving 30s after a digest
+  fires still rides along
+
+```
+                       T+0           T+30s          T+60s
+deferred A (delay 30s)   ──┐                          │
+deferred B (delay 60s)     │           ──┐            │
+digest fires at T+30s      │             │            │  ← bundling fires
+                           └──── one email ────────────┘   with A + B + digest items
+```
+
+### How adapters see the bundle
+
+Each item in the bundle carries the notification it originated
+from. Adapters receive an array, with one element per source:
+
+```ts
+type BundleItem = {
+	notification: string;             // e.g. "comments.posted"
+	mode:         "digest" | "deferred";
+	payload:      unknown;            // whatever the channel's renderItem (digest) or render (deferred) returned
+};
+```
+
+For channels where bundling makes sense (email, in-app), the
+adapter is called once with the full array. For channels where it
+doesn't (push — limited content, in some platforms unbundle-able),
+the framework collapses to a single "N new items" summary by
+default.
+
+### Custom bundle renderer
+
+A channel can opt into a custom bundle renderer. It receives the
+mixed-source array and produces a single channel payload:
+
+```ts
+email: {
+	mode: "digest",
+	// ...
+	renderBundle: async ({ items, ctx, userId }) => {
+		const user = await ctx.db.users.findOne({ _id: userId });
+		const grouped = groupBy(items, (i) => i.notification);
+		return {
+			to:      user!.email,
+			subject: `${items.length} updates`,
+			html:    Object.entries(grouped).map(([name, group]) =>
+				`<section><h2>${prettyName(name)}</h2>` +
+				group.map((i: any) => i.payload.html).join("") +
+				`</section>`,
+			).join(""),
+		};
+	},
+},
+```
+
+If `renderBundle` is omitted, the framework uses a default:
+
+- **Single-source bundle** (every item from the same notification):
+  call `renderDigest` (digest mode) or concatenate `render` payloads
+  (deferred mode).
+- **Multi-source bundle**: concatenate each notification's
+  `renderDigest` output, with the notification's `description` as
+  a section header.
+
+Most apps don't need to override. The default is reasonable.
+
+### Coalescing window
+
+Configure on `serve({ notify })`:
+
+```ts
+serve({
+	notify: {
+		// ... adapters
+		coalesceWindowMs: 60_000,    // bundle items arriving within this window
+	},
+});
+```
+
+Set to `0` to disable bundling. Set higher to tolerate more delay
+in exchange for fewer deliveries.
+
+## In-app inbox
+
+The in-app channel is more than an event stream — it's typically
+also a persisted notification list the user reads in a bell
+dropdown. Vyn ships `@vyn/notify-inbox` as the canonical in-app
+adapter: it both emits to a subscription (for live badge updates)
+and persists each notification to a collection (for the dropdown
+list).
+
+```ts
+import { serve } from "@vyn/server";
+import { inboxAdapter } from "@vyn/notify-inbox";
+
+serve({
+	notify: {
+		// ...
+		inApp: inboxAdapter({
+			collection: "notifications",         // MongoDB / SQLite collection
+			subscription: onNotification,        // your existing subscription
+		}),
+	},
+});
+```
+
+The adapter persists each delivery as a row:
+
+```ts
+type InboxRow = {
+	_id:          string;
+	userId:       string;
+	notification: string;            // notification name
+	payload:      unknown;            // the renderItem / render output
+	createdAt:    Date;
+	readAt:       Date | null;
+	groupedWith?: string[];           // ids of bundled siblings (when the delivery was a bundle)
+};
+```
+
+It also exposes a set of actions you can import directly into your
+router:
+
+```ts
+import {
+	list, count, markRead, markAllRead, onNew,
+} from "@vyn/notify-inbox/actions";
+```
+
+These are pre-built `createQuery` / `createMutation` /
+`createSubscription` declarations under `inbox.*`:
+
+| Action | What it does |
+|---|---|
+| `rpc.inbox.list({ unreadOnly?, limit?, before? })` | Paginated; newest first |
+| `rpc.inbox.count({ unreadOnly?: true })` | For the bell badge |
+| `rpc.inbox.markRead({ _id })` | Sets `readAt` |
+| `rpc.inbox.markAllRead({})` | Bulk |
+| `rpc.inbox.onNew.listen()` | Fires when a new row is inserted |
+
+### The bell dropdown
+
+The standard UI: a bell icon with an unread count, a dropdown
+showing recent items, a "mark all read" footer. Build it as a
+component:
+
+```html
+<!-- features/inbox/bell.component.html (optional — could be inline) -->
+<button id="bell">
+	🔔 <span id="badge"></span>
+</button>
+<div id="dropdown" hidden></div>
+```
+
+```ts
+// public/routes/_bell.ts (route-local helper)
+import { $, html, render } from "@vyn/client";
+import { rpc, cache } from "./_app.ts";
+
+const badge    = $<HTMLSpanElement>("#badge");
+const dropdown = $<HTMLDivElement>("#dropdown");
+
+cache.subscribe(rpc.inbox.count, ({ count }) => {
+	badge.textContent = count > 0 ? String(count) : "";
+});
+
+rpc.inbox.onNew.listen({}, {
+	onValue: () => {
+		cache.patch(rpc.inbox.count, (c) => ({ count: c.count + 1 }));
+		cache.invalidate(rpc.inbox.list);
+	},
+});
+
+$<HTMLButtonElement>("#bell").addEventListener("click", async () => {
+	dropdown.hidden = !dropdown.hidden;
+	if (!dropdown.hidden) {
+		const items = await rpc.inbox.list.query({ limit: 20 });
+		render(dropdown, items.map((row) => html`
+			<a href="${row.payload.url ?? "#"}" data-id="${row._id}">
+				<strong>${row.payload.title ?? row.notification}</strong>
+				<p>${row.payload.body ?? ""}</p>
+				<small>${row.createdAt.toLocaleString()}</small>
+			</a>
+		`));
+	}
+});
+
+dropdown.addEventListener("click", async (e) => {
+	const link = (e.target as HTMLElement).closest<HTMLAnchorElement>("a[data-id]");
+	if (!link) return;
+	await rpc.inbox.markRead.mutate({ _id: link.dataset.id! });
+	cache.patch(rpc.inbox.count, (c) => ({ count: Math.max(0, c.count - 1) }));
+});
+
+void rpc.inbox.count.query({ unreadOnly: true });
+```
+
+That's the whole bell. The framework provides the persistence + the
+actions; the app provides 20 lines of UI.
+
+### Bundle-aware in-app rendering
+
+When a bundle delivery hits the in-app channel, the adapter creates
+one row whose `groupedWith` lists the other source notifications.
+The default payload is:
+
+```ts
+{
+	title:  `${items.length} new updates`,
+	body:   "Click to see all",
+	groups: [/* per-notification subsection from each renderItem */],
+}
+```
+
+Override per-channel via `renderBundle` (above) for richer custom
+shapes.
+
 ## Per-user preferences override the mode
 
 A user might prefer instant email even though the notification's
