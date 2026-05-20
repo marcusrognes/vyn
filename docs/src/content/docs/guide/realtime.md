@@ -34,7 +34,7 @@ a toast.
 ```ts
 // features/threads/threads.actions.ts
 import { createQuery, createMutation, createSubscription, v, RpcError } from "@vyn/core";
-import { requireSession } from "../auth/_guards.ts";
+import { requireSession } from "../auth/guards.ts";
 import { MessageSchema, type Message } from "./message.ts";
 
 async function userCanAccessThread(opts: { ctx: Ctx & { session: Session } }, threadId: string) {
@@ -103,8 +103,8 @@ Things to notice:
 ```ts
 {
 	description: "...",
-	input:  v.object({...}),       // query params: what the subscriber wants to filter by
-	output: v.object({...}),       // each yielded value validates against this
+	input:  v.object({...}),       // optional; defaults to v.object({}). query params subscriber sends
+	output: v.object({...}),       // optional; yielded values validate when present
 	run:    async function* (opts) {
 		// access check, then yield from opts.events (or anywhere else)
 	},
@@ -238,23 +238,28 @@ written back to the cache. No network round-trip.
 
 ## Multi-instance deployments
 
-In a single process, the local bus delivers `emit()` to every active
-subscription instance. Across instances, swap the bus:
+In a single process, the default in-memory transport delivers `emit()`
+calls to every active subscription instance locally. Across instances
+(or for data-source-derived events, durable delivery, or cross-cutting
+observability), swap the transport:
 
 ```ts
 import { serve } from "@vyn/server";
-import { redisBus } from "@vyn/bus-redis";
+import { redisTransport } from "@vyn/transport-redis";
 
 serve({
 	port: 8000,
-	bus:  redisBus({ url: process.env.REDIS_URL }),
+	transport: redisTransport({ url: env.REDIS_URL }),
 });
 ```
 
-Your `subscription.emit(...)` calls do not change. The bus adapter
-handles cross-instance fan-out. Vyn ships `redisBus` and `natsBus`;
-rolling your own implements `publish/subscribe` keyed by the
-subscription's registry name.
+Your `subscription.emit(...)` calls do not change. The transport
+adapter handles cross-instance fan-out keyed by the subscription's
+registry name. Vyn ships transports for Redis, NATS, Postgres
+LISTEN/NOTIFY, MongoDB change streams, Postgres logical replication,
+Kafka, Redis Streams, and NATS JetStream — see [Transport](/guide/transport/)
+for the full set, composable wrappers (logging, retry, multi-backend
+fan-out), and how to write a custom one.
 
 ## File-based discovery
 

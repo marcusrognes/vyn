@@ -25,10 +25,10 @@ Guards are functions that either return (success) or throw an
 types for everything that follows the call:
 
 ```ts
-// features/auth/_guards.ts
+// features/auth/guards.ts
 import { RpcError } from "@vyn/core";
-import type { Ctx } from "../../_ctx.ts";
-import type { Session } from "./_session.ts";
+import type { Ctx } from "../../ctx.ts";
+import type { Session } from "./session.ts";
 
 export function requireSession<C extends Ctx>(
 	opts: { ctx: C },
@@ -49,7 +49,7 @@ Use it like this:
 ```ts
 // features/notes/notes.actions.ts
 import { createQuery, v } from "@vyn/core";
-import { requireSession } from "../auth/_guards.ts";
+import { requireSession } from "../auth/guards.ts";
 import { NoteSchema } from "./note.ts";
 
 export const list = createQuery({
@@ -225,7 +225,7 @@ in one action is honest. Don't extract until duplication forces it.
 Because guards are plain functions, test them directly:
 
 ```ts
-import { requireSession } from "./_guards.ts";
+import { requireSession } from "./guards.ts";
 import { RpcError } from "@vyn/core";
 
 test("requireSession throws when session is null", () => {

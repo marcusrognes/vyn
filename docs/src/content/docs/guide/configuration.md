@@ -141,8 +141,8 @@ accepting connections. Put long-lived shared resources here:
 // server.ts
 import { serve } from "@vyn/server";
 import { env } from "./env.ts";
-import { openDb } from "./_db.ts";
-import { createLogger } from "./_log.ts";
+import { openDb } from "./db.ts";
+import { createLogger } from "./log.ts";
 import "./_vyn.gen.ts";
 
 serve({
@@ -217,11 +217,11 @@ Declare a `Ctx` type once and use it from each action that needs the
 extras. The full ctx is the intersection of all three layers.
 
 ```ts
-// _ctx.ts
+// ctx.ts
 import type { BaseCtx } from "@vyn/server";
-import type { Database } from "./_db.ts";
-import type { Logger } from "./_log.ts";
-import type { Session } from "./features/auth/_session.ts";
+import type { Database } from "./db.ts";
+import type { Logger } from "./log.ts";
+import type { Session } from "./features/auth/session.ts";
 
 export type StaticCtx  = { db: Database; logger: Logger };
 export type DynamicCtx = { session: Session | null };
@@ -231,7 +231,7 @@ export type Ctx        = BaseCtx & StaticCtx & DynamicCtx;
 Then in an action that needs the database or session, annotate `opts`:
 
 ```ts
-import type { Ctx } from "../../_ctx.ts";
+import type { Ctx } from "../../ctx.ts";
 
 export const create = createMutation({
 	description: "Create a note.",
@@ -359,12 +359,12 @@ mangled). The recommended way to enforce this is a small shared
 module:
 
 ```ts
-// _transform.ts
+// transform.ts
 import superjson from "superjson";
 export const transformer = superjson;
 ```
 
-Both `server.ts` and the client entry import from `_transform.ts`.
+Both `server.ts` and the client entry import from `transform.ts`.
 One source of truth, one upgrade path when you change libraries.
 
 ### Performance

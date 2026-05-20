@@ -60,8 +60,7 @@ todo/                                     project root
 ├── features/
 │   └── todos/
 │       ├── todo.ts                       Todo schema with defaults
-│       ├── todos.actions.ts              list, add, toggle, remove, onChanged
-│       └── todo-item.component.ts        render function for one todo row
+│       └── todos.actions.ts              list, add, toggle, remove, onChanged
 └── public/
     ├── index.html                        SPA shell
     ├── style.css                         a little polish
@@ -70,14 +69,15 @@ todo/                                     project root
         └── index.ts                      page logic for `/`
 ```
 
-The whole "todos" feature is one directory: model, actions, and one
-reusable `<todo-item>` component. Routes live under
-`public/routes/` — each `.html` is a page, the sibling `.ts` runs
-on navigation to that page. Components are discovered as
-`*.component.ts` files (a sibling `.component.html` is optional, for
-the more complex imperative flavor) and registered as native custom
-elements. Vyn handles both kinds of discovery; you don't write a
-router config or a component manifest.
+The whole "todos" feature is one directory: model and actions.
+Routes live under `public/routes/` — each `.html` is a page, the
+sibling `.ts` runs on navigation to that page. Vyn handles both
+kinds of discovery; you don't write a router config.
+
+The todo row's UI lives inline in `routes/index.ts` because this app
+has exactly one route that renders it. When a second route would
+reuse the same markup, extract it into a
+`features/todos/todo-row.component.ts`. See [Components](/guide/components/).
 
 ## Step 1 — the model
 
@@ -282,52 +282,12 @@ li.done span { text-decoration: line-through; color: #888; }
 button { background: none; border: 0; cursor: pointer; padding: .25rem; }
 ```
 
-## Step 5 — the component
-
-A todo row has its own DOM, its own clicks, and its own bit of state
-(the checkbox glyph). Wrap it in a custom element so the route module
-doesn't have to track buttons or delegate clicks. The render-function
-flavor of components is exactly right for this — one file, one
-function, returns a template:
-
-```ts
-// features/todos/todo-item.component.ts
-import { component, html } from "@vyn/client";
-import type { Todo } from "./todo.ts";
-
-export default component<{ todo: Todo }>(({ todo, emit }) => html`
-	<li class="${todo.done ? "done" : ""}">
-		<button @click=${() => emit("toggle", todo)}>${todo.done ? "☑" : "☐"}</button>
-		<span>${todo.title}</span>
-		<button @click=${() => emit("remove", todo)} style="margin-left:auto">×</button>
-	</li>
-`);
-```
-
-That's the whole component. Things to notice:
-
-- **The tag name comes from the filename.** `todo-item.component.ts`
-  registers as `<todo-item>`.
-- **The function returns a template**, so the framework re-renders it
-  efficiently whenever the bound prop changes.
-- **`emit(name, detail)`** dispatches a `CustomEvent` from the host
-  element. The route module listens with `@toggle` / `@remove`.
-- **No `el.effect`, no `$within`, no `addEventListener` plumbing.**
-  This is the render-function flavor — declarative, terse, perfect for
-  presentational components like this.
-
-When a component needs imperative DOM control (canvas, focus
-preservation, animations that the renderer can't predict), switch to
-the imperative flavor by adding a sibling `.component.html` and using
-`el.effect(...)` inside the function. See [Components](/guide/components/)
-for that path.
-
-## Step 6 — the route module
+## Step 5 — the route module
 
 The route at `/` is `public/routes/index.ts`. Vyn runs it when the
 user navigates to `/` because it sits next to `index.html`. This file
-hooks the form, listens for `onChanged`, and renders the list using
-`<todo-item>` for each row.
+renders the list, hooks the form, subscribes to changes, and
+delegates clicks for toggle/remove.
 
 ```ts
 // public/routes/index.ts
@@ -342,11 +302,11 @@ const form   = $<HTMLFormElement>("#add");
 
 function paint(todos: Todo[]) {
 	render(listEl, todos.map(t => html`
-		<todo-item
-			.todo=${t}
-			@toggle=${(e: CustomEvent<Todo>) => rpc.todos.toggle.mutate({ _id: e.detail._id })}
-			@remove=${(e: CustomEvent<Todo>) => rpc.todos.remove.mutate({ _id: e.detail._id })}
-		></todo-item>
+		<li class="${t.done ? "done" : ""}" data-id="${t._id}">
+			<button data-action="toggle">${t.done ? "☑" : "☐"}</button>
+			<span>${t.title}</span>
+			<button data-action="remove" style="margin-left:auto">×</button>
+		</li>
 	`));
 }
 
@@ -375,20 +335,31 @@ form.addEventListener("submit", async e => {
 	input.value = "";
 });
 
+// Delegated click handling for the list.
+listEl.addEventListener("click", async e => {
+	const btn = (e.target as HTMLElement).closest("button");
+	if (!btn) return;
+	const id = btn.closest("li")?.dataset.id;
+	if (!id) return;
+	if (btn.dataset.action === "toggle") await rpc.todos.toggle.mutate({ _id: id });
+	if (btn.dataset.action === "remove") await rpc.todos.remove.mutate({ _id: id });
+});
+
 // Initial load (kicks off the query, populating the cache).
 void rpc.todos.list.query({});
 ```
 
-What the component bought you:
+That's the whole client. One file, no component layer, no custom
+element registration. Each `paint()` swaps `listEl.innerHTML` for
+every todo in the cache — fine for a list of a few dozen items, which
+is what a todo app is.
 
-- No delegated click handler on `listEl` — `<todo-item>` owns its own
-  buttons and surfaces intent as typed events.
-- No `data-id` attribute round-trip — the event detail is the full
-  `Todo`, so the route module reads `e.detail._id` directly.
-- The row's render logic is in one place and reusable. A future
-  `/archived/` route can use `<todo-item>` without copying any HTML.
+When you grow the app — say a second route at `/archived/` that
+renders the same todo row markup — that's when extracting a
+`features/todos/todo-row.component.ts` pays off. Until then, inline
+HTML + a delegated click handler is shorter and honest.
 
-## Step 7 — try it
+## Step 6 — try it
 
 ```sh
 vyn dev
@@ -403,7 +374,7 @@ Open `http://localhost:8000` in two browser tabs side by side.
 The `onChanged` subscription is doing this work; no polling, no manual
 cache invalidation, no refetching round-trips.
 
-## Step 8 — talk to it from an LLM
+## Step 7 — talk to it from an LLM
 
 Because `add`, `toggle`, and `remove` declared `tool: {}`, they are
 already exposed over MCP at `http://localhost:8000/mcp`. Point any MCP

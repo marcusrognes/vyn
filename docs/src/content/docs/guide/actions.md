@@ -119,12 +119,10 @@ Concretely:
   with both file paths in the error.
 - **Multiple actions per file are encouraged for cohesion.** Group a
   query and its sibling mutations in one file when they share a model.
-- **Files and directories starting with `_` are invisible to
-  discovery.** `_session.ts`, `_db.ts`, `_ctx.ts` next to your actions
-  are app internals that the framework will not try to register or
-  route. The same rule applies to routes and components. Codegen
-  artifacts use the same prefix (`_vyn.gen.ts`) so they don't loop
-  back into discovery.
+- **Non-`.actions.ts` files are ignored.** Discovery matches by suffix,
+  so `db.ts`, `session.ts`, and any other helper sitting next to an
+  actions file is invisible — it's just a normal module you import by
+  name. No `_` prefix needed inside `features/`.
 
 ### The actions root
 
@@ -153,22 +151,22 @@ import { createQuery, createMutation, createSubscription, v } from "@vyn/core";
 
 export const list = createQuery({
 	description: "...",
-	input:  v.object({...}),
+	input:  v.object({...}),          // optional; defaults to v.object({})
 	output: v.object({...}),          // optional; inferred from run if omitted
 	run: async opts => ...,
 });
 
 export const create = createMutation({
 	description: "...",
-	input:  v.object({...}),
+	input:  v.object({...}),          // optional; defaults to v.object({})
 	output: v.object({...}),          // optional; inferred from run if omitted
 	run: async opts => ...,            // call onCreated.emit(value) on subscriptions inside
 });
 
 export const onCreated = createSubscription({
 	description: "...",
-	input:  v.object({...}),
-	output: v.object({...}),
+	input:  v.object({...}),          // optional; defaults to v.object({})
+	output: v.object({...}),          // optional; inferred from yield type if omitted
 	run: async function* (opts) {
 		// access check, then yield from opts.events (or anywhere else)
 		for await (const event of opts.events) yield event;
@@ -204,7 +202,7 @@ Both primitives accept these fields:
 ```ts
 {
 	description: "Human-readable purpose",  // recommended; required if `tool` is set
-	input:       v.object({...}),           // required, validator with JSON Schema form
+	input:       v.object({...}),           // optional; defaults to v.object({}) if omitted
 	output:      v.object({...}),           // optional; required if `tool` is set
 	run:         async opts => ...,         // required, does the work
 	tool:        { ... },                   // optional, exposes to LLM surfaces (MCP, agents)
@@ -221,10 +219,28 @@ anything that lands in generated docs.
 
 ### `input`
 
-A validator built with `v.*`. Always required, even for actions that take
-no meaningful input — write `input: v.object({})`. The validator exposes
-its JSON Schema form, which is what makes agent tooling and form
-generation work without code generation.
+A validator built with `v.*`. **Optional** — if omitted, the framework
+treats the input as `v.object({})` (empty object). For any action that
+accepts meaningful input from the caller, declare the schema; the
+validator exposes its JSON Schema form, which is what makes agent
+tooling and form generation work without code generation.
+
+```ts
+// No input — opts.input is {} typed as Record<string, never>
+export const ping = createQuery({
+	description: "Health check.",
+	output: v.string(),
+	run: async () => "pong",
+});
+
+// Explicit input
+export const greet = createQuery({
+	description: "Say hello.",
+	input:  v.object({ name: v.string() }),
+	output: v.string(),
+	run: async opts => `Hello, ${opts.input.name}!`,
+});
+```
 
 See [Models](/guide/models/) for sharing schemas across actions.
 
@@ -563,7 +579,7 @@ type Action =
 		kind: "query";
 		name: string;                  // dot-separated; derived from file path + export
 		description?: string;
-		input:  Schema<unknown>;
+		input?: Schema<unknown>;     // defaults to v.object({}) if omitted
 		output?: Schema<unknown>;
 		tool?: ToolSpec;
 		run: (opts: { input: unknown; ctx: unknown; [k: string]: unknown }) => Promise<unknown>;
@@ -572,7 +588,7 @@ type Action =
 		kind: "mutation";
 		name: string;
 		description?: string;
-		input:  Schema<unknown>;
+		input?: Schema<unknown>;     // defaults to v.object({}) if omitted
 		output?: Schema<unknown>;
 		tool?: ToolSpec;
 		run: (opts: { input: unknown; ctx: unknown; [k: string]: unknown }) => Promise<unknown>;
@@ -581,7 +597,7 @@ type Action =
 		kind: "subscription";
 		name: string;
 		description?: string;
-		input:  Schema<unknown>;
+		input?: Schema<unknown>;     // defaults to v.object({}) if omitted
 		output?: Schema<unknown>;
 		tool?: ToolSpec;
 		run: (opts: {

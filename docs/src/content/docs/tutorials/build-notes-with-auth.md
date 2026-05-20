@@ -20,7 +20,7 @@ By the end you'll have:
 - signup / login / logout actions with password hashing,
 - per-user-scoped notes with realtime updates,
 - a parameterized `/notes/:noteId/` route,
-- reusable `<note-card>` and `<auth-form>` components.
+- inline HTML for the list and forms (no components needed at this size).
 
 The whole app is around 400 lines of code.
 
@@ -40,19 +40,17 @@ notes/                                    project root
 ├── vyn.config.ts                         actionsRoot: "features"
 ├── env.ts                                typed env vars
 ├── server.ts                             server boot
-├── _db.ts                                SQLite handle + migrations
-├── _ctx.ts                               Ctx type
+├── db.ts                                SQLite handle + migrations
+├── ctx.ts                               Ctx type
 ├── features/
 │   ├── auth/
 │   │   ├── user.ts                       User schema
-│   │   ├── _session.ts                   session helpers (read, refresh, clear)
-│   │   ├── _require.ts                   throw-on-no-session helper
-│   │   ├── auth.actions.ts               signup, login, logout, me
-│   │   └── auth-form.component.ts        reusable signup / login form
+│   │   ├── session.ts                   session helpers (read, refresh, clear)
+│   │   ├── require.ts                   throw-on-no-session helper
+│   │   └── auth.actions.ts               signup, login, logout, me
 │   └── notes/
 │       ├── note.ts                       Note schema
-│       ├── notes.actions.ts              list, get, create, update, remove, onChanged
-│       └── note-card.component.ts        one note in a list
+│       └── notes.actions.ts              list, get, create, update, remove, onChanged
 └── public/
     ├── index.html                        SPA shell
     ├── style.css
@@ -68,9 +66,10 @@ notes/                                    project root
             └── [noteId].ts
 ```
 
-Files prefixed with `_` are framework-invisible — neither route
-discovery nor actions discovery descends into them. They are app
-internals that get imported by name.
+Files at the root and inside `features/` are imported by name — Vyn's
+discovery looks for `*.actions.ts` under `features/` and `.html` files
+under `public/routes/`. Anything else (like `db.ts`, `ctx.ts`,
+`session.ts`) is just a normal module the framework never sees.
 
 ## Step 1 — env
 
@@ -106,7 +105,7 @@ your data layer; this is just plain TypeScript using `node:sqlite`
 (available in both Deno and Node 22+).
 
 ```ts
-// _db.ts
+// db.ts
 import { DatabaseSync } from "node:sqlite";
 import { env } from "./env.ts";
 
@@ -154,10 +153,10 @@ Declare what the layers contain. This lets every action's `opts.ctx`
 type as the full picture without re-stating the shape per file.
 
 ```ts
-// _ctx.ts
+// ctx.ts
 import type { BaseCtx } from "@vyn/server";
-import type { Database } from "./_db.ts";
-import type { Session } from "./features/auth/_session.ts";
+import type { Database } from "./db.ts";
+import type { Session } from "./features/auth/session.ts";
 
 export type StaticCtx  = { db: Database };
 export type DynamicCtx = { session: Session | null };
@@ -167,13 +166,14 @@ export type Ctx        = BaseCtx & StaticCtx & DynamicCtx;
 ## Step 4 — sessions
 
 The auth helpers know how to read, refresh, and clear a session
-cookie. They live in the auth feature folder, prefixed with `_` so
-discovery ignores them.
+cookie. They live in the auth feature folder as a normal module —
+discovery only looks at `*.actions.ts`, so the framework ignores
+`session.ts` automatically.
 
 ```ts
-// features/auth/_session.ts
+// features/auth/session.ts
 import { randomBytes } from "node:crypto";
-import type { Database } from "../../_db.ts";
+import type { Database } from "../../db.ts";
 import { env } from "../../env.ts";
 
 export type Session = { token: string; userId: string; expiresAt: number };
@@ -237,9 +237,9 @@ A small helper that throws if there's no session — used at the top of
 authenticated actions:
 
 ```ts
-// features/auth/_require.ts
+// features/auth/require.ts
 import { RpcError } from "@vyn/core";
-import type { Ctx } from "../../_ctx.ts";
+import type { Ctx } from "../../ctx.ts";
 
 export function requireSession(opts: { ctx: Ctx }) {
 	if (!opts.ctx.session) {
@@ -277,10 +277,10 @@ export type UserPublic = v.Infer<typeof UserPublicSchema>;
 // features/auth/auth.actions.ts
 import { createMutation, createQuery, v, RpcError } from "@vyn/core";
 import { scryptSync, randomBytes, timingSafeEqual } from "node:crypto";
-import type { Ctx } from "../../_ctx.ts";
+import type { Ctx } from "../../ctx.ts";
 import { UserSchema, UserPublicSchema, type UserPublic } from "./user.ts";
-import { issueSession, clearSession } from "./_session.ts";
-import { requireSession } from "./_require.ts";
+import { issueSession, clearSession } from "./session.ts";
+import { requireSession } from "./require.ts";
 
 const Credentials = v.object({
 	email:    v.string().email().trim().lowercase(),
@@ -399,9 +399,9 @@ export type Note = v.Infer<typeof NoteSchema>;
 ```ts
 // features/notes/notes.actions.ts
 import { createQuery, createMutation, createSubscription, v, RpcError } from "@vyn/core";
-import type { Ctx } from "../../_ctx.ts";
+import type { Ctx } from "../../ctx.ts";
 import { NoteSchema, type Note } from "./note.ts";
-import { requireSession } from "../auth/_require.ts";
+import { requireSession } from "../auth/require.ts";
 
 export const list = createQuery({
 	description: "List the current user's notes, newest first.",
@@ -523,8 +523,8 @@ Notice:
 // server.ts
 import { serve } from "@vyn/server";
 import { env } from "./env.ts";
-import { openDb } from "./_db.ts";
-import { readSession } from "./features/auth/_session.ts";
+import { openDb } from "./db.ts";
+import { readSession } from "./features/auth/session.ts";
 import "./_vyn.gen.ts";
 
 serve({
@@ -549,57 +549,13 @@ console.log(`listening on http://localhost:${env.PORT}`);
 Static ctx opens the database and applies migrations once. Dynamic ctx
 reads the session per request. Both feed every action's `opts.ctx`.
 
-## Step 8 — components
+## Step 8 — the routes
 
-A reusable `<auth-form>` that the login and signup routes both reuse:
-
-```ts
-// features/auth/auth-form.component.ts
-import { component, signal, html } from "@vyn/client";
-
-export default component<{ mode: "login" | "signup"; error?: string }>(({ mode, error, emit }) => {
-	const email    = signal("");
-	const password = signal("");
-	const verb     = mode === "login" ? "Sign in" : "Sign up";
-
-	return html`
-		<form @submit=${(e: SubmitEvent) => {
-			e.preventDefault();
-			emit("submit", { email: email(), password: password() });
-		}}>
-			<h1>${verb}</h1>
-			${error ? html`<p class="error">${error}</p>` : null}
-			<label>Email <input type="email" required @input=${(e: Event) => email.set((e.target as HTMLInputElement).value)} /></label>
-			<label>Password <input type="password" required minlength="8" @input=${(e: Event) => password.set((e.target as HTMLInputElement).value)} /></label>
-			<button type="submit">${verb}</button>
-		</form>
-	`;
-});
-```
-
-A `<note-card>` for the list view:
-
-```ts
-// features/notes/note-card.component.ts
-import { component, html } from "@vyn/client";
-import type { Note } from "./note.ts";
-
-export default component<{ note: Note }>(({ note, emit }) => html`
-	<li>
-		<a href="/notes/${note._id}/">
-			<h3>${note.title}</h3>
-			<p>${note.body.slice(0, 120)}${note.body.length > 120 ? "…" : ""}</p>
-			<small>updated ${new Date(note.updatedAt).toLocaleString()}</small>
-		</a>
-		<button @click=${() => emit("remove", note)}>×</button>
-	</li>
-`);
-```
-
-## Step 9 — the routes
-
-The SPA shell stays the same as in the todo tutorial. The four routes
-below are what's new.
+The SPA shell stays the same as in the todo tutorial. Four routes
+below are what's new — list, login, signup, and the parameterized
+note detail page. Each route is inline HTML + a small `.ts` that
+calls `rpc.*` and uses standard DOM events. No components for this
+size.
 
 ```html
 <!-- public/routes/index.html -->
@@ -629,10 +585,14 @@ const logoutEl = $<HTMLButtonElement>("#logout");
 
 function paint(notes: Note[]) {
 	render(listEl, notes.map(n => html`
-		<note-card
-			.note=${n}
-			@remove=${(e: CustomEvent<Note>) => rpc.notes.remove.mutate({ _id: e.detail._id })}
-		></note-card>
+		<li data-id="${n._id}">
+			<a href="/notes/${n._id}/">
+				<h3>${n.title}</h3>
+				<p>${n.body.slice(0, 120)}${n.body.length > 120 ? "…" : ""}</p>
+				<small>updated ${new Date(n.updatedAt).toLocaleString()}</small>
+			</a>
+			<button data-action="remove">×</button>
+		</li>
 	`));
 }
 
@@ -650,6 +610,13 @@ rpc.notes.onChanged.listen({}, {
 
 cache.subscribe(rpc.notes.list, paint);
 
+listEl.addEventListener("click", e => {
+	const btn = (e.target as HTMLElement).closest("button[data-action=remove]");
+	if (!btn) return;
+	const id = btn.closest("li")?.dataset.id;
+	if (id) rpc.notes.remove.mutate({ _id: id });
+});
+
 newBtn.addEventListener("click", async () => {
 	const note = await rpc.notes.create.mutate({});
 	location.href = `/notes/${note._id}/`;
@@ -663,49 +630,75 @@ logoutEl.addEventListener("click", async () => {
 void rpc.notes.list.query({});
 ```
 
+Login and signup both render a small form inline. They differ only in
+which mutation they call, so we extract the form helper:
+
+```ts
+// public/routes/_auth-form.ts (route-local helper, prefixed with _ so
+// the framework doesn't treat it as a route)
+import { $, html, render } from "@vyn/client";
+
+export function mountAuthForm(
+	root: HTMLElement,
+	verb: "Sign in" | "Sign up",
+	submit: (creds: { email: string; password: string }) => Promise<void>,
+) {
+	render(root, html`
+		<form id="form">
+			<h1>${verb}</h1>
+			<p id="error" class="error" hidden></p>
+			<label>Email <input name="email" type="email" required autofocus /></label>
+			<label>Password <input name="password" type="password" required minlength="8" /></label>
+			<button type="submit">${verb}</button>
+		</form>
+	`);
+	const form = $<HTMLFormElement>("#form", root);
+	const error = $<HTMLParagraphElement>("#error", root);
+	form.addEventListener("submit", async e => {
+		e.preventDefault();
+		const data = Object.fromEntries(new FormData(form)) as { email: string; password: string };
+		error.hidden = true;
+		try { await submit(data); }
+		catch (err) { error.textContent = (err as Error).message; error.hidden = false; }
+	});
+}
+```
+
 ```html
 <!-- public/routes/login.html -->
-<auth-form id="form" mode="login"></auth-form>
+<main id="root"></main>
 ```
 
 ```ts
 // public/routes/login.ts
-import { createApp, $, html } from "@vyn/client";
+import { createApp, $ } from "@vyn/client";
 import type { AppRouter } from "../../_vyn.gen.ts";
+import { mountAuthForm } from "./_auth-form.ts";
 
 const { rpc } = createApp<AppRouter>();
-const form = $<HTMLElement & { mode: string; error?: string }>("#form");
 
-form.addEventListener("submit", async (e: any) => {
-	try {
-		await rpc.login.mutate(e.detail);
-		location.href = "/";
-	} catch (err: any) {
-		form.error = err.message;
-	}
+mountAuthForm($("#root"), "Sign in", async creds => {
+	await rpc.login.mutate(creds);
+	location.href = "/";
 });
 ```
 
 ```html
 <!-- public/routes/signup.html -->
-<auth-form id="form" mode="signup"></auth-form>
+<main id="root"></main>
 ```
 
 ```ts
 // public/routes/signup.ts
 import { createApp, $ } from "@vyn/client";
 import type { AppRouter } from "../../_vyn.gen.ts";
+import { mountAuthForm } from "./_auth-form.ts";
 
 const { rpc } = createApp<AppRouter>();
-const form = $<HTMLElement & { mode: string; error?: string }>("#form");
 
-form.addEventListener("submit", async (e: any) => {
-	try {
-		await rpc.signup.mutate(e.detail);
-		location.href = "/";
-	} catch (err: any) {
-		form.error = err.message;
-	}
+mountAuthForm($("#root"), "Sign up", async creds => {
+	await rpc.signup.mutate(creds);
+	location.href = "/";
 });
 ```
 
@@ -731,7 +724,6 @@ const note = await rpc.notes.get.query({ _id: noteId });
 titleEl.value = note.title;
 bodyEl.value  = note.body;
 
-// Save on blur or every keystroke (debounced); minimal version: on blur.
 async function save() {
 	await rpc.notes.update.mutate({
 		_id:   noteId,
@@ -743,7 +735,12 @@ titleEl.addEventListener("blur", save);
 bodyEl.addEventListener("blur", save);
 ```
 
-## Step 10 — try it
+The `_auth-form.ts` underscore-prefixed file is invisible to route
+discovery; it's a plain module that login and signup both import.
+This is the canonical pattern for sharing UI code: a regular function
+in a regular file. No custom-element registration overhead.
+
+## Step 9 — try it
 
 ```sh
 vyn dev
@@ -755,7 +752,7 @@ sign up as a different user, write a note — confirm each account only
 sees its own list. Open two tabs as the same user and watch realtime
 updates flow as you add or edit.
 
-## Step 11 — talk to it from an LLM
+## Step 10 — talk to it from an LLM
 
 `create`, `update`, and `remove` declared `tool: {}`, so they're
 exposed at `http://localhost:8000/mcp`. Point an MCP client at that

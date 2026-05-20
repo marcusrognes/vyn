@@ -1,282 +1,257 @@
 ---
 title: Components
-description: File-defined custom elements with two flavors — simple render functions or imperative templates + behavior.
+description: File-defined custom elements. A small setup function, a render call, standard DOM events. No virtual DOM, no template engine.
 sidebar:
   order: 4
 ---
 
-A **component** in Vyn is a native custom element backed by either a
-render function or an HTML template plus a behavior module. Drop a
-file (or a pair) into a feature folder, and the framework registers a
-HTML tag you can use anywhere.
+A **component** in Vyn is a native custom element backed by a small TS
+module. The framework does almost nothing — it registers the tag and
+runs your setup function on connect. From there it's plain DOM:
+`render(el, html\`...\`)` to write markup, `addEventListener` to handle
+events, `dispatchEvent` to talk back to the parent.
 
-Vyn does not ship a virtual DOM, JSX, or a runtime template language.
-Components are TypeScript and HTML, sitting in plain files, registered
-as custom elements at boot.
+Vyn does not ship a virtual DOM, JSX, or a reactive template engine.
+**Re-rendering replaces the element's `innerHTML`.** That's intentional:
+the implementation is tiny, the failure modes are obvious, and it's
+enough for the majority of UI work. When a particular component needs
+granular DOM updates (preserving focus, animating a node, driving a
+canvas), it opts in by doing the work imperatively — same `el`, same
+DOM API, same signals.
 
-## Two flavors
+## File convention
 
-Pick the flavor that matches the component:
+A component is a single `*.component.ts` file. The framework discovers
+it and registers a custom element with the **tag name derived from the
+file's basename**:
 
-| Flavor | Files | When to use |
-|---|---|---|
-| **Render-function** | `<name>.component.ts` only | Simple components whose output is mostly a function of props. The function returns a template; the framework re-renders efficiently when any read prop changes. |
-| **Imperative** | `<name>.component.html` + `<name>.component.ts` | Complex components that need imperative DOM, canvas, third-party widgets, or selective updates. The HTML file is the initial DOM; the TS module wires up reactivity with `el.effect(...)`. |
-
-The framework picks the flavor by looking at the file shape — if a
-sibling `.component.html` exists, it's imperative; otherwise it's
-render-function. **The tag name is the basename of the file** —
-`todo-item.component.ts` becomes `<todo-item>`. The basename must
-contain a hyphen (the web standard for custom elements).
-
-## Render-function flavor
-
-For straightforward components — a row, a card, a badge, a button
-group — write a single `.component.ts` whose default export returns a
-template. The framework re-renders that template whenever any prop the
-template reads changes.
-
-```ts
-// features/todos/todo-item.component.ts
-import { component, html } from "@vyn/client";
-import type { Todo } from "./todo.ts";
-
-export default component<{ todo: Todo }>(({ todo, emit }) => html`
-	<li class="${todo.done ? "done" : ""}">
-		<button @click=${() => emit("toggle", todo)}>${todo.done ? "☑" : "☐"}</button>
-		<span>${todo.title}</span>
-		<button @click=${() => emit("remove", todo)} style="margin-left:auto">×</button>
-	</li>
-`);
+```
+features/notes/
+├── note-card.component.ts       → <note-card>
+└── auth-form.component.ts       → <auth-form>
 ```
 
-That's the whole component. No HTML file, no `el.effect`, no manual
-queries. Things to notice:
+The basename must contain a hyphen (the web standard for custom
+elements), which usually falls out naturally from names like `note-card`
+or `date-picker`.
 
-- **The function receives `(props, ctx)`** in the long form; the short
-  form above destructures both into one parameter. Props live alongside
-  framework helpers like `emit`.
-- **Returning an `html` template** is what puts the component in
-  render-function mode.
-- **`emit(name, detail)`** dispatches a `CustomEvent` from the host
-  element. The parent listens with `@name=${handler}`.
-- **Reads in the template auto-subscribe.** When the parent rebinds
-  `.todo=${newTodo}`, the template re-runs and the framework patches
-  only the changed bits. There is no full innerHTML replacement.
+There is no sibling `.component.html` and no two-flavor split. One
+file, one setup function. If a component grows complex enough to want
+a separate template file, just import it as a string and feed it to
+`render()`.
 
-The full destructure for completeness:
+## The setup function
 
-```ts
-component<{ todo: Todo }>((props, { emit, el }) => html`…`);
-```
-
-`props` exposes the typed prop values as signal readers (see
-[Props are signal readers](#props-are-signal-readers) below); reading
-them inside the returned template tracks them automatically. `ctx`
-exposes `emit`, the host `el`, `effect`, and `onDisconnect` for the
-rare case you need them in render-function mode.
-
-## Imperative flavor
-
-For components that need imperative DOM control — animations, canvas,
-third-party widgets, selective updates skipping the diff — pair an
-HTML template with a TS behavior module.
-
-```html
-<!-- features/todos/todo-item.component.html -->
-<li>
-	<button data-action="toggle"></button>
-	<span class="title"></span>
-	<button data-action="remove" style="margin-left:auto">×</button>
-</li>
-```
+The file default-exports `component(setup)`. The setup function runs
+once per element instance, on `connectedCallback`. Receive the host
+element, register a `render` method on it (or render immediately),
+attach listeners, manage state — whatever the component needs.
 
 ```ts
-// features/todos/todo-item.component.ts
-import { component, $within } from "@vyn/client";
-import type { Todo } from "./todo.ts";
+// features/notes/note-card.component.ts
+import { component, html, render } from "@vyn/client";
+import type { Note } from "./note.ts";
 
-export default component<{ todo: Todo }>((props, { el, emit }) => {
-	const titleEl  = $within(el, ".title");
-	const toggleEl = $within<HTMLButtonElement>(el, "[data-action=toggle]");
-	const removeEl = $within<HTMLButtonElement>(el, "[data-action=remove]");
+type Props = { note: Note };
 
-	el.effect(() => {
-		const t = props.todo();
-		el.classList.toggle("done", t.done);
-		titleEl.textContent = t.title;
-		toggleEl.textContent = t.done ? "☑" : "☐";
+export default component<Props>((el) => {
+	el.render = () => render(el, html`
+		<a href="/notes/${el.props.note._id}/">
+			<h3>${el.props.note.title}</h3>
+			<p>${el.props.note.body.slice(0, 120)}</p>
+		</a>
+		<button data-action="remove">×</button>
+	`);
+
+	el.addEventListener("click", (e) => {
+		const btn = (e.target as HTMLElement).closest("button");
+		if (btn?.dataset.action === "remove") {
+			el.dispatchEvent(new CustomEvent("remove", { detail: el.props.note }));
+		}
 	});
 
-	toggleEl.addEventListener("click", () => emit("toggle", props.todo()));
-	removeEl.addEventListener("click", () => emit("remove", props.todo()));
+	el.render();
 });
 ```
 
-What changes from render-function mode:
+What's happening:
 
-- The function returns nothing. The framework sees `void` and stays in
-  imperative mode.
-- The initial DOM comes from the `.component.html` file. Vyn injects
-  it before the function runs.
-- `el.effect(fn)` is a reactive effect: any prop read inside it
-  re-runs `fn` when that prop changes. Multiple effects can target
-  different parts of the DOM, so a single prop change only touches the
-  pieces that actually depend on it.
-- Event wiring is by `addEventListener`, not `@event` template binding.
-
-Use this flavor when you need updates the renderer wouldn't make on
-its own — keeping focus during a re-render, preserving a video element
-across prop changes, talking to a Web Component that has internal
-state.
+- `component<Props>(setup)` registers the tag (from the filename) and
+  installs typed `el.props` on every instance.
+- The setup function attaches an `el.render()` method and any
+  listeners, then calls `el.render()` once for the initial paint.
+- `render(el, html\`...\`)` sets `el.innerHTML` from the `Html`
+  sentinel returned by `html` — escape-by-default for interpolated
+  values, nested `html\`...\`` flowing through unescaped.
+- Events go through standard `addEventListener` / `dispatchEvent`.
+  Inside the component, event delegation on `el` handles inner
+  buttons; the component republishes intent as typed CustomEvents.
 
 ## Using a component
 
-Once registered, you use the tag like any other HTML element. To pass
-typed props or attach event handlers, use the `@vyn/client` `html`
-helper with two prefix conventions borrowed from the custom-elements
-ecosystem:
-
-- `.prop=${value}` sets a **JavaScript property** on the element.
-- `@event=${handler}` adds an **event listener**.
-
-Bare `attr=${value}` still sets an HTML attribute as a string.
+Mount the tag in any HTML, then drive it imperatively from the parent:
 
 ```ts
-import { render, html } from "@vyn/client";
+import { html, render } from "@vyn/client";
+import type { Note } from "../../features/notes/note.ts";
 
-render(listEl, todos.map(t => html`
-	<todo-item
-		.todo=${t}
-		@toggle=${e => rpc.todos.toggle.mutate({ _id: e.detail._id })}
-		@remove=${e => rpc.todos.remove.mutate({ _id: e.detail._id })}
-	></todo-item>
-`));
-```
+function paint(notes: Note[]) {
+	render(listEl, notes.map((n) => html`
+		<note-card data-id="${n._id}"></note-card>
+	`));
 
-There is no compilation step. The same `html` tag is used for the
-component's returned template *and* for parent-side composition.
+	for (const n of notes) {
+		const el = listEl.querySelector<HTMLElement & { props: { note: Note }; render: () => void }>(
+			`note-card[data-id="${n._id}"]`,
+		)!;
+		el.props = { note: n };
+		el.render();
+	}
+}
 
-## Props are signal readers
-
-Whichever flavor you use, the type you pass to `component<T>` describes
-the **value** shape of each prop. Inside the component, the framework
-wraps every prop as a **signal reader** so reads can be tracked
-automatically:
-
-```ts
-component<{ todo: Todo }>((props) => {
-	// props.todo is () => Todo, not Todo directly
-
-	const t: Todo = props.todo();          // read the current value
-	// Reads inside an effect or returned template auto-subscribe.
+listEl.addEventListener("remove", (e: Event) => {
+	const detail = (e as CustomEvent<Note>).detail;
+	rpc.notes.remove.mutate({ _id: detail._id });
 });
 ```
 
-In **render-function mode**, you usually destructure into a plain
-value: `({ todo, emit }) => html`…`` — the destructure preserves
-reactivity because the destructure happens inside the function the
-framework re-runs.
+The parent:
 
-In **imperative mode**, you read through the signal: `props.todo()`
-inside an `el.effect(...)`.
+1. Renders one tag per item (cheap; just `innerHTML` swap).
+2. Sets `el.props` directly and calls `el.render()` to paint each.
+3. Listens at the container with event delegation — `<note-card>`
+   dispatches `remove`, the container receives it.
 
-Two consequences worth knowing in both flavors:
+This is more typing than a Lit-style `.note=${n}` binding, but it's
+honest: nothing the framework does is hidden, and every line of code
+has an obvious effect on the DOM.
 
-1. **Props are read-only.** There is no `props.todo.set(...)`. A child
-   never writes back to its parent's value. Surface changes through
-   custom events instead; the parent decides whether to update.
-2. **Reads track.** Reading inside `el.effect(fn)` or inside a returned
-   template subscribes that effect (or template) to the prop. Reading
-   outside both fires once on connect and never reacts.
+### When the prop ergonomics hurt
 
-## Slots
+For lists of items where each component needs a non-string prop, the
+imperative set-then-render dance is the price. Two ways to make it
+less painful:
 
-Components participate in standard slotted composition. Use `<slot>`
-in the template:
+- **Inline the HTML instead.** For simple row rendering, just use
+  `html`...`` inside the parent and skip the component entirely. See
+  the [Build a todo app](/tutorials/build-a-todo/) tutorial — it
+  renders each row inline because the row's logic fits in five lines.
+- **Reach for a `mount` helper.** A small helper that creates the
+  element, sets props, and returns it — encapsulates the dance:
 
-```html
-<!-- features/ui/card.component.html (imperative flavor) -->
-<section class="card">
-	<header><slot name="header"></slot></header>
-	<div class="body"><slot></slot></div>
-</section>
-```
+  ```ts
+  function mountCard(parent: Element, note: Note) {
+  	const el = document.createElement("note-card") as any;
+  	el.props = { note };
+  	parent.appendChild(el);
+  	el.render();
+  	return el;
+  }
+  ```
 
-Render-function flavor uses the same:
+Pick the cost that fits the situation.
 
-```ts
-export default component<{}>(() => html`
-	<section class="card">
-		<header><slot name="header"></slot></header>
-		<div class="body"><slot></slot></div>
-	</section>
-`);
-```
+## Reactivity (when you want it)
 
-```ts
-render(host, html`
-	<x-card>
-		<h2 slot="header">Hello</h2>
-		<p>This text lands in the default slot.</p>
-	</x-card>
-`);
-```
+Components are not reactive by default — setting `el.props` does not
+re-render unless you call `el.render()`. That's the contract: explicit
+renders, no surprises.
 
-Slots are useful when a component owns the layout and the parent
-controls the content. For more typed composition, prefer props.
-
-## Local state
-
-For component-local state, import `signal` from `@vyn/client`. Works
-the same in both flavors:
+For components that genuinely need reactive re-renders (a counter, a
+form input mirroring a signal), use the framework's signals primitive:
 
 ```ts
-import { component, signal, html } from "@vyn/client";
+import { component, signal, html, render } from "@vyn/client";
 
-export default component<{}>(() => {
+export default component<{}>((el) => {
 	const open = signal(false);
-	return html`
-		<details ?open=${open()}>
-			<summary @click=${() => open.set(!open())}>Click</summary>
-			<p>Hidden until clicked.</p>
-		</details>
-	`;
+
+	function paint() {
+		render(el, html`
+			<details ${open() ? "open" : ""}>
+				<summary>Click</summary>
+				<p>Hidden until clicked.</p>
+			</details>
+		`);
+	}
+
+	el.addEventListener("click", (e) => {
+		if ((e.target as HTMLElement).tagName === "SUMMARY") {
+			open.set(!open());
+		}
+	});
+
+	open.subscribe(paint);   // re-paint on change
+	paint();                  // initial
 });
 ```
 
-Signals are the same primitive across the framework — actions, route
-modules, and components all read and write the same kind of value.
-They are tiny, synchronous, and you can `console.log` what's in them.
+Signals are tiny, synchronous, and the same primitive every other
+layer of Vyn uses. They are not the framework's responsibility to
+inject — you reach for them when you want them.
+
+## Granular updates (the opt-out)
+
+`render(el, html\`...\`)` replaces `el.innerHTML`. For most UI work
+that's fine — the work is cheap and the source of truth is your data,
+not the DOM. When a component needs finer control:
+
+- **Preserve focus across renders.** Read `document.activeElement`
+  before render, restore after.
+- **Animate a node out before removing.** Don't re-render the parent;
+  call `node.animate(...)` then remove the element directly.
+- **Drive a canvas.** Render the canvas element once; mutate it via
+  the `CanvasRenderingContext2D` API afterwards. Never call
+  `el.render()` again.
+- **Patch one field of a row.** Skip `render()`, walk to the child
+  element with `$within(el, ".title")`, set `.textContent`.
+
+Vyn does not stand in the way. The component owns `el` and can do
+anything the DOM allows.
 
 ## Lifecycle
 
-The component function runs once per element on `connectedCallback`.
-For one-off work that needs cleanup (subscriptions, intervals), use
-`onDisconnect(fn)` from the ctx:
+The setup function runs on `connectedCallback`. For cleanup on
+`disconnectedCallback`, register on the `el.onDisconnect` helper:
 
 ```ts
-export default component<{}>((_, { onDisconnect }) => {
-	const tick = setInterval(() => { /* ... */ }, 1000);
-	onDisconnect(() => clearInterval(tick));
+export default component<{}>((el) => {
+	const tick = setInterval(() => /* ... */, 1000);
+	el.onDisconnect(() => clearInterval(tick));
 });
 ```
 
-There is no `mounted` / `beforeUpdate` / `unmounted` hook tree. The
-function body is "mounted" and `onDisconnect` is "unmounted." Effects
-and template-tracking clean up automatically.
+Signal subscriptions registered via `signal.subscribe(fn)` clean up
+automatically when the element disconnects. Other resources
+(intervals, MutationObservers, server-sent event sources) need
+explicit cleanup.
+
+There is no `beforeUpdate` / `updated` hook tree. You call
+`el.render()` when you want a render. The framework runs your setup
+when the element connects and your cleanup when it disconnects.
+That's the whole lifecycle.
+
+## Props are read-only from inside
+
+`el.props` is set by the parent. A component never writes back to its
+own `el.props`. To request a change, dispatch an event; the parent
+decides whether to update. This is the same shape as
+`<input value="..."/>` plus an `input` event — Vyn just borrows it.
+
+For component-local mutable state, use a `signal()` inside the setup
+function. The signal is private to the component instance; the parent
+never sees it.
 
 ## When to make a component
 
 If you find yourself writing the same `html\`<li>…</li>\`` block from
 two different routes, that's the moment to extract a component. Until
-then, inline. Components add one indirection: parent passes props,
-child reads them, child emits events, parent handles them. Worth it
-when reuse pays for the dance; premature otherwise.
+then, inline.
 
-When you do extract, start with the render-function flavor. Most
-components stay there. Switch to the imperative flavor only when the
-component genuinely needs DOM control the renderer wouldn't give it.
+Components add an indirection (parent imports the tag, sets props,
+listens for events; child renders, dispatches events) that pays off
+when the markup or behavior is genuinely reusable. For one-shot
+patterns inside a single route, inline HTML is honest and short.
 
 ## See also
 
@@ -284,5 +259,5 @@ component genuinely needs DOM control the renderer wouldn't give it.
   they emit events for the route module to dispatch
 - [Realtime](/guide/realtime/) — components react to props changing,
   not to subscriptions; the route owns the subscription
-- [Build a todo app](/tutorials/build-a-todo/) — the tutorial uses a
-  render-function `<todo-item>` component end-to-end
+- [Build a todo app](/tutorials/build-a-todo/) — the tutorial renders
+  todo rows inline, no component needed for a single-route app
