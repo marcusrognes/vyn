@@ -90,6 +90,44 @@ describe("createQuery", () => {
 		).toThrow(/description/);
 	});
 
+	it("opts.tick(payload) emits a progress event during run", async () => {
+		const ticks: unknown[] = [];
+		const q = createQuery({
+			run: async (opts) => {
+				opts.tick({ kind: "status", message: "loading" });
+				opts.tick({ kind: "status", message: "computing" });
+				return "ok";
+			},
+		});
+		await q.run({ input: {}, ctx: {}, tick: (t: unknown) => ticks.push(t) });
+		expect(ticks).toHaveLength(2);
+	});
+
+	it("opts.tick validates against the progress schema when declared", async () => {
+		const { v } = await import("../src/index.ts");
+		const q = createQuery({
+			progress: v.object({ kind: v.literal("status"), message: v.string() }),
+			run: async (opts) => {
+				opts.tick({ kind: "status", message: "ok" });
+				opts.tick({ kind: "wrong" } as never);   // invalid
+				return "x";
+			},
+		});
+		await expect(q.run({ input: {}, ctx: {}, tick: () => undefined })).rejects.toThrow();
+	});
+
+	it("opts.tick is a no-op (or warning) when no listener is attached", async () => {
+		const q = createQuery({
+			run: async (opts) => {
+				// No tick listener — call should not throw
+				opts.tick({ kind: "status", message: "fine" });
+				return "ok";
+			},
+		});
+		// No tick fn passed in; should not throw
+		await expect(q.run({ input: {}, ctx: {} })).resolves.toBe("ok");
+	});
+
 	it("requires output when tool is set", async () => {
 		expect(() =>
 			createQuery({
