@@ -1,0 +1,16 @@
+{
+	"name": "@vyn/example-research",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"scripts": {
+		"dev":   "node --experimental-strip-types --watch server.ts",
+		"start": "node --experimental-strip-types server.ts"
+	},
+	"dependencies": {
+		"@vyn/core":   "*",
+		"@vyn/server": "*",
+		"@vyn/client": "*",
+		"superjson":   "^2.2.2"
+	}
+}

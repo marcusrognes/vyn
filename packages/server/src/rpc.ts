@@ -27,10 +27,11 @@ export async function handleRpc(req: Request, base: BaseCtx, makeCtx: Surface["m
 		return new Response("subscriptions use websocket /ws", { status: 400 });
 	}
 
-	let body: unknown;
+	let rawInput: unknown;
 	try {
 		const text = await req.text();
-		body = text ? transformer.deserialize(JSON.parse(text)) : undefined;
+		const body = text ? JSON.parse(text) : {};
+		rawInput   = body?.input;
 	} catch (e) {
 		return jsonError(new RpcError("bad_request", `invalid JSON body: ${(e as Error).message}`), transformer);
 	}
@@ -38,7 +39,7 @@ export async function handleRpc(req: Request, base: BaseCtx, makeCtx: Surface["m
 	const ctxExtra = await makeCtx(req, base);
 	const ctx = { ...ctxExtra, ...base };
 
-	const input = (body as any)?.input;
+	const input = rawInput !== undefined ? transformer.deserialize(rawInput) : undefined;
 	const isStream = req.headers.get("accept") === "text/event-stream";
 
 	if (isStream && (action.kind === "query" || action.kind === "mutation" || action.kind === "job")) {

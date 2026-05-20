@@ -4,7 +4,8 @@
 	"version": "0.0.0",
 	"workspaces": [
 		"docs",
-		"packages/*"
+		"packages/*",
+		"examples/*"
 	],
 	"scripts": {
 		"docs:dev": "npm --workspace docs run dev",
