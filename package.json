@@ -9,6 +9,16 @@
 	"scripts": {
 		"docs:dev": "npm --workspace docs run dev",
 		"docs:build": "npm --workspace docs run build",
-		"docs:preview": "npm --workspace docs run preview"
+		"docs:preview": "npm --workspace docs run preview",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"test:ui": "playwright test"
+	},
+	"devDependencies": {
+		"@playwright/test": "^1.49.0",
+		"@vitest/coverage-v8": "^2.1.8",
+		"happy-dom": "^15.11.7",
+		"typescript": "^5.7.2",
+		"vitest": "^2.1.8"
 	}
 }

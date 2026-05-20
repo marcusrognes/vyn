@@ -5,6 +5,14 @@ sidebar:
   order: 1
 ---
 
+:::tip
+**Live interactive examples land with the package.** This doc currently
+shows code; once `@vyn/ui` ships, each behavior and widget page gains a
+`<LiveExample>` block that renders the actual element inline — read the
+HTML, see the keyboard work in real time, watch the events fire, copy
+the source. Until then, examples are reference-only.
+:::
+
 `@vyn/ui` is an optional package that makes accessible UI primitives —
 keyboard navigation, selection, positioning, focus trapping — work
 across any HTML you write. The package is **opt-in**: nothing in the
