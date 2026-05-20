@@ -114,11 +114,75 @@ What the dropdown handles for you:
 
 You write the markup; the primitive does the rest.
 
-## The set
+## Two layers
 
-The initial release ships these primitives. Each is one custom element
-(plus a few sub-elements where the ARIA spec calls for it). Click
-through for the per-primitive reference.
+`@vyn/ui` ships at two levels of abstraction. Use whichever fits the
+situation; you can mix freely in the same app.
+
+### Behaviors (data-attribute modules)
+
+Small modules that scan the document for elements with specific
+`data-*` attributes and wire keyboard / selection / positioning onto
+them. No custom element required — apply attributes to plain HTML,
+import the behavior module once, the behavior turns on.
+
+```html
+<ul data-keyboard-nav data-select="single" data-value="editor">
+	<li data-value="admin">Admin</li>
+	<li data-value="editor">Editor</li>
+	<li data-value="viewer">Viewer</li>
+</ul>
+```
+
+```ts
+import "@vyn/ui/keyboard-nav";
+import "@vyn/ui/select";
+```
+
+That's a fully keyboard-navigable single-select list. No
+`<v-listbox>` registration, no `createApp`, no JSX. The behavior
+modules cover the bulk of UI work:
+
+| Module | Behavior |
+|---|---|
+| [`@vyn/ui/keyboard-nav`](/ui/keyboard-nav/) | Arrow keys, type-ahead, roving tabindex |
+| [`@vyn/ui/select`](/ui/select/)             | Single or multi selection state via `data-value`; `aria-selected` |
+| `@vyn/ui/popover`        | Anchored positioning + open/close via `data-popover` |
+| `@vyn/ui/focus-trap`     | Trap focus inside a modal |
+| `@vyn/ui/live`           | `aria-live` announcements |
+| `@vyn/ui/edit`           | Inline-editable cells |
+| `@vyn/ui/sort`           | Column-header sort buttons |
+
+Each behavior is ~50-150 LOC. The whole behavior set is small enough
+to read end-to-end.
+
+### Widgets (prebuilt custom elements)
+
+For the common compositions, the package ships prebuilt custom
+elements that bundle behaviors with sensible defaults, role wiring,
+and tested edge cases. You don't have to choose — use the widget for
+the common case, drop down to behaviors when the widget doesn't fit.
+
+| Widget | Composes |
+|---|---|
+| [`<v-menu>`](/ui/menu/)         | keyboard-nav + activate |
+| [`<v-dropdown>`](/ui/dropdown/) | menu + popover + button trigger |
+| [`<v-listbox>`](/ui/listbox/)   | keyboard-nav + select |
+| [`<v-combobox>`](/ui/combobox/) | keyboard-nav + select + popover + input |
+| [`<v-tabs>`](/ui/tabs/)         | keyboard-nav + select (orientation-aware) |
+| [`<v-table>`](/ui/table/)       | keyboard-nav + select + sort |
+| [`<v-grid>`](/ui/grid/)         | keyboard-nav + select + edit + sort |
+| [`<v-dialog>`](/ui/dialog/)     | focus-trap + native `<dialog>` |
+| [`<v-popover>`](/ui/popover/)   | popover behavior + dismiss handling |
+
+The widgets emit the right `data-*` attributes internally and import
+the behaviors they need. Reading a widget's source is the easiest way
+to learn the behavior pattern.
+
+## The widget set
+
+Each widget is one custom element (plus a few sub-elements where the
+ARIA spec calls for it). Click through for the per-widget reference.
 
 ### Form controls
 
