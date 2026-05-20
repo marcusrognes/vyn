@@ -310,14 +310,40 @@ digest arrives — the hour and the timezone:
 
 	<div id="digest-time" class="space-y-2 pt-2 border-t border-slate-100">
 		<label class="flex items-center justify-between gap-2">
-			<span>Digest hour</span>
-			<select data-pref="digestEmail.hour" class="rounded border-slate-300 text-sm">
+			<span>Cadence</span>
+			<select id="cadence-picker" class="rounded border-slate-300 text-sm">
+				<option value="daily">Daily</option>
+				<option value="weekly">Weekly</option>
+				<option value="weekdays">Weekdays only</option>
+				<option value="custom">Custom (cron)</option>
+				<option value="never">Never</option>
+			</select>
+		</label>
+		<label id="weekday-row" class="flex items-center justify-between gap-2 hidden">
+			<span>Day</span>
+			<select id="weekday-picker" class="rounded border-slate-300 text-sm">
+				<option value="0">Sunday</option>
+				<option value="1" selected>Monday</option>
+				<option value="2">Tuesday</option>
+				<option value="3">Wednesday</option>
+				<option value="4">Thursday</option>
+				<option value="5">Friday</option>
+				<option value="6">Saturday</option>
+			</select>
+		</label>
+		<label id="hour-row" class="flex items-center justify-between gap-2">
+			<span>Hour</span>
+			<select id="hour-picker" class="rounded border-slate-300 text-sm">
 				${Array.from({ length: 24 }, (_, h) => `<option value="${h}">${String(h).padStart(2, "0")}:00</option>`).join("")}
 			</select>
 		</label>
+		<label id="cron-row" class="flex items-center justify-between gap-2 hidden">
+			<span>Cron</span>
+			<input id="cron-input" class="rounded border-slate-300 text-sm w-40 font-mono" placeholder="0 9 * * 1">
+		</label>
 		<label class="flex items-center justify-between gap-2">
 			<span>Timezone</span>
-			<input data-pref="digestEmail.timezone" class="rounded border-slate-300 text-sm w-40" placeholder="Europe/Oslo">
+			<input id="tz-input" class="rounded border-slate-300 text-sm w-40" placeholder="Europe/Oslo">
 		</label>
 	</div>
 </aside>
@@ -325,28 +351,98 @@ digest arrives — the hour and the timezone:
 
 ```ts
 // detect the user's browser timezone as a default
-const tzInput = $<HTMLInputElement>('[data-pref="digestEmail.timezone"]');
+const tzInput = $<HTMLInputElement>("#tz-input");
 if (!tzInput.value) tzInput.value = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-// hide digest-time when mode is not digest
-const modeSelect = $<HTMLSelectElement>('[data-pref="email.mode"]');
-const digestRow  = $<HTMLDivElement>("#digest-time");
+const modeSelect    = $<HTMLSelectElement>('[data-pref="email.mode"]');
+const digestRow     = $<HTMLDivElement>("#digest-time");
+const cadenceSelect = $<HTMLSelectElement>("#cadence-picker");
+const weekdayRow    = $<HTMLLabelElement>("#weekday-row");
+const hourRow       = $<HTMLLabelElement>("#hour-row");
+const cronRow       = $<HTMLLabelElement>("#cron-row");
+const weekdaySelect = $<HTMLSelectElement>("#weekday-picker");
+const hourSelect    = $<HTMLSelectElement>("#hour-picker");
+const cronInput     = $<HTMLInputElement>("#cron-input");
+
 function syncDigestRow() { digestRow.classList.toggle("hidden", modeSelect.value !== "digest"); }
+
+// Each cadence option determines which sub-rows are visible.
+function syncCadenceRows() {
+	const c = cadenceSelect.value;
+	weekdayRow.classList.toggle("hidden", c !== "weekly");
+	hourRow.classList.toggle("hidden",    c === "never" || c === "custom");
+	cronRow.classList.toggle("hidden",    c !== "custom");
+}
+
+// Translate picker state → a cron string the framework stores as the preference.
+function pickerToCron(): string | null {
+	const hour = Number(hourSelect.value);
+	switch (cadenceSelect.value) {
+		case "daily":    return `0 ${hour} * * *`;
+		case "weekdays": return `0 ${hour} * * 1-5`;
+		case "weekly":   return `0 ${hour} * * ${weekdaySelect.value}`;
+		case "custom":   return cronInput.value.trim() || null;
+		case "never":    return null;
+	}
+	return null;
+}
+
+// Translate a stored cron back to the picker shape on load (best-effort).
+function cronToPicker(cron: string | null | undefined) {
+	if (!cron) { cadenceSelect.value = "never"; return; }
+	if (cron === "0 8 * * *" || /^0 \d+ \* \* \*$/.test(cron)) {
+		cadenceSelect.value = "daily";
+		hourSelect.value    = String(Number(cron.split(" ")[1]));
+		return;
+	}
+	if (/^0 \d+ \* \* 1-5$/.test(cron)) {
+		cadenceSelect.value = "weekdays";
+		hourSelect.value    = String(Number(cron.split(" ")[1]));
+		return;
+	}
+	if (/^0 \d+ \* \* [0-6]$/.test(cron)) {
+		cadenceSelect.value = "weekly";
+		hourSelect.value    = String(Number(cron.split(" ")[1]));
+		weekdaySelect.value = cron.split(" ")[4];
+		return;
+	}
+	cadenceSelect.value = "custom";
+	cronInput.value     = cron;
+}
+
+cadenceSelect.addEventListener("change", syncCadenceRows);
 modeSelect.addEventListener("change", syncDigestRow);
 syncDigestRow();
+syncCadenceRows();
 
-// every input change persists immediately
+// Persist on any change.
 drawer.addEventListener("change", async () => {
-	await rpc.auth.setPreferences.mutate(readDrawerState(drawer));
+	const cron = pickerToCron();
+	const tz   = tzInput.value || Intl.DateTimeFormat().resolvedOptions().timeZone;
+	await rpc.auth.setPreferences.mutate({
+		push:  ($<HTMLInputElement>('[data-pref="push"]')).checked,
+		inApp: ($<HTMLInputElement>('[data-pref="inApp"]')).checked,
+		email: {
+			enabled: ($<HTMLInputElement>('[data-pref="email.enabled"]')).checked,
+			mode:    modeSelect.value,
+		},
+		digests: {
+			"research.researchReady": {
+				email: cron ? { cron, timezone: tz } : null,
+			},
+		},
+	});
 });
 ```
 
-Two payoffs:
+Three payoffs:
 
 - **Browser-detected timezone default** — `Intl.DateTimeFormat()
   .resolvedOptions().timeZone` returns IANA names like
-  `"Europe/Oslo"`, exactly what the `flushWhen` predicate from
-  [4 · Deep research](../4-deep-research/) expects.
+  `"Europe/Oslo"`, exactly what the framework expects.
+- **Cadence picker → cron translation** — friendly UI on the
+  outside, standard cron on the wire. Custom-cron users get an
+  advanced field; defaults cover the 95% case.
 - **Digest-only rows hide when mode is instant** — Tailwind's
   `hidden` class is one DOM toggle; no JS animation library.
 

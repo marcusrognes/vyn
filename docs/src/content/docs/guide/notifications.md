@@ -116,8 +116,8 @@ createNotification({
 		email: {
 			mode:         "digest",
 			digestKey:    (input) => input.recipientId,    // accumulate per user
-			digestSchedule: { cron: "0 8 * * *" },         // flush daily at 08:00
-			digestMaxAge:   "24h",                          // don't include items older than this
+			defaultCron:  "0 8 * * *",                       // fallback when a user has no preference
+			digestMaxAge: "24h",                              // don't include items older than this
 			renderItem:   async (opts) => ({ noteId: opts.input.noteId, commentId: opts.input.commentId }),
 			renderDigest: async ({ items, ctx, userId }) => {
 				const user = await ctx.db.users.get(userId);
@@ -141,9 +141,16 @@ createNotification({
 ```
 
 One `.send()` call fans out to three channels with three different
-delivery modes. The user gets the push immediately, a single email at
-8am summarizing the day's comments, and an in-app reminder card 30
-minutes after each event.
+delivery modes. The user gets the push immediately, a single
+digest email at *their* preferred time (default 08:00 daily in their
+timezone — `defaultCron`), and an in-app reminder card 30 minutes
+after each event.
+
+Digest delivery time is **always a user preference**. The
+notification declares a `defaultCron` for users who haven't picked
+one; each user can override with their own cron + timezone — daily,
+weekly, twice a day, weekdays only, never. See
+[Delivery time is a user preference](#delivery-time-is-a-user-preference).
 
 ## Delivery modes
 
@@ -156,68 +163,91 @@ minutes after each event.
 A channel using `digest` mode must declare:
 
 - `digestKey(input)` — what to group by (usually `recipientId`)
-- `digestSchedule` — how often the framework checks each pending
-  group (cron or interval). NOT the time it actually fires
 - `renderItem(opts)` — what to record per event (minimal — just
   enough to render the digest later)
 - `renderDigest({ items, ctx, userId })` — what the combined message
   looks like
+- `defaultCron` (optional) — fallback delivery schedule when a user
+  has no preference. Default: `"0 8 * * *"` (daily 08:00 UTC).
 
-The framework keeps the digest queue in the job store. On each
-`digestSchedule` pulse, it walks every pending group and asks: is
-this group ready to flush? The default answer is "yes, every time"
-— pulse interval = flush interval. For per-user timing, declare
-`flushWhen`:
+What the channel does **not** declare: when each individual user's
+digest is delivered. That's user preference territory. Each user
+provides a cron expression and a timezone; the framework polls every
+minute and dispatches whenever a user's next cron tick has elapsed
+since their last digest send.
 
-### `flushWhen` — per-user digest timing
+### Delivery time is a user preference
 
-`flushWhen({ userId, ctx, items, lastFlushAt })` returns `true` if
-the framework should render and send the digest for this user now,
-`false` to keep the items queued for the next pulse.
+Each user has a per-notification, per-channel cron + timezone in
+their preferences:
 
-Use it when you want each user to control **when** they receive
-their digest. The pulse stays fast (every 15 minutes, every hour);
-the predicate reads the user's preference and gates delivery.
+```ts
+preferences: {
+	"research.researchReady": {
+		email: { cron: "0 9 * * 1", timezone: "Europe/Oslo" },  // weekly Monday 09:00 local
+	},
+}
+```
+
+The cron syntax is standard 5-field cron. Common pickers map to:
+
+| Picker option | Cron |
+|---|---|
+| Daily at 09:00            | `0 9 * * *` |
+| Weekly on Monday at 09:00 | `0 9 * * 1` |
+| Twice daily (09 + 17)     | `0 9,17 * * *` |
+| Weekdays only at 08:00    | `0 8 * * 1-5` |
+| First of every month, 09:00 | `0 9 1 * *` |
+| Never                     | omitted (channel disabled in prefs) |
+
+Your settings UI generates the cron string from a friendly picker
+(see [the research-notebook tutorial](/tutorials/build-a-research-notebook/5-ui/)
+for one); users with custom needs can paste a raw cron string into
+an advanced field.
+
+### How the framework dispatches
+
+The notification author writes:
 
 ```ts
 email: {
-	mode:           "digest",
-	digestKey:      (input) => input.userId,
-	digestSchedule: { interval: "15 minutes" },   // tight pulse
-	flushWhen: async ({ userId, ctx, lastFlushAt }) => {
-		const user = await ctx.db.users.findOne({ _id: userId });
-		const hour = user?.preferences?.digestHour ?? 8;
-		const tz   = user?.preferences?.timezone   ?? "UTC";
-
-		// What hour is it for this user right now?
-		const userHour = Number(
-			new Date().toLocaleString("en-US", { hour: "2-digit", hour12: false, timeZone: tz }),
-		);
-
-		if (userHour !== hour) return false;            // not their hour
-		if (lastFlushAt && isSameDayInTz(lastFlushAt, new Date(), tz)) return false;  // already sent today
-		return true;
-	},
+	mode:         "digest",
+	digestKey:    (input) => input.userId,
+	digestMaxAge: "7d",                    // accommodate weekly-cadence users
+	defaultCron:  "0 8 * * *",             // fallback if a user has no preference
 	renderItem:   async (opts) => ({ /* ... */ }),
 	renderDigest: async ({ items, ctx, userId }) => ({ /* ... */ }),
 },
 ```
 
-Per-user timezone + hour, configurable from your settings UI, fully
-honored. The framework persists `lastFlushAt` per `(notification,
-digestKey)` so you don't have to track it yourself.
+Internally, the framework:
 
-### Flush frequencies vs delivery time
+1. **Polls every minute.** A built-in `_digest-flush` job pulls every
+   group with pending items.
+2. **Resolves each user's cron.** The preferences resolver returns
+   the user's cron + timezone for this notification + channel; if
+   absent, `defaultCron` is used (in UTC).
+3. **Computes the previous cron tick** given the cron + timezone.
+4. **Compares to `lastFlushAt`** (persisted by the framework per
+   `digestKey`). If `lastFlushAt < previous tick`, the digest is
+   due — render and dispatch, update `lastFlushAt`.
+5. **Otherwise**, the items stay in the queue.
 
-| Pulse interval (`digestSchedule`) | What it controls |
-|---|---|
-| Short (5–15 min) | How often the framework checks each user's `flushWhen`. The user can have minute-level precision on their delivery time. |
-| Medium (1 hour) | Cheaper. Users get hourly precision. Fine for daily digests. |
-| Long (1 day) | One flush attempt per day per user. Use only when delivery time is fixed for everyone. |
+`digestMaxAge` drops items older than the threshold so a weekly
+user doesn't see two-week-old items even if their last cron tick
+got skipped.
 
-For a true "fixed time, same for everyone" digest, omit `flushWhen`
-and set `digestSchedule` directly to that cron (`0 8 * * *`). The
-pulse and the flush coincide.
+### Preference shape
+
+```ts
+type DigestPreference = {
+	cron:     string;   // 5-field cron expression
+	timezone: string;   // IANA tz, e.g. "Europe/Oslo"
+};
+```
+
+Set to `null` (or omit the channel) to disable the digest for that
+user.
 
 ## Per-user preferences override the mode
 

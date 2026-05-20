@@ -206,34 +206,10 @@ export const researchReady = createNotification({
 		},
 
 		email: {
-			mode:           "digest",
-			digestKey:      (input: any) => input.userId,
-			digestSchedule: { interval: "15 minutes" },     // pulse; flushWhen decides actual delivery
-			digestMaxAge:   "24h",
-			flushWhen: async ({ userId, ctx, lastFlushAt }) => {
-				const user = await ctx.db.users.findOne({ _id: userId });
-				const prefs = user?.preferences?.digestEmail ?? {};
-				const hour = prefs.hour ?? 8;
-				const tz   = prefs.timezone ?? "UTC";
-
-				const userHour = Number(
-					new Date().toLocaleString("en-US", {
-						hour:     "2-digit",
-						hour12:   false,
-						timeZone: tz,
-					}),
-				);
-
-				if (userHour !== hour) return false;
-
-				if (lastFlushAt) {
-					const lastDay = new Date(lastFlushAt).toLocaleDateString("en-US", { timeZone: tz });
-					const today   = new Date().toLocaleDateString("en-US", { timeZone: tz });
-					if (lastDay === today) return false;
-				}
-
-				return true;
-			},
+			mode:         "digest",
+			digestKey:    (input: any) => input.userId,
+			defaultCron:  "0 8 * * *",     // fallback for users who haven't picked a schedule
+			digestMaxAge: "7d",             // hold up to a week so weekly-cadence users get a full bundle
 			renderItem: async (opts: any) => ({
 				runId:   opts.input.runId,
 				topic:   opts.input.topic,
@@ -260,26 +236,39 @@ export const researchReady = createNotification({
 ```
 
 Per user, **push and in-app fire instantly**, **email batches up
-across the day and arrives at the hour each user chose** (default
-8am, configurable per user via `preferences.digestEmail.{ hour,
-timezone }`).
+into a digest that arrives on the user's own schedule** (default
+daily at 8am UTC for users who haven't picked one; otherwise
+honoring `preferences[notificationName].email.{ cron, timezone }`).
+
+The notification author doesn't pick the digest schedule. Users do.
+The author just declares the digest exists and provides a sensible
+default via `defaultCron`.
 
 How the digest delivery time gets honored:
 
-1. `digestSchedule: { interval: "15 minutes" }` — every 15 minutes,
-   the framework walks the pending digest queues.
-2. For each user with pending items, it calls `flushWhen({ userId,
-   ctx, lastFlushAt })`. The predicate reads the user's preferred
-   hour and timezone, checks whether it's that hour now, and
-   whether we've already flushed today.
-3. If yes, the framework calls `renderDigest({ items, ctx, userId
-   })` to produce the email and dispatches it. `lastFlushAt` is
-   updated automatically.
-4. If no, items stay in the queue for the next pulse.
+1. Every minute, the framework walks every pending digest group
+   across all notifications.
+2. For each user, it looks up their cron + timezone preference for
+   this notification + channel. If absent, it uses `defaultCron`.
+3. It computes the previous cron tick in the user's timezone and
+   compares to the persisted `lastFlushAt` for this user.
+4. If `lastFlushAt < previous tick`, the digest is due — render and
+   dispatch, update `lastFlushAt`.
+5. If not, items stay in the queue for the next minute's pulse.
 
-A user who picks `{ hour: 17, timezone: "Europe/Oslo" }` gets a
-digest at 17:00 Norwegian local time every day they have pending
-runs, regardless of where the server runs.
+Common preferences a user might set:
+
+| User wants | Their cron |
+|---|---|
+| Daily at 09:00 in their timezone | `0 9 * * *` |
+| Weekly on Monday at 09:00        | `0 9 * * 1` |
+| Twice daily (09 + 17)            | `0 9,17 * * *` |
+| Weekdays only at 08:00           | `0 8 * * 1-5` |
+| First of every month at 09:00    | `0 9 1 * *` |
+| Never                             | (channel omitted from preferences) |
+
+The settings UI generates the cron string from a picker; users
+with custom needs can paste a raw cron.
 
 A user reading the page when a run finishes:
 
@@ -316,10 +305,14 @@ export const setPreferences = createMutation({
 			enabled: v.boolean(),
 			mode:    v.string().regex(/^(instant|digest)$/),
 		}).optional(),
-		digestEmail: v.object({
-			hour:     v.number().integer().min(0).max(23),
-			timezone: v.string(),   // IANA timezone name, e.g. "Europe/Oslo"
-		}).optional(),
+		// Per-notification, per-channel digest schedule.
+		// Map from notification name to a per-channel preference.
+		digests: v.record(v.string(), v.object({
+			email: v.object({
+				cron:     v.string(),   // standard 5-field cron
+				timezone: v.string(),   // IANA timezone name
+			}).nullable().optional(),   // null = disable email digest for this notification
+		})).optional(),
 	}),
 	output: v.object({}),
 	run: async (opts) => {
@@ -343,23 +336,35 @@ serve({
 		email: postmarkAdapter({ ... }),
 		inApp: { subscription: onNotification },
 
-		preferences: async (userId, ctx) => {
-			const user = await ctx.db.users.findOne({ _id: userId });
+		preferences: async (userId, ctx, notificationName) => {
+			const user  = await ctx.db.users.findOne({ _id: userId });
 			const prefs = user?.preferences ?? {};
+			const dig   = prefs.digests?.[notificationName]?.email ?? undefined;
 			return {
-				push:  { enabled: prefs.push  !== false,                                   mode: "instant" },
-				email: { enabled: prefs.email?.enabled !== false, mode: prefs.email?.mode ?? "digest" },
-				inApp: { enabled: prefs.inApp !== false,                                  mode: "instant" },
+				push:  { enabled: prefs.push  !== false,         mode: "instant" },
+				inApp: { enabled: prefs.inApp !== false,         mode: "instant" },
+				email: {
+					enabled: prefs.email?.enabled !== false,
+					mode:    prefs.email?.mode ?? "digest",
+					// Per-notification digest schedule override
+					digest:  dig === null ? null : dig ?? undefined,
+				},
 			};
 		},
 	},
 });
 ```
 
-The framework calls this for every `notification.send()`. If a user
-has `push: false` and `email: { enabled: true, mode: "instant" }`,
-their push render runs but the adapter is skipped, and their email
-goes immediately instead of joining the digest.
+The framework calls this per `notification.send()` and (for digest
+channels) per minute-pulse against pending groups. Two layers of
+preferences in play:
+
+- **`email.enabled`** / **`email.mode`** — overall channel state.
+  `enabled: false` skips the channel; `mode: "instant"` flips a
+  digest into immediate send.
+- **`email.digest`** — for digest mode only, the per-notification
+  cron + timezone. `undefined` falls back to the notification's
+  `defaultCron`; `null` disables the digest for this notification.
 
 ## Worker
 
