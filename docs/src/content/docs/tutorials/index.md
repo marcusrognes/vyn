@@ -14,6 +14,10 @@ Available now:
 - [Build notes with auth](/tutorials/build-notes-with-auth/) — a
   multi-user notes app with SQLite persistence, session-cookie auth,
   per-user scoping, parameterized routes, and realtime updates.
+- [Build a research notebook](/tutorials/build-a-research-notebook/) —
+  multi-page tutorial: MongoDB persistence, SuperJSON for rich types,
+  a streaming AI agent, scheduled deep-research jobs, multi-channel
+  notifications, and a Tailwind UI.
 
 Planned:
 
