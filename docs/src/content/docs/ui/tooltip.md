@@ -1,0 +1,77 @@
+---
+title: tooltip
+description: Supplementary text on hover and focus, wired via aria-describedby. Composes anchor + dismiss + aria-describedby into one behavior.
+sidebar:
+  order: 10
+---
+
+`@vyn/ui/tooltip` is a hover/focus-driven floating label. It wraps
+[`anchor`](/ui/anchor/), [`dismiss`](/ui/dismiss/), and
+[`aria-describedby`](/ui/aria-describedby/) into one
+data-attribute. The tooltip target must have its own accessible
+name — the tooltip is **supplementary**, not the label.
+
+```html
+<button id="save" aria-label="Save">💾</button>
+<div data-tooltip data-tooltip-for="save" data-placement="bottom">
+	Saves the current draft (⌘S)
+</div>
+```
+
+```ts
+import "@vyn/ui/tooltip";
+```
+
+The button gets `aria-describedby` pointing at the tooltip; the
+tooltip shows on hover (after a short delay) or on focus
+(immediately), and dismisses on Esc, blur, or mouse leave.
+
+## Attributes
+
+| Attribute | Type | Default | What it does |
+|---|---|---|---|
+| `data-tooltip` | boolean | required | Activates the behavior |
+| `data-tooltip-for` | string | required | id of the target element |
+| `data-placement` | placement | `"top"` | See [anchor](/ui/anchor/) |
+| `data-offset` | number | `4` | Pixel gap |
+| `data-show-delay` | number | `500` | ms before showing on hover (no delay on focus) |
+| `data-hide-delay` | number | `0` | ms before hiding on leave |
+
+## Behavior
+
+- **Hover the target:** tooltip shows after `data-show-delay`.
+- **Focus the target:** tooltip shows immediately (keyboard users
+  shouldn't wait).
+- **Leave the target (mouse or focus):** tooltip hides after
+  `data-hide-delay`.
+- **Esc while the tooltip is shown:** dismisses immediately; focus
+  stays on the target.
+- **Hover into the tooltip itself:** does NOT keep it open. Tooltips
+  are non-interactive; for hoverable content use a
+  [`popover`](/ui/popover/).
+
+## ARIA
+
+- target: `aria-describedby="<tooltip-id>"` (generated)
+- tooltip: `role="tooltip"`, `id` auto-generated if not set
+
+`aria-describedby` (not `aria-labelledby`) is the right pattern — the
+target has its own accessible name; the tooltip adds detail.
+
+## What NOT to use tooltips for
+
+- **As the only label.** Touch users can't trigger tooltips.
+  Always give the target a real label (text content or
+  `aria-label`).
+- **For actions.** Tooltips never receive focus and can't contain
+  interactive elements. For action menus, use a
+  [`popover`](/ui/popover/).
+- **For form errors.** Show errors inline so they appear with the
+  field; use [`aria-describedby`](/ui/aria-describedby/) directly.
+
+## See also
+
+- [`@vyn/ui/anchor`](/ui/anchor/) — positioning primitive
+- [`@vyn/ui/dismiss`](/ui/dismiss/) — Esc handling
+- [`@vyn/ui/aria-describedby`](/ui/aria-describedby/) — for non-floating descriptions
+- [`@vyn/ui/popover`](/ui/popover/) — for interactive floating content
