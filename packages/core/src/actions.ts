@@ -31,10 +31,12 @@ type BaseDef<I, O, C> = {
 };
 
 function validateRequirements(def: { description?: string; output?: unknown; tool?: ToolSpec }, kind: string) {
-	if (def.tool) {
-		if (!def.description) throw new Error(`@vyn/core: ${kind} with tool requires a description`);
-		if (!def.output) throw new Error(`@vyn/core: ${kind} with tool requires an output schema`);
+	if (def.tool && !def.description) {
+		throw new Error(`@vyn/core: ${kind} with tool requires a description`);
 	}
+	// Output is optional even for tool-tagged actions — void-returning
+	// tools (deletes, side-effect commands) are legitimate. MCP exposes
+	// `output: { type: "null" }` when absent.
 }
 
 // When no input schema is given, we pass values through unchanged

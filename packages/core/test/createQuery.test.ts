@@ -128,14 +128,13 @@ describe("createQuery", () => {
 		await expect(q.run({ input: {}, ctx: {} })).resolves.toBe("ok");
 	});
 
-	it("requires output when tool is set", async () => {
+	it("permits tool-tagged query without output (output is optional)", async () => {
 		expect(() =>
 			createQuery({
 				description: "Greet",
 				tool:        {},
 				run:         async () => "x",
-				// no output
 			})
-		).toThrow(/output/);
+		).not.toThrow();
 	});
 });

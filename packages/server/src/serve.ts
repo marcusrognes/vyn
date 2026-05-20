@@ -55,9 +55,14 @@ export async function serve<S extends object = {}, D extends object = {}>(opts: 
 			const url2 = new URL(url);
 
 			if (url2.pathname.startsWith("/rpc/")) {
-				response = await handleRpc(request, baseCtx, async (r, b) =>
-					(opts.createContext ? await opts.createContext({ req: r, staticCtx, baseCtx: b }) : ({} as D)),
-				transformer);
+				response = await handleRpc(request, baseCtx, async (r, b) => {
+					const dyn = opts.createContext
+						? await opts.createContext({ req: r, staticCtx, baseCtx: b })
+						: ({} as D);
+					return { ...staticCtx, ...dyn };
+				}, transformer);
+			} else if (url2.pathname === "/_vyn/client.js") {
+				response = await serveClientBundle();
 			} else {
 				response = await tryStatic(request, { root: publicDir, indexHtml });
 			}
@@ -97,8 +102,12 @@ export async function serve<S extends object = {}, D extends object = {}>(opts: 
 				};
 				attachWebSocket(ws, request, baseCtx, {
 					transformer,
-					makeCtx: async (r, b) =>
-						(opts.createContext ? await opts.createContext({ req: r, staticCtx, baseCtx: b }) : ({} as D)),
+					makeCtx: async (r, b) => {
+						const dyn = opts.createContext
+							? await opts.createContext({ req: r, staticCtx, baseCtx: b })
+							: ({} as D);
+						return { ...staticCtx, ...dyn };
+					},
 				});
 			});
 		} catch (e) {
@@ -163,6 +172,20 @@ async function sendFetchResponse(res: ServerResponse, fetchRes: Response, side: 
 		}
 	}
 	res.end();
+}
+
+// Resolves at boot time so the file is read once.
+let clientBundle: string | undefined;
+async function serveClientBundle(): Promise<Response> {
+	if (!clientBundle) {
+		const url = await import.meta.resolve?.("@vyn/client/browser.js");
+		const path = url ? new URL(url).pathname : require.resolve("@vyn/client/browser.js");
+		clientBundle = await readFile(path, "utf-8");
+	}
+	return new Response(clientBundle, {
+		status:  200,
+		headers: { "content-type": "text/javascript; charset=utf-8", "cache-control": "no-cache" },
+	});
 }
 
 export { parseCookies, serializeCookie };

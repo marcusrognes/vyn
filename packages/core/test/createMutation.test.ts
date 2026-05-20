@@ -104,13 +104,13 @@ describe("createMutation", () => {
 		await expect(m.run({ input: {}, ctx: {}, tick: () => undefined })).rejects.toThrow();
 	});
 
-	it("requires output when tool is set", () => {
+	it("permits tool-tagged action without output (void-returning tools are valid)", () => {
 		expect(() =>
 			createMutation({
-				description: "Create note",
+				description: "Delete by id",
 				tool:        {},
 				run:         async () => undefined,
 			})
-		).toThrow(/output/);
+		).not.toThrow();
 	});
 });
