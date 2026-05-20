@@ -15,6 +15,14 @@ export function createSubscription(_opts: unknown): never {
 	throw new Error("@vyn/core: createSubscription not implemented");
 }
 
+export function createJob(_opts: unknown): never {
+	throw new Error("@vyn/core: createJob not implemented");
+}
+
+export function createNotification(_opts: unknown): never {
+	throw new Error("@vyn/core: createNotification not implemented");
+}
+
 export const v = new Proxy({} as Record<string, unknown>, {
 	get() {
 		throw new Error("@vyn/core: v.* validators not implemented");
