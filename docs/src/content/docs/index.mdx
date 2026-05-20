@@ -1,0 +1,139 @@
+---
+title: Vyn
+description: A small full-stack TypeScript framework for Deno and Node. Read it in a weekend, run it in production.
+template: splash
+hero:
+  tagline: A small full-stack TypeScript framework. Read it. Run it on Deno or Node.
+  actions:
+    - text: Get started
+      link: /getting-started/
+      icon: right-arrow
+    - text: Why Vyn?
+      link: /why-vyn/
+      icon: open-book
+      variant: minimal
+---
+
+import { Card, CardGrid, Tabs, TabItem, Code, Aside } from '@astrojs/starlight/components';
+
+## What is Vyn?
+
+Vyn is a full-stack TypeScript framework with the smallest reasonable surface
+area. File-based routing, typed RPC over HTTP and WebSocket, server-rendered
+data loaders, and an auth primitive — all designed to be readable end-to-end.
+
+Every layer is meant to fit in your head. The whole framework is a few
+thousand lines. You can pull up any file in the source and understand what
+it does without a wiki.
+
+Vyn runs on Deno and Node from a shared codebase. Pick one or use both —
+the public API is identical; only the imports and project file differ.
+
+## 30-second tour
+
+Define a procedure on the server. Call it from the client with full type
+safety. No code generation, no manual fetch.
+
+<Tabs syncKey="runtime">
+<TabItem label="Deno">
+
+```ts
+// app/router/hello.rpc.ts
+import { procedure, router, v } from "vyn/core";
+
+export default () =>
+	router({
+		greet: procedure.query(
+			v.object({ name: v.string() }),
+			({ input }) => `Hello, ${input.name}!`,
+		),
+	});
+```
+
+```ts
+// app/server.ts
+import { serve } from "vyn/server";
+import { createAppRouter } from "./router/index.ts";
+
+serve({ port: 8000, router: createAppRouter() });
+```
+
+</TabItem>
+<TabItem label="Node">
+
+```ts
+// app/router/hello.rpc.ts
+import { procedure, router, v } from "@vyn/core";
+
+export default () =>
+	router({
+		greet: procedure.query(
+			v.object({ name: v.string() }),
+			({ input }) => `Hello, ${input.name}!`,
+		),
+	});
+```
+
+```ts
+// app/server.ts
+import { serve } from "@vyn/server";
+import { createAppRouter } from "./router/index.js";
+
+serve({ port: 8000, router: createAppRouter() });
+```
+
+</TabItem>
+</Tabs>
+
+The client gets a typed proxy. No code generation step.
+
+```ts
+// app/public/main.ts
+const greeting = await rpc.hello.greet.query({ name: "world" });
+//    ^? string
+```
+
+## Design choices
+
+<CardGrid>
+	<Card title="No magic" icon="seti:typescript">
+		Every behavior in Vyn is traceable to code you can read. No hidden
+		dependency injection, no compile-time macros, no decorators that
+		rewrite your functions behind your back.
+	</Card>
+	<Card title="Vanilla platform" icon="puzzle">
+		Custom elements, signals, native fetch, native WebSocket. Vyn leans on
+		what browsers and runtimes already ship. The framework is glue,
+		not a parallel universe.
+	</Card>
+	<Card title="Read in one sitting" icon="open-book">
+		The entire framework is small enough to skim end-to-end before
+		dinner. If you can't explain why a request behaves the way it does
+		by reading two files, that's a bug in Vyn, not in you.
+	</Card>
+	<Card title="Deno and Node, one codebase" icon="random">
+		Apps target either runtime without rewriting. Runtime adapters live
+		at the boundary; user code touches only the shared API.
+	</Card>
+</CardGrid>
+
+## Next steps
+
+<CardGrid>
+	<Card title="Get started" icon="rocket">
+		Install Vyn and ship a working app in ten minutes.
+		[Read the guide →](/getting-started/)
+	</Card>
+	<Card title="Read the guide" icon="document">
+		How routing, RPC, loaders, and auth fit together.
+		[Browse →](/guide/routing/)
+	</Card>
+	<Card title="API reference" icon="list-format">
+		Every export, every option, every signature.
+		[Open →](/api/server/)
+	</Card>
+	<Card title="Tutorials" icon="laptop">
+		Build something concrete end-to-end.
+		[See tutorials →](/tutorials/build-a-blog/)
+	</Card>
+</CardGrid>
