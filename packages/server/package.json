@@ -5,5 +5,12 @@
 	"type": "module",
 	"main": "./src/index.ts",
 	"types": "./src/index.ts",
-	"scripts": { "test": "vitest run", "test:watch": "vitest" }
+	"scripts": { "test": "vitest run", "test:watch": "vitest" },
+	"dependencies": {
+		"@vyn/core": "*",
+		"ws": "^8.18.0"
+	},
+	"devDependencies": {
+		"@types/ws": "^8.5.13"
+	}
 }
