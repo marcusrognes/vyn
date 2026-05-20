@@ -6,7 +6,16 @@ description: Build something concrete with Vyn, end to end.
 Tutorials are step-by-step walkthroughs of building a complete app. Pick
 one and follow it; each tutorial is self-contained.
 
-Planned tutorials:
+Available now:
 
-- Build a blog (CRUD, routing, loaders)
-- Build a chat (WebSocket subscriptions, optimistic mutations, auth)
+- [Build a todo app](/tutorials/build-a-todo/) — a complete realtime
+  todo app: model, actions, client, subscriptions, and MCP exposure
+  in under 200 lines.
+- [Build notes with auth](/tutorials/build-notes-with-auth/) — a
+  multi-user notes app with SQLite persistence, session-cookie auth,
+  per-user scoping, parameterized routes, and realtime updates.
+
+Planned:
+
+- Build a blog (loaders, public-read / private-write)
+- Build a chat (presence, optimistic mutations)
