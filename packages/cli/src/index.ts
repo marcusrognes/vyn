@@ -191,9 +191,22 @@ async function worker() {
 
 // ─── gen — scan filesystem, emit _vyn.gen.ts ─────────────────────────
 
+async function loadVynConfig(): Promise<{ actionsRoot?: string; routesRoot?: string }> {
+	const path = join(cwd, "vyn.config.ts");
+	if (!existsSync(path)) return {};
+	try {
+		const mod = await import(path);
+		return (mod.default ?? {}) as { actionsRoot?: string; routesRoot?: string };
+	} catch (e) {
+		console.warn(`[vyn] could not load vyn.config.ts: ${(e as Error).message}`);
+		return {};
+	}
+}
+
 async function gen() {
-	const featuresDir = join(cwd, "features");
-	const routesDir   = join(cwd, "public", "routes");
+	const config      = await loadVynConfig();
+	const featuresDir = join(cwd, config.actionsRoot ?? "features");
+	const routesDir   = join(cwd, config.routesRoot  ?? "public/routes");
 	const actionFiles = existsSync(featuresDir) ? await walkFiles(featuresDir, /\.actions\.ts$/) : [];
 	const routeFiles  = existsSync(routesDir)   ? await walkFiles(routesDir,   /\.html$/) : [];
 
