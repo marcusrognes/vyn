@@ -16,9 +16,16 @@ import "./popover.ts";
 import "./tooltip.ts";
 import "./scroll-into-view.ts";
 import "./sort.ts";
+import "./sortable.ts";
+import "./drag-drop.ts";
+import "./edit.ts";
 import "./auto-resize.ts";
 import "./aria-describedby.ts";
+import "./form-associated.ts";
 import "./copy.ts";
 import "./v-toaster.ts";
+import "./v-combobox.ts";
+import "./v-table.ts";
+import "./v-grid.ts";
 
 export { live } from "./live.ts";

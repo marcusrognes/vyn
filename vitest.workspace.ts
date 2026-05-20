@@ -12,4 +12,5 @@ export default defineWorkspace([
 	"packages/ui",
 	"packages/db-sqlite",
 	"packages/db-mongo",
+	"packages/notify-inbox",
 ]);

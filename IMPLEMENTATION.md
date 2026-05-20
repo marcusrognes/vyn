@@ -17,7 +17,8 @@ implemented. Updated 2026-05-21 (round 2).
 | `createSubscription`                              | ✅ async-generator run / `opts.events` AsyncIterable / `.emit` / signal abort propagation / eager queue registration so emits between run() and first iter.next() aren't lost |
 | `createJob`                                       | ✅ in-memory store / .now/.at/.in/.cancel/.status/.watch/.result / retries + backoff (exponential/linear/custom) / timeout / RpcError-category retry rules (permanent vs transient) |
 | `createNotification`                              | ✅ instant + deferred + digest modes. Routes through the notification runtime (notify-runtime.ts). |
-| `inboxAdapter`                                    | 🟡 stub that writes to a `collection.insertOne` if provided; no built-in list/count/markRead/markAllRead actions yet |
+| `inboxAdapter`                                    | ✅ moved to `@vyn/notify-inbox`; persists rows; optional subscription emit |
+| `inbox.list / count / markRead / markAllRead / onNew` | ✅ prebuilt actions in `@vyn/notify-inbox/actions`; apps import the module to register them |
 | `cron`                                            | ✅ parser + previousTick + nextTick, timezone-aware via Intl.DateTimeFormat, POSIX dom/dow OR semantics |
 | notification runtime                              | ✅ installNotify({ adapters, preferences, coalesceWindowMs }) + flush loop. Per-channel queues, per-user cron-driven digest flush, coalesce window for cross-notification bundling, preferences resolver overrides mode/digest |
 
@@ -86,9 +87,13 @@ implemented. Updated 2026-05-21 (round 2).
 | `copy`                                             | ✅ data-copy='selector' → clipboard + data-state='copied' flash |
 | `live(message)`                                    | ✅ singleton aria-live regions, throttled |
 | `<v-toaster>`                                      | ✅ custom element + global `vynToast({ body, kind, timeout })` helper |
-| `form-associated`                                  | 🟡 documented; use native ElementInternals — examples deferred |
-| `sortable` / `drag-drop` / `edit`                  | 🟡 documented; not yet implemented |
-| `<v-grid>`, `<v-table>`, `<v-combobox>`            | 🟡 documented; not yet implemented |
+| `form-associated`                                  | ✅ mirrors data-value to a hidden `<input name=...>` so wrapping `<form>` submits it |
+| `sortable`                                         | ✅ pointer + keyboard (space-to-pickup, arrows to move, esc to cancel); fires `reorder` |
+| `drag-drop`                                        | ✅ typed via data-draggable + data-dropzone + data-accepts; fires `drop` / `rejected` |
+| `edit`                                             | ✅ Enter / F2 / dblclick activate; Esc cancels; Enter/Tab commits with `change` event |
+| `<v-grid columns=N>`                               | ✅ focusable cell grid with arrow / Home / End navigation; fires `cellfocus` |
+| `<v-table columns rows>`                           | ✅ JSON-driven sortable table rendered as native `<table>`; fires `sort` |
+| `<v-combobox>`                                     | ✅ text input + listbox; suggestions via attribute, setter, or `fetch` event |
 
 ## Tests
 
@@ -125,18 +130,19 @@ built by following the matching tutorial. See
 
 ## Tests
 
-- 218 passing (was 202 last round)
-- 18 todo (worker / bundling / adapter edge cases that need an
-  integration harness)
+- 220 passing (was 218)
+- 18 todo (worker / bundling integration tests that need an end-
+  to-end harness; sqlite vitest resolver issue tracked separately)
 
-## Next session priorities
+## What's left
 
-1. Wire `<LiveExample>` into a couple of UI pages now that the
-   widgets work in a browser.
-2. Implement remaining UI: sortable, drag-drop, edit, form-associated,
-   v-grid, v-table, v-combobox.
-3. Build the inbox actions (`inbox.list / count / markRead /
-   markAllRead / onNew`) so the in-app channel has a complete UI
-   pattern out of the box.
-4. Real LLM integration in `examples/research` (drop the mock).
-5. MongoDB integration test using a docker-compose harness.
+1. UI browser bundle (`/_vyn/ui.js`) so behaviors + widgets load
+   in app pages without a build step (today they need esbuild or
+   manual concatenation).
+2. Real LLM integration in `examples/research` (drop the mock).
+3. MongoDB integration test using a docker-compose harness.
+4. Resource + prompt support in the MCP surface (currently only
+   tools are exposed).
+5. Per-tutorial doc reconciliation: the docs reference SQLite,
+   Tailwind, an `inbox` ctx key, etc. — wire each into a worked
+   example or trim the doc to the actual surface.

@@ -80,6 +80,8 @@ export async function serve<S extends object = {}, D extends object = {}>(opts: 
 				});
 			} else if (url2.pathname === "/_vyn/client.js") {
 				response = await serveClientBundle();
+			} else if (url2.pathname === "/_vyn/ui.js") {
+				response = await serveUiBundle();
 			} else {
 				response = await tryStatic(request, { root: publicDir, indexHtml });
 			}
@@ -193,6 +195,7 @@ async function sendFetchResponse(res: ServerResponse, fetchRes: Response, side: 
 
 // Resolves at boot time so the file is read once.
 let clientBundle: string | undefined;
+let uiBundle:     string | undefined;
 async function serveClientBundle(): Promise<Response> {
 	if (!clientBundle) {
 		const url = await import.meta.resolve?.("@vyn/client/browser.js");
@@ -200,6 +203,21 @@ async function serveClientBundle(): Promise<Response> {
 		clientBundle = await readFile(path, "utf-8");
 	}
 	return new Response(clientBundle, {
+		status:  200,
+		headers: { "content-type": "text/javascript; charset=utf-8", "cache-control": "no-cache" },
+	});
+}
+async function serveUiBundle(): Promise<Response> {
+	if (!uiBundle) {
+		try {
+			const url = await import.meta.resolve?.("@vyn/ui/browser.js");
+			const path = url ? new URL(url).pathname : require.resolve("@vyn/ui/browser.js");
+			uiBundle = await readFile(path, "utf-8");
+		} catch {
+			return new Response("@vyn/ui is not installed", { status: 404 });
+		}
+	}
+	return new Response(uiBundle, {
 		status:  200,
 		headers: { "content-type": "text/javascript; charset=utf-8", "cache-control": "no-cache" },
 	});
