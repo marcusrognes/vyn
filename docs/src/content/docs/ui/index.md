@@ -124,37 +124,37 @@ through for the per-primitive reference.
 
 | Element | Role | Native equivalent |
 |---|---|---|
-| [`<v-button>`](/api/ui/button/) | activation | `<button>` (with extra states like `loading`, `pressed`) |
-| [`<v-toggle>`](/api/ui/toggle/) | switch | `<input type=checkbox>` styled as switch |
-| [`<v-radio-group>`](/api/ui/radio-group/) | radio group | `<input type=radio>` set with roving tabindex |
-| [`<v-checkbox>`](/api/ui/checkbox/) | checkbox | `<input type=checkbox>` with tri-state |
+| [`<v-button>`](/ui/button/) | activation | `<button>` (with extra states like `loading`, `pressed`) |
+| [`<v-toggle>`](/ui/toggle/) | switch | `<input type=checkbox>` styled as switch |
+| [`<v-radio-group>`](/ui/radio-group/) | radio group | `<input type=radio>` set with roving tabindex |
+| [`<v-checkbox>`](/ui/checkbox/) | checkbox | `<input type=checkbox>` with tri-state |
 
 ### Disclosure and overlays
 
 | Element | Role | Notes |
 |---|---|---|
-| [`<v-popover>`](/api/ui/popover/) | non-modal positioned overlay | anchored to a trigger; Esc dismisses |
-| [`<v-dialog>`](/api/ui/dialog/) | modal | wraps `<dialog>`; focus trap; Esc dismisses |
-| [`<v-tooltip>`](/api/ui/tooltip/) | tooltip | hover + focus; Esc dismiss |
-| [`<v-disclosure>`](/api/ui/disclosure/) | summary/content | wraps `<details>` with animation hooks |
+| [`<v-popover>`](/ui/popover/) | non-modal positioned overlay | anchored to a trigger; Esc dismisses |
+| [`<v-dialog>`](/ui/dialog/) | modal | wraps `<dialog>`; focus trap; Esc dismisses |
+| [`<v-tooltip>`](/ui/tooltip/) | tooltip | hover + focus; Esc dismiss |
+| [`<v-disclosure>`](/ui/disclosure/) | summary/content | wraps `<details>` with animation hooks |
 
 ### Lists and selection
 
 | Element | Role | Notes |
 |---|---|---|
-| [`<v-menu>`](/api/ui/menu/) | menu | arrow nav, type-ahead, Esc closes |
-| [`<v-dropdown>`](/api/ui/dropdown/) | trigger + menu | composes button + menu with positioning |
-| [`<v-listbox>`](/api/ui/listbox/) | listbox | single or multi-select, type-ahead |
-| [`<v-combobox>`](/api/ui/combobox/) | combobox | input + filterable listbox |
+| [`<v-menu>`](/ui/menu/) | menu | arrow nav, type-ahead, Esc closes |
+| [`<v-dropdown>`](/ui/dropdown/) | trigger + menu | composes button + menu with positioning |
+| [`<v-listbox>`](/ui/listbox/) | listbox | single or multi-select, type-ahead |
+| [`<v-combobox>`](/ui/combobox/) | combobox | input + filterable listbox |
 
 ### Structure and layout
 
 | Element | Role | Notes |
 |---|---|---|
-| [`<v-tabs>`](/api/ui/tabs/) | tabs + panels | arrow nav, automatic or manual activation |
-| [`<v-table>`](/api/ui/table/) | sortable data table | wraps `<table>` with keyboard cell nav and sort |
-| [`<v-grid>`](/api/ui/grid/) | data grid | divs with `role="grid"`, full keyboard nav |
-| [`<v-toast>`](/api/ui/toast/) | live region notifications | `aria-live`, auto-dismiss |
+| [`<v-tabs>`](/ui/tabs/) | tabs + panels | arrow nav, automatic or manual activation |
+| [`<v-table>`](/ui/table/) | sortable data table | wraps `<table>` with keyboard cell nav and sort |
+| [`<v-grid>`](/ui/grid/) | data grid | divs with `role="grid"`, full keyboard nav |
+| [`<v-toast>`](/ui/toast/) | live region notifications | `aria-live`, auto-dismiss |
 
 ## Styling
 
@@ -252,5 +252,5 @@ By design, `@vyn/ui` does not include:
 ## See also
 
 - [Components](/guide/components/) — write your own custom elements
-- [`@vyn/ui` API reference](/api/ui/) — every primitive, every prop,
+- [`@vyn/ui` reference](/ui/) — every primitive, every prop,
   every event, every key

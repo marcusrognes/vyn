@@ -31,6 +31,10 @@ export default defineConfig({
 					items: [{ autogenerate: { directory: 'tutorials' } }],
 				},
 				{
+					label: 'UI',
+					items: [{ autogenerate: { directory: 'ui' } }],
+				},
+				{
 					label: 'API reference',
 					items: [{ autogenerate: { directory: 'api' } }],
 				},

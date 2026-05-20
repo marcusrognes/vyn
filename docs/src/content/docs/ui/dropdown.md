@@ -187,9 +187,9 @@ document.addEventListener("contextmenu", (e) => {
 
 ## See also
 
-- [`<v-menu>`](/api/ui/menu/) — the menu primitive `<v-dropdown>` wraps
-- [`<v-popover>`](/api/ui/popover/) — non-modal positioned overlay
+- [`<v-menu>`](/ui/menu/) — the menu primitive `<v-dropdown>` wraps
+- [`<v-popover>`](/ui/popover/) — non-modal positioned overlay
   used internally
 - [Components guide](/guide/components/) — how custom elements work
   in Vyn
-- [UI primitives overview](/guide/ui/) — the whole `@vyn/ui` set
+- [UI primitives overview](/ui/) — the whole `@vyn/ui` set
