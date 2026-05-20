@@ -9,8 +9,8 @@ of the source.
 
 Pages in this section will be added as packages stabilize:
 
-- `vyn/core`
-- `vyn/server`
-- `vyn/client`
-- `vyn/auth`
-- `vyn/cli`
+- `@vyn/core`
+- `@vyn/server`
+- `@vyn/client`
+- `@vyn/auth`
+- `@vyn/cli`

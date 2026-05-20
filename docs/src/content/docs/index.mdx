@@ -31,83 +31,83 @@ the public API is identical; only the imports and project file differ.
 
 ## 30-second tour
 
-Define a procedure on the server. Call it from the client with full type
-safety. No code generation, no manual fetch.
-
-<Tabs syncKey="runtime">
-<TabItem label="Deno">
+Declare an action. Its location in the file tree becomes its RPC path,
+its agent tool id, its CLI subcommand. No barrels to maintain, no name
+to keep in sync with a path.
 
 ```ts
-// app/router/hello.rpc.ts
-import { procedure, router, v } from "vyn/core";
+// features/notes/notes.actions.ts
+import { createQuery, createMutation, createSubscription, v } from "@vyn/core";
+import { NoteSchema } from "../models/note.ts";
 
-export default () =>
-	router({
-		greet: procedure.query(
-			v.object({ name: v.string() }),
-			({ input }) => `Hello, ${input.name}!`,
-		),
-	});
+export const list = createQuery({
+	description: "List notes for the current session.",
+	input:  v.object({ limit: v.number().min(1).max(100).default(50) }),
+	output: v.array(NoteSchema),
+	run: async opts => opts.ctx.db.notes.limit(opts.input.limit).all(),
+});
+
+export const onCreated = createSubscription({
+	description: "Stream notes as they are created.",
+	input:  v.object({}),
+	output: NoteSchema,
+	run: async function* (opts) {
+		for await (const note of opts.events) yield note;
+	},
+});
+
+export const create = createMutation({
+	description: "Create a note.",
+	input:  NoteSchema,
+	output: NoteSchema,
+	run: async opts => {
+		const note = await opts.ctx.db.notes.insert(NoteSchema.create(opts.input)).get();
+		onCreated.emit(note);   // typed reference; subscribers receive the new note
+		return note;
+	},
+});
 ```
 
 ```ts
-// app/server.ts
-import { serve } from "vyn/server";
-import { createAppRouter } from "./router/index.ts";
-
-serve({ port: 8000, router: createAppRouter() });
-```
-
-</TabItem>
-<TabItem label="Node">
-
-```ts
-// app/router/hello.rpc.ts
-import { procedure, router, v } from "@vyn/core";
-
-export default () =>
-	router({
-		greet: procedure.query(
-			v.object({ name: v.string() }),
-			({ input }) => `Hello, ${input.name}!`,
-		),
-	});
-```
-
-```ts
-// app/server.ts
+// server.ts
 import { serve } from "@vyn/server";
-import { createAppRouter } from "./router/index.js";
+import "./_vyn.gen.ts";   // codegen barrel — discovers every *.actions.ts
 
-serve({ port: 8000, router: createAppRouter() });
+serve({ port: 8000 });
 ```
 
-</TabItem>
-</Tabs>
+Same code on Deno and Node. Only the project file and install command
+differ; the code you write does not. The runtime switcher changes those
+parts of the docs but leaves your application code alone.
 
-The client gets a typed proxy. No code generation step.
+The client gets a typed proxy whose shape matches the file tree exactly.
+No code generation step on the client.
 
 ```ts
-// app/public/main.ts
-const greeting = await rpc.hello.greet.query({ name: "world" });
-//    ^? string
+// public/routes/index.ts
+const notes = await rpc.notes.list.query({});
+//    ^? Note[]
+
+const fresh = await rpc.notes.create.mutate({ body: "hello" });
+//    ^? Note
 ```
+
+The split between query and mutation is honest: queries are cacheable
+and side-effect-free; mutations declare what they affect by importing
+the actions they touch and calling their methods. No topic strings, no
+metadata drift.
 
 ## Design choices
 
 <CardGrid>
 	<Card title="No magic" icon="seti:typescript">
-		Every behavior in Vyn is traceable to code you can read. No hidden
+		Every behavior is traceable to code you can read. No hidden
 		dependency injection, no compile-time macros, no decorators that
-		rewrite your functions behind your back.
-	</Card>
-	<Card title="Vanilla platform" icon="puzzle">
-		Custom elements, signals, native fetch, native WebSocket. Vyn leans on
-		what browsers and runtimes already ship. The framework is glue,
-		not a parallel universe.
+		rewrite your functions. The framework is glue between native
+		platform primitives — custom elements, signals, fetch, WebSocket.
 	</Card>
 	<Card title="Read in one sitting" icon="open-book">
-		The entire framework is small enough to skim end-to-end before
+		The whole framework is small enough to skim end-to-end before
 		dinner. If you can't explain why a request behaves the way it does
 		by reading two files, that's a bug in Vyn, not in you.
 	</Card>
