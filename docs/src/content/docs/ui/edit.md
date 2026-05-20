@@ -13,8 +13,8 @@ Enter or Tab commits and fires `change`.
 ```html
 <table>
 	<tr>
-		<td>Marcus</td>
-		<td data-editable data-type="text">marcus@rognes.guru</td>
+		<td>Jane Doe</td>
+		<td data-editable data-type="text">jane@example.com</td>
 		<td data-editable data-type="select" data-options="admin,editor,viewer">editor</td>
 	</tr>
 </table>
