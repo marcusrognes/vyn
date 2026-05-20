@@ -8,7 +8,7 @@ function init() {
 
 function wire(container: HTMLElement) {
 	container.dataset.selWired = "true";
-	const mode = container.dataset.select ?? "single";   // "single" | "multiple"
+	const mode = container.dataset.select || "single";   // "single" | "multiple"; empty attr defaults to single
 
 	function items(): HTMLElement[] {
 		return [...container.querySelectorAll<HTMLElement>("[data-value]")];

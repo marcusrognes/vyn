@@ -31,6 +31,36 @@ function toolSpec(action: Action) {
 	};
 }
 
+// Queries with `tool: {}` AND zero required input fields can also be
+// exposed as MCP resources — a snapshot read with no args. Apps that
+// want richer resource semantics (URIs, content types) declare them
+// in `action.tool.resource = { uri, mimeType }`.
+function resourceSpec(action: Action) {
+	const res = (action.tool as { resource?: { uri?: string; mimeType?: string } } | undefined)?.resource;
+	const uri = res?.uri ?? `vyn://${action.name}`;
+	return {
+		uri,
+		name:         action.name,
+		description:  action.description ?? "",
+		mimeType:     res?.mimeType ?? "application/json",
+	};
+}
+
+function promptSpec(action: Action) {
+	const args = action.input?.schema as { properties?: Record<string, { description?: string }> } | undefined;
+	return {
+		name:        action.name,
+		description: action.description ?? "",
+		arguments:   args?.properties
+			? Object.entries(args.properties).map(([name, def]) => ({
+				name,
+				description: def.description ?? "",
+				required:    true,
+			}))
+			: [],
+	};
+}
+
 export async function handleMcp(req: Request, makeCtx: () => Promise<object>): Promise<Response> {
 	if (req.method !== "POST") {
 		return new Response("mcp endpoint accepts POST only", { status: 405 });
@@ -64,10 +94,53 @@ export async function handleMcp(req: Request, makeCtx: () => Promise<object>): P
 			});
 		}
 
+		if (body.method === "resources/list") {
+			const resources = registry.list()
+				.filter((a) => a.kind === "query" && a.tool && !a.tool.hidden)
+				.map(resourceSpec);
+			return jsonRpc(id, undefined, { resources });
+		}
+
+		if (body.method === "resources/read") {
+			const { uri } = (body.params ?? {}) as { uri?: string };
+			if (!uri) return jsonRpc(id, { code: -32602, message: "missing uri" });
+			const name = uri.replace(/^vyn:\/\//, "");
+			const action = registry.get(name);
+			if (!action || action.kind !== "query") return jsonRpc(id, { code: -32601, message: `unknown resource: ${uri}` });
+			const ctx    = await makeCtx();
+			const result = await (action as any).run({ input: {}, ctx });
+			return jsonRpc(id, undefined, {
+				contents: [{ uri, mimeType: "application/json", text: JSON.stringify(result) }],
+			});
+		}
+
+		if (body.method === "prompts/list") {
+			const prompts = registry.list()
+				.filter((a) => (a.tool as { prompt?: boolean } | undefined)?.prompt === true)
+				.map(promptSpec);
+			return jsonRpc(id, undefined, { prompts });
+		}
+
+		if (body.method === "prompts/get") {
+			const { name, arguments: args } = (body.params ?? {}) as { name?: string; arguments?: Record<string, unknown> };
+			if (!name) return jsonRpc(id, { code: -32602, message: "missing prompt name" });
+			const action = registry.get(name);
+			if (!action || (action.tool as { prompt?: boolean } | undefined)?.prompt !== true) {
+				return jsonRpc(id, { code: -32601, message: `unknown prompt: ${name}` });
+			}
+			const ctx    = await makeCtx();
+			const result = await (action as any).run({ input: args ?? {}, ctx });
+			const text   = typeof result === "string" ? result : JSON.stringify(result, null, 2);
+			return jsonRpc(id, undefined, {
+				description: action.description ?? "",
+				messages: [{ role: "user", content: { type: "text", text } }],
+			});
+		}
+
 		if (body.method === "initialize") {
 			return jsonRpc(id, undefined, {
 				protocolVersion: "2024-11-05",
-				capabilities:    { tools: {} },
+				capabilities:    { tools: {}, resources: {}, prompts: {} },
 				serverInfo:      { name: "@vyn/server", version: "0.0.0" },
 			});
 		}

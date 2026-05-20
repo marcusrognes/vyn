@@ -96,7 +96,7 @@ registerInit(() => {
 registerInit(() => {
 	document.querySelectorAll("[data-select]:not([data-sel-wired])").forEach((container) => {
 		container.dataset.selWired = "true";
-		const mode = container.dataset.select ?? "single";
+		const mode = container.dataset.select || "single";
 		const items = () => [...container.querySelectorAll("[data-value]")];
 		const current = () => {
 			const v = container.dataset.value ?? "";
