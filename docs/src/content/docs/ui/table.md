@@ -170,5 +170,5 @@ refresh();
 ## See also
 
 - [`<v-grid>`](/ui/grid/) — for editable / range-select / dense data
-- [`<v-listbox>`](/ui/listbox/) — for single-column selection
+- [`@vyn/ui/keyboard-nav`](/ui/keyboard-nav/) + [`@vyn/ui/select`](/ui/select/) — for single-column selection without a widget
 - [Components guide](/guide/components/) — for writing your own

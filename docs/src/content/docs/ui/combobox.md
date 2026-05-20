@@ -149,7 +149,7 @@ the user arrows through.
 - For async data, debounce your `input` listener. The combobox does
   not debounce internally because the right debounce depends on
   your network and back-end.
-- The listbox uses a `<v-popover>` internally for positioning —
+- The listbox uses the `popover` behavior internally for positioning —
   same flip + offset behavior, escapes `overflow: hidden` parents.
 - Type-ahead in the input is filtering, not jumping. Letters narrow
   the listbox; they don't jump to the next matching option.
@@ -166,6 +166,6 @@ combo.clear();                  // clears value and inputValue
 
 ## See also
 
-- [`<v-listbox>`](/ui/listbox/) — selection list without an input
-- [`<v-popover>`](/ui/popover/) — used internally for the dropdown
-- [Components guide](/guide/components/) — for writing your own
+- [`@vyn/ui/select`](/ui/select/) — selection state via `data-select` (used for non-input listboxes)
+- [`@vyn/ui/popover`](/ui/popover/) — anchored positioning behavior used internally
+- [`@vyn/ui/keyboard-nav`](/ui/keyboard-nav/) — for listboxes that don't need a free-text input

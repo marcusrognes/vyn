@@ -166,5 +166,5 @@ alongside.
 ## See also
 
 - [`@vyn/ui/keyboard-nav`](/ui/keyboard-nav/) — arrow keys and focus management; usually paired
-- [`<v-listbox>`](/ui/listbox/) — prebuilt listbox composing these two behaviors plus role/ARIA defaults
-- [`<v-radio-group>`](/ui/radio-group/) — prebuilt radio group with form association
+- [`@vyn/ui/form-associated`](/ui/form-associated/) — to make a `data-select` container submit a value with a `<form>`
+- [`<v-combobox>`](/ui/combobox/) — input + listbox widget when the `aria-activedescendant` pattern is needed

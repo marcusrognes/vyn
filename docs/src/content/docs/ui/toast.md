@@ -141,5 +141,6 @@ toast.info("3 new messages");
 
 ## See also
 
-- [`<v-dialog>`](/ui/dialog/) — for interactive modals
+- [`@vyn/ui/focus-trap`](/ui/focus-trap/) + native `<dialog>` — for interactive modal dialogs
+- [`@vyn/ui/live`](/ui/live/) — for one-off `aria-live` announcements without the toast UI
 - [Components guide](/guide/components/) — for writing your own

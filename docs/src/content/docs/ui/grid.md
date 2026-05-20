@@ -207,5 +207,5 @@ grid.addEventListener("activate", (e: CustomEvent) => {
 ## See also
 
 - [`<v-table>`](/ui/table/) — wraps native `<table>`; simpler, less power
-- [`<v-listbox>`](/ui/listbox/) — for single-column selection
+- [`@vyn/ui/keyboard-nav`](/ui/keyboard-nav/) + [`@vyn/ui/select`](/ui/select/) — write your own selection list from plain HTML when a custom element is overkill
 - [Components guide](/guide/components/) — for writing your own

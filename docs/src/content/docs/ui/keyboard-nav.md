@@ -99,8 +99,10 @@ The behavior writes:
 
 The behavior does **not** set role attributes — you set those
 yourself, because they depend on what the list semantically is
-(`menu` / `listbox` / `tablist` / `grid`). For built-in role wiring,
-see [`<v-menu>`](/ui/menu/), [`<v-listbox>`](/ui/listbox/), etc.
+(`menu` / `listbox` / `tablist` / `grid`). Apply `role="menu"`,
+`role="listbox"`, etc. on the container along with `data-keyboard-nav`,
+and the right ARIA roles + the framework's focus management coexist
+cleanly.
 
 ## Composing with other behaviors
 
@@ -139,19 +141,19 @@ For floating menus, also pair with [`@vyn/ui/popover`](/ui/popover/):
 Three behavior imports, no custom element, full keyboard + ARIA +
 positioning.
 
-## When NOT to use this
+## Common compositions
 
-If you find yourself adding five behaviors to one element, reach for
-the prebuilt widget — it composes the same behaviors but ships ARIA
-roles and tested edge cases. The behavior modules are the building
-blocks; the widgets are the recipes.
+Most UI patterns are this behavior plus one or two more on the same
+element:
 
-| Want | Use |
+| Pattern | Behaviors to apply |
 |---|---|
-| A menu | [`<v-menu>`](/ui/menu/) (composes keyboard-nav + activate + dismiss) |
-| A select | [`<v-listbox>`](/ui/listbox/) (composes keyboard-nav + select) |
-| A combobox | [`<v-combobox>`](/ui/combobox/) (composes keyboard-nav + select + popover + input) |
-| A grid | [`<v-grid>`](/ui/grid/) (composes keyboard-nav + select + edit + sort) |
+| Menu                  | `data-keyboard-nav data-typeahead` + `data-dismiss` + `role="menu"` |
+| Listbox               | `data-keyboard-nav` + `data-select` + `role="listbox"` |
+| Tabs                  | `data-keyboard-nav="horizontal"` + `data-select` + `role="tablist"` (+ panel show/hide via `data-tabs`) |
+| Dropdown              | trigger + popover + menu (composes the menu pattern inside a `data-popover` host) |
+| Combobox              | reach for the [`<v-combobox>`](/ui/combobox/) widget — the `aria-activedescendant` pattern is materially different |
+| Data grid             | reach for the [`<v-grid>`](/ui/grid/) widget — cell rendering + range select want encapsulated state |
 
 ## Implementation note
 

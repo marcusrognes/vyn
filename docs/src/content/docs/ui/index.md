@@ -1,320 +1,206 @@
 ---
 title: UI primitives
-description: An optional package of accessible custom elements — dropdowns, menus, dialogs, tables, grids. Native HTML where it exists, ARIA done right where it doesn't. Keyboard-navigable by default.
+description: An optional package of accessible UI behaviors and a few prebuilt widgets. Apply data-attributes to plain HTML; the framework wires keyboard, selection, positioning, and ARIA.
 sidebar:
-  order: 8
+  order: 1
 ---
 
-`@vyn/ui` is an optional package of accessible UI primitives —
-dropdowns, menus, dialogs, tabs, listboxes, tables, grids — that you
-can drop into a Vyn app when you'd rather not write keyboard
-navigation and ARIA wiring from scratch. The package is **opt-in**:
-nothing in the framework depends on it, and apps that don't import
-it don't pay for it.
+`@vyn/ui` is an optional package that makes accessible UI primitives —
+keyboard navigation, selection, positioning, focus trapping — work
+across any HTML you write. The package is **opt-in**: nothing in the
+framework depends on it, and apps that don't import it don't pay for
+it.
 
-These are custom elements built the same way [your components are](/guide/components/).
-You install the package, import the primitives you want, and use them
-in plain HTML. There is no separate runtime, no parallel reactivity
-system, no design system.
+The package ships at two layers. **Behaviors** are small modules that
+apply functionality to any HTML via `data-*` attributes. **Widgets**
+are a handful of custom elements that bundle behaviors with internal
+state for cases where the data-attribute approach can't reach.
 
-## Why this exists
+You'll mostly use behaviors. Widgets exist where they genuinely earn
+their keep.
 
-Most apps need a handful of widgets that browsers don't ship: a
-button-triggered menu, a non-modal popover, an accessible combobox.
-Writing them well is hard — keyboard handling, ARIA roles and
-states, focus management, screen-reader announcements, RTL, IME.
-Writing them poorly is easy and ships in production every day.
+## Behaviors
 
-Two existing answers:
-
-- **react-aria-components** — comprehensive, battle-tested, deep.
-  Costs: React, render-props composition, state machines, a real
-  learning curve. Hard to use if you weren't going to use React
-  anyway.
-- **Roll your own** — fine for the first one. Tenth one is a tax,
-  twentieth is a project.
-
-`@vyn/ui` sits between them. It targets the common-case keyboard +
-ARIA correctness for a small set of primitives, ships as plain custom
-elements, and stays small enough that you can read each primitive's
-source if you need to fix something. The trade is depth of edge-case
-handling vs. simplicity; if you need flawless RTL + virtual keyboard
-+ screen-reader announcement quirks across every primitive, use
-react-aria.
-
-## Install
-
-<Tabs syncKey="runtime">
-<TabItem label="Deno">
-
-```sh
-deno add @vyn/ui
-```
-
-```ts
-// import the primitives you want anywhere in your client code
-import "@vyn/ui/dropdown";
-import "@vyn/ui/dialog";
-```
-
-</TabItem>
-<TabItem label="Node">
-
-```sh
-npm add @vyn/ui
-```
-
-```ts
-import "@vyn/ui/dropdown";
-import "@vyn/ui/dialog";
-```
-
-</TabItem>
-</Tabs>
-
-import { Tabs, TabItem } from '@astrojs/starlight/components';
-
-Each subpath import registers one custom element. The bundle includes
-only what you import.
-
-## Usage
-
-A dropdown menu that posts to your action registry:
+Each behavior is a single module that scans for elements with a
+matching `data-*` attribute, wires the relevant keyboard / focus /
+ARIA logic onto them, and watches the DOM for additions. Import the
+module once; the behavior turns on everywhere.
 
 ```html
-<v-dropdown id="menu">
-	<button slot="trigger">Actions ▾</button>
-	<v-menu>
-		<v-menuitem id="archive">Archive</v-menuitem>
-		<v-menuitem id="duplicate">Duplicate</v-menuitem>
-		<v-menuitem id="delete" disabled>Delete</v-menuitem>
-	</v-menu>
-</v-dropdown>
-```
-
-```ts
-const menu = $<HTMLElement>("#menu");
-menu.addEventListener("select", async (e: Event) => {
-	const id = (e as CustomEvent<{ id: string }>).detail.id;
-	if (id === "archive")   await rpc.notes.archive.mutate({ _id });
-	if (id === "duplicate") await rpc.notes.duplicate.mutate({ _id });
-});
-```
-
-What the dropdown handles for you:
-
-- Toggles open/closed on click, Enter, or Space.
-- Arrow keys move focus through items; type-ahead jumps by letter.
-- Esc closes and restores focus to the trigger.
-- Tab moves focus out of the menu, closing it.
-- `aria-haspopup` and `aria-expanded` on the trigger; `role="menu"` on
-  the panel; `role="menuitem"` on items; `disabled` is `aria-disabled`.
-- Click outside closes.
-- Focus visibly returns to the trigger on close.
-
-You write the markup; the primitive does the rest.
-
-## Two layers
-
-`@vyn/ui` ships at two levels of abstraction. Use whichever fits the
-situation; you can mix freely in the same app.
-
-### Behaviors (data-attribute modules)
-
-Small modules that scan the document for elements with specific
-`data-*` attributes and wire keyboard / selection / positioning onto
-them. No custom element required — apply attributes to plain HTML,
-import the behavior module once, the behavior turns on.
-
-```html
-<ul data-keyboard-nav data-select="single" data-value="editor">
-	<li data-value="admin">Admin</li>
-	<li data-value="editor">Editor</li>
-	<li data-value="viewer">Viewer</li>
+<ul role="listbox" data-keyboard-nav data-select="single" data-value="editor">
+	<li role="option" data-value="admin">Admin</li>
+	<li role="option" data-value="editor">Editor</li>
+	<li role="option" data-value="viewer">Viewer</li>
 </ul>
 ```
 
 ```ts
 import "@vyn/ui/keyboard-nav";
 import "@vyn/ui/select";
+
+document.querySelector("ul")!.addEventListener("change", (e) => {
+	const { value } = (e as CustomEvent<{ value: string }>).detail;
+	// ...
+});
 ```
 
-That's a fully keyboard-navigable single-select list. No
-`<v-listbox>` registration, no `createApp`, no JSX. The behavior
-modules cover the bulk of UI work:
+That's a fully keyboard-operable single-select listbox with
+`aria-selected` wiring. No custom element, no compile step, no
+framework runtime to think about.
 
-| Module | Behavior |
-|---|---|
-| [`@vyn/ui/keyboard-nav`](/ui/keyboard-nav/) | Arrow keys, type-ahead, roving tabindex |
-| [`@vyn/ui/select`](/ui/select/)             | Single or multi selection state via `data-value`; `aria-selected` |
-| `@vyn/ui/popover`        | Anchored positioning + open/close via `data-popover` |
-| `@vyn/ui/focus-trap`     | Trap focus inside a modal |
-| `@vyn/ui/live`           | `aria-live` announcements |
-| `@vyn/ui/edit`           | Inline-editable cells |
-| `@vyn/ui/sort`           | Column-header sort buttons |
+### The behavior set
 
-Each behavior is ~50-150 LOC. The whole behavior set is small enough
-to read end-to-end.
-
-### Widgets (prebuilt custom elements)
-
-For the common compositions, the package ships prebuilt custom
-elements that bundle behaviors with sensible defaults, role wiring,
-and tested edge cases. You don't have to choose — use the widget for
-the common case, drop down to behaviors when the widget doesn't fit.
-
-| Widget | Composes |
-|---|---|
-| [`<v-menu>`](/ui/menu/)         | keyboard-nav + activate |
-| [`<v-dropdown>`](/ui/dropdown/) | menu + popover + button trigger |
-| [`<v-listbox>`](/ui/listbox/)   | keyboard-nav + select |
-| [`<v-combobox>`](/ui/combobox/) | keyboard-nav + select + popover + input |
-| [`<v-tabs>`](/ui/tabs/)         | keyboard-nav + select (orientation-aware) |
-| [`<v-table>`](/ui/table/)       | keyboard-nav + select + sort |
-| [`<v-grid>`](/ui/grid/)         | keyboard-nav + select + edit + sort |
-| [`<v-dialog>`](/ui/dialog/)     | focus-trap + native `<dialog>` |
-| [`<v-popover>`](/ui/popover/)   | popover behavior + dismiss handling |
-
-The widgets emit the right `data-*` attributes internally and import
-the behaviors they need. Reading a widget's source is the easiest way
-to learn the behavior pattern.
-
-## The widget set
-
-Each widget is one custom element (plus a few sub-elements where the
-ARIA spec calls for it). Click through for the per-widget reference.
-
-### Form controls
-
-| Element | Role | Native equivalent |
+| Module | Behavior | Composes via |
 |---|---|---|
-| [`<v-button>`](/ui/button/) | activation | `<button>` (with extra states like `loading`, `pressed`) |
-| [`<v-toggle>`](/ui/toggle/) | switch | `<input type=checkbox>` styled as switch |
-| [`<v-radio-group>`](/ui/radio-group/) | radio group | `<input type=radio>` set with roving tabindex |
-| [`<v-checkbox>`](/ui/checkbox/) | checkbox | `<input type=checkbox>` with tri-state |
+| [`@vyn/ui/keyboard-nav`](/ui/keyboard-nav/)        | Arrow keys, Home/End, roving tabindex                          | `data-keyboard-nav` |
+| [`@vyn/ui/typeahead`](/ui/typeahead/)              | Letter-key buffer + jump                                       | `data-typeahead` |
+| [`@vyn/ui/select`](/ui/select/)                    | Single/multi selection state via `data-value`; `aria-selected` | `data-select` |
+| [`@vyn/ui/popover`](/ui/popover/)                  | Anchored positioning + open/close                              | `data-popover` |
+| [`@vyn/ui/anchor`](/ui/anchor/)                    | Position one element relative to another (flip, offset)        | `data-anchor` |
+| [`@vyn/ui/dismiss`](/ui/dismiss/)                  | Esc + outside click + focus-out → `dismiss` event              | `data-dismiss` |
+| [`@vyn/ui/focus-trap`](/ui/focus-trap/)            | Contain Tab focus inside an element                            | `data-focus-trap` |
+| [`@vyn/ui/aria-describedby`](/ui/aria-describedby/) | Wire `aria-describedby` between two elements                  | `data-describes` |
+| [`@vyn/ui/tooltip`](/ui/tooltip/)                  | Hover/focus + describedby; composes anchor + dismiss + describedby | `data-tooltip` |
+| [`@vyn/ui/form-associated`](/ui/form-associated/)  | Custom value-holders participate in `<form>` submission         | `data-form-name` |
+| [`@vyn/ui/live`](/ui/live/)                        | `aria-live` region for ad-hoc announcements                    | `liveRegion(message)` helper |
+| [`@vyn/ui/sort`](/ui/sort/)                        | Column-header sort buttons with `aria-sort`                    | `data-sort-key` |
+| [`@vyn/ui/edit`](/ui/edit/)                        | Inline-editable cells (Enter to edit, Esc to cancel, Enter/Tab to commit) | `data-editable` |
+| [`@vyn/ui/sortable`](/ui/sortable/)                | Drag to reorder a list; emits `reorder`                         | `data-sortable` |
+| [`@vyn/ui/drag-drop`](/ui/drag-drop/)              | Cross-container drag-and-drop with keyboard fallback           | `data-drag` / `data-drop` |
+| [`@vyn/ui/auto-resize`](/ui/auto-resize/)          | `<textarea>` grows with content                                | `data-auto-resize` |
+| [`@vyn/ui/copy`](/ui/copy/)                        | Button copies a target's text to clipboard with feedback        | `data-copy` |
+| [`@vyn/ui/scroll-into-view`](/ui/scroll-into-view/) | Scroll element into view on focus or attribute change          | `data-scroll-into-view` |
 
-### Disclosure and overlays
+Each behavior is ~50-150 LOC. The whole set fits in one mental model:
+a few hundred lines that turn HTML into accessible UI.
 
-| Element | Role | Notes |
+### Composing behaviors
+
+Most UI patterns are a stack of behaviors on the same element:
+
+```html
+<!-- a dropdown menu -->
+<button data-anchor="role-menu-trigger" aria-haspopup="menu">Role ▾</button>
+
+<ul id="role-menu" role="menu"
+    data-popover data-anchor-of="role-menu-trigger"
+    data-dismiss data-keyboard-nav data-typeahead>
+	<li role="menuitem" data-key="admin">Admin</li>
+	<li role="menuitem" data-key="editor">Editor</li>
+	<li role="menuitem" data-key="viewer">Viewer</li>
+</ul>
+```
+
+```ts
+import "@vyn/ui/popover";
+import "@vyn/ui/dismiss";
+import "@vyn/ui/keyboard-nav";
+import "@vyn/ui/typeahead";
+
+document.querySelector("ul")!.addEventListener("activate", (e) => {
+	const { key } = (e as CustomEvent<{ key: string }>).detail;
+	// ...
+});
+```
+
+That is a complete accessible dropdown menu: keyboard navigation,
+type-ahead, ARIA, click-outside-to-dismiss, Esc-to-dismiss, anchored
+positioning. No custom element registration, no JSX, no compile step.
+
+## Widgets
+
+For four specific cases, a custom element earns its keep — the
+state, virtual focus, queue, or data-driven rendering is too tangled
+to express purely through data-attributes. These ship as
+`@vyn/ui/<widget>` subpaths.
+
+| Widget | What it adds | Why a custom element |
 |---|---|---|
-| [`<v-popover>`](/ui/popover/) | non-modal positioned overlay | anchored to a trigger; Esc dismisses |
-| [`<v-dialog>`](/ui/dialog/) | modal | wraps `<dialog>`; focus trap; Esc dismisses |
-| [`<v-tooltip>`](/ui/tooltip/) | tooltip | hover + focus; Esc dismiss |
-| [`<v-disclosure>`](/ui/disclosure/) | summary/content | wraps `<details>` with animation hooks |
+| [`<v-grid>`](/ui/grid/)       | Data-driven cell rendering, range select, inline edit                  | Cell rendering and range selection model want encapsulated state |
+| [`<v-table>`](/ui/table/)     | Data-driven `<table>` with sort and row select                          | Same as grid but read-mostly and based on native `<table>` |
+| [`<v-combobox>`](/ui/combobox/) | Input + listbox with `aria-activedescendant` (input keeps focus)     | The virtual-focus pattern is materially different from roving tabindex |
+| [`<v-toaster>`](/ui/toast/)    | Queue, position stacking, dedup, route-survival                        | Queue management needs encapsulated state |
 
-### Lists and selection
-
-| Element | Role | Notes |
-|---|---|---|
-| [`<v-menu>`](/ui/menu/) | menu | arrow nav, type-ahead, Esc closes |
-| [`<v-dropdown>`](/ui/dropdown/) | trigger + menu | composes button + menu with positioning |
-| [`<v-listbox>`](/ui/listbox/) | listbox | single or multi-select, type-ahead |
-| [`<v-combobox>`](/ui/combobox/) | combobox | input + filterable listbox |
-
-### Structure and layout
-
-| Element | Role | Notes |
-|---|---|---|
-| [`<v-tabs>`](/ui/tabs/) | tabs + panels | arrow nav, automatic or manual activation |
-| [`<v-table>`](/ui/table/) | sortable data table | wraps `<table>` with keyboard cell nav and sort |
-| [`<v-grid>`](/ui/grid/) | data grid | divs with `role="grid"`, full keyboard nav |
-| [`<v-toast>`](/ui/toast/) | live region notifications | `aria-live`, auto-dismiss |
+Everything else that used to be a widget — menus, dropdowns,
+listboxes, dialogs, popovers, tooltips, tabs, buttons, switches,
+checkboxes, radios, disclosure — is now plain HTML plus
+data-attributes. Reach for the prebuilt widget for the cases above;
+write the markup yourself for everything else.
 
 ## Styling
 
-`@vyn/ui` ships zero opinions about visual design. Each primitive
-defines a small set of CSS custom properties for the parts that need
-to coordinate — focus rings, layering, transitions — and leaves
-everything else to your stylesheet.
+`@vyn/ui` ships zero opinions about visual design. Behaviors set
+ARIA and `data-state="..."` attributes; widgets expose CSS custom
+properties for the parts that need to coordinate (focus rings,
+overlays, transitions). Everything else is your stylesheet.
 
 ```css
-/* Globally tweak the focus ring for every primitive */
+/* Global focus ring */
 :root {
-	--vyn-focus-ring: 2px solid blue;
+	--vyn-focus-ring: 2px solid CanvasText;
 	--vyn-focus-offset: 2px;
 }
 
-/* Or scope it to one primitive */
-v-menu {
-	--vyn-menu-bg: #1a1a1a;
-	--vyn-menu-border: 1px solid #333;
+/* Style a selected option */
+[data-select] [aria-selected="true"] {
+	background: Highlight;
+	color: HighlightText;
+}
+
+/* Animate the open state of a popover */
+[data-popover][data-state="opening"] {
+	animation: fade-in 150ms;
 }
 ```
 
-Each primitive's reference page lists every custom property it
-honors. The bare-bones output is unstyled lists, buttons, and dialogs;
-add your own CSS to make it look like your app.
+The defaults use system colors so the primitives render sensibly in
+forced-colors mode and dark mode without theming.
 
 ## Accessibility
 
-Each primitive ships with a documented keyboard table and a list of
-ARIA roles/states it manages. The package is tested against:
+Each behavior + widget is tested against:
 
-- **Keyboard:** every interactive primitive is fully operable without
-  a mouse, with no surprises on Tab order.
-- **Screen readers:** VoiceOver (macOS), NVDA (Windows), Orca (Linux).
-  The CI matrix runs each primitive through a recorded SR session and
-  diffs the announcements.
-- **High contrast and forced colors:** primitives don't disappear in
-  Windows High Contrast mode or `prefers-contrast: more`.
+- **Keyboard:** every interactive primitive is operable without a mouse.
+- **Screen readers:** VoiceOver, NVDA, Orca, all on the latest stable
+  browsers in CI.
+- **High contrast / forced colors:** primitives don't disappear.
 - **Reduced motion:** transitions respect `prefers-reduced-motion`.
 
-This is a real ongoing investment. The package documents its known
-gaps in each primitive's "Accessibility notes" section so you can
-make an informed call.
+The behavior reference pages document keyboard tables, ARIA roles
+and states, and known accessibility gaps in their open-questions
+section.
 
 ## Composing your own
 
-`@vyn/ui` is not a closed set. If you want a primitive it doesn't
-ship, write your own using the same framework helpers the package
-uses internally — they're exported from `@vyn/client`:
+If a behavior is missing, write it. The same helpers `@vyn/ui` uses
+internally are exported from `@vyn/client`:
 
 | Helper | What it does |
 |---|---|
-| `trapFocus(el)`       | Constrains focus to `el` while active; returns a teardown fn |
-| `restoreFocusOn(el)`  | Saves the currently-focused element; restores it when `el` disconnects |
-| `rovingTabIndex(items)` | One-tab-stop list with arrow-key navigation |
-| `typeahead(items, getLabel)` | Letter-key jumping for menus/listboxes |
-| `position(target, anchor, opts)` | Floating UI-style positioning for popovers |
-| `liveRegion(message, level)` | Announce a string via an off-screen `aria-live` region |
+| `trapFocus(el)`           | Constrains focus to `el`; returns a teardown fn |
+| `restoreFocusOn(el)`      | Saves currently-focused element; restores when `el` disconnects |
+| `rovingTabIndex(items)`   | One-tab-stop list with arrow-key navigation |
+| `typeahead(items, getLabel)` | Letter-key jumping for menus / listboxes |
+| `position(target, anchor, opts)` | Floating-UI-style positioning |
+| `liveRegion(message, level?)` | Announce via an off-screen `aria-live` region |
+| `observe(selector, fn)`   | Run `fn` for every existing and future element matching `selector` — the discovery hook every behavior uses |
 
-These are the same helpers `@vyn/ui` uses; the package is not
-magic. Read the source of any primitive — each one is ~100 LOC of
-custom element + helpers.
+The behavior modules themselves are the best examples of how to
+compose these — read any of their sources to write your own.
 
 ## What's not in the box
 
-By design, `@vyn/ui` does not include:
-
-- **Layout primitives.** `<Container>`, `<Stack>`, `<Grid>` (CSS
-  layout, not data grid) — these are just flexbox/grid and don't
-  benefit from a primitive. Write the CSS.
-- **Iconography.** Pick an icon set you like and `<svg>` it. The
-  primitives don't bundle icons; they accept any element you slot
-  in.
-- **A theme.** No light/dark switcher, no color tokens, no spacing
-  scale. Apps already have these or pick a CSS framework. The
-  primitives use CSS custom properties so any theme can coordinate.
-- **Animation library.** `<v-dialog>` and `<v-popover>` expose
-  transition hooks (`v-state="opening"`, `"closing"`, etc.) so your
-  CSS can animate. No JS animation runtime.
-
-## Open questions
-
-- **Form integration.** Form primitives currently expose values via
-  `el.value` and emit `change` events, matching native inputs.
-  Whether to ship a higher-level `<v-form>` that integrates with
-  `v.*` validators for inline error display is open.
-- **Data binding.** Listbox/table/combobox primitives take items via
-  property assignment (`el.items = ...`) and an optional
-  `getLabel` / `getKey` config. Whether to ship a "render-item"
-  pattern beyond that is open.
-- **Virtualization.** For large lists, `<v-listbox>` and `<v-table>`
-  do not virtualize by default. A `<v-virtual-list>` primitive may
-  land later; rendering 10k rows is a real-world need.
+- **Layout primitives.** `<Stack>`, `<Grid>` (CSS layout) — these are
+  just flexbox/grid CSS and don't benefit from a primitive.
+- **Iconography.** Pick an icon set and `<svg>` it.
+- **Themes.** No light/dark switcher, no color tokens. Use the system
+  colors the primitives default to, or override the CSS custom
+  properties.
+- **Animation runtime.** Primitives expose `data-state="opening"` /
+  `"closing"` so your CSS can animate; no JS animation library.
 
 ## See also
 
 - [Components](/guide/components/) — write your own custom elements
-- [`@vyn/ui` reference](/ui/) — every primitive, every prop,
-  every event, every key
+  when you need them
+- The behavior reference pages above, each linked from the table
