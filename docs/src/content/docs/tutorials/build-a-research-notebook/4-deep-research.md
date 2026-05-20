@@ -209,7 +209,8 @@ export const researchReady = createNotification({
 			mode:         "digest",
 			digestKey:    (input: any) => input.userId,
 			defaultCron:  "0 8 * * *",     // fallback for users who haven't picked a schedule
-			digestMaxAge: "7d",             // hold up to a week so weekly-cadence users get a full bundle
+			// digestMaxAge omitted — framework infers retention per user from their cron.
+			// Set it (e.g. "30d") only as a privacy / data-retention cap on top of that.
 			renderItem: async (opts: any) => ({
 				runId:   opts.input.runId,
 				topic:   opts.input.topic,

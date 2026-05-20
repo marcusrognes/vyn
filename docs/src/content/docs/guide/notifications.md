@@ -117,7 +117,6 @@ createNotification({
 			mode:         "digest",
 			digestKey:    (input) => input.recipientId,    // accumulate per user
 			defaultCron:  "0 8 * * *",                       // fallback when a user has no preference
-			digestMaxAge: "24h",                              // don't include items older than this
 			renderItem:   async (opts) => ({ noteId: opts.input.noteId, commentId: opts.input.commentId }),
 			renderDigest: async ({ items, ctx, userId }) => {
 				const user = await ctx.db.users.get(userId);
@@ -167,8 +166,19 @@ A channel using `digest` mode must declare:
   enough to render the digest later)
 - `renderDigest({ items, ctx, userId })` — what the combined message
   looks like
-- `defaultCron` (optional) — fallback delivery schedule when a user
-  has no preference. Default: `"0 8 * * *"` (daily 08:00 UTC).
+
+Optional fields:
+
+- `defaultCron` — fallback delivery schedule for users who haven't
+  picked their own. Default: `"0 8 * * *"` (daily 08:00 UTC). Has
+  no effect on users who DO have a preference.
+- `digestMaxAge` — hard cap on how long an item may live in the
+  digest queue before being dropped. By default the framework
+  computes per-user retention from each user's cron (a daily-cron
+  user keeps items ~1 day; a weekly-cron user keeps items ~7 days);
+  `digestMaxAge` caps that at a maximum regardless. Use for data-
+  retention or privacy reasons (`"30d"`, etc.). Omit it and the
+  framework's per-user-cron retention is the only ceiling.
 
 What the channel does **not** declare: when each individual user's
 digest is delivered. That's user preference territory. Each user
