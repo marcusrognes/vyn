@@ -285,29 +285,70 @@ The JS module mirrors the auth tutorial. Skipping for brevity.
 
 ## Per-user preferences UI
 
-A small drawer with toggles for push / email mode / in-app:
+A small drawer with toggles for push / email mode / in-app. When
+the email is in digest mode, two extra fields choose **when** the
+digest arrives — the hour and the timezone:
 
 ```html
-<aside class="fixed bottom-4 right-4 w-72 bg-white rounded-lg shadow-lg border border-slate-200 p-4">
-	<h3 class="text-sm font-semibold mb-2">Notifications</h3>
-	<label class="flex items-center gap-2 mb-1">
+<aside class="fixed bottom-4 right-4 w-72 bg-white rounded-lg shadow-lg border border-slate-200 p-4 space-y-2 text-sm">
+	<h3 class="font-semibold">Notifications</h3>
+
+	<label class="flex items-center gap-2">
 		<input type="checkbox" data-pref="push"> Push
 	</label>
-	<label class="flex items-center gap-2 mb-1">
+	<label class="flex items-center gap-2">
 		<input type="checkbox" data-pref="inApp"> In-app
 	</label>
-	<label class="flex items-center gap-2 mb-1">
+	<label class="flex items-center gap-2">
 		<input type="checkbox" data-pref="email.enabled"> Email
 	</label>
-	<select data-pref="email.mode" class="mt-1 w-full text-sm">
+
+	<select data-pref="email.mode" class="mt-1 w-full text-sm rounded border-slate-300">
 		<option value="instant">Instant</option>
 		<option value="digest" selected>Daily digest</option>
 	</select>
+
+	<div id="digest-time" class="space-y-2 pt-2 border-t border-slate-100">
+		<label class="flex items-center justify-between gap-2">
+			<span>Digest hour</span>
+			<select data-pref="digestEmail.hour" class="rounded border-slate-300 text-sm">
+				${Array.from({ length: 24 }, (_, h) => `<option value="${h}">${String(h).padStart(2, "0")}:00</option>`).join("")}
+			</select>
+		</label>
+		<label class="flex items-center justify-between gap-2">
+			<span>Timezone</span>
+			<input data-pref="digestEmail.timezone" class="rounded border-slate-300 text-sm w-40" placeholder="Europe/Oslo">
+		</label>
+	</div>
 </aside>
 ```
 
-Wire each change to `rpc.auth.setPreferences.mutate(...)`. Five
-lines of vanilla TS.
+```ts
+// detect the user's browser timezone as a default
+const tzInput = $<HTMLInputElement>('[data-pref="digestEmail.timezone"]');
+if (!tzInput.value) tzInput.value = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+// hide digest-time when mode is not digest
+const modeSelect = $<HTMLSelectElement>('[data-pref="email.mode"]');
+const digestRow  = $<HTMLDivElement>("#digest-time");
+function syncDigestRow() { digestRow.classList.toggle("hidden", modeSelect.value !== "digest"); }
+modeSelect.addEventListener("change", syncDigestRow);
+syncDigestRow();
+
+// every input change persists immediately
+drawer.addEventListener("change", async () => {
+	await rpc.auth.setPreferences.mutate(readDrawerState(drawer));
+});
+```
+
+Two payoffs:
+
+- **Browser-detected timezone default** — `Intl.DateTimeFormat()
+  .resolvedOptions().timeZone` returns IANA names like
+  `"Europe/Oslo"`, exactly what the `flushWhen` predicate from
+  [4 · Deep research](../4-deep-research/) expects.
+- **Digest-only rows hide when mode is instant** — Tailwind's
+  `hidden` class is one DOM toggle; no JS animation library.
 
 ## Where you are
 

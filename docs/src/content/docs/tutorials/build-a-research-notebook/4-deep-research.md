@@ -206,11 +206,35 @@ export const researchReady = createNotification({
 		},
 
 		email: {
-			mode:         "digest",
-			digestKey:    (input: any) => input.userId,
-			digestSchedule: { cron: "0 8 * * *" },          // 08:00 daily
+			mode:           "digest",
+			digestKey:      (input: any) => input.userId,
+			digestSchedule: { interval: "15 minutes" },     // pulse; flushWhen decides actual delivery
 			digestMaxAge:   "24h",
-			renderItem:   async (opts: any) => ({
+			flushWhen: async ({ userId, ctx, lastFlushAt }) => {
+				const user = await ctx.db.users.findOne({ _id: userId });
+				const prefs = user?.preferences?.digestEmail ?? {};
+				const hour = prefs.hour ?? 8;
+				const tz   = prefs.timezone ?? "UTC";
+
+				const userHour = Number(
+					new Date().toLocaleString("en-US", {
+						hour:     "2-digit",
+						hour12:   false,
+						timeZone: tz,
+					}),
+				);
+
+				if (userHour !== hour) return false;
+
+				if (lastFlushAt) {
+					const lastDay = new Date(lastFlushAt).toLocaleDateString("en-US", { timeZone: tz });
+					const today   = new Date().toLocaleDateString("en-US", { timeZone: tz });
+					if (lastDay === today) return false;
+				}
+
+				return true;
+			},
+			renderItem: async (opts: any) => ({
 				runId:   opts.input.runId,
 				topic:   opts.input.topic,
 				summary: opts.input.summary,
@@ -236,8 +260,26 @@ export const researchReady = createNotification({
 ```
 
 Per user, **push and in-app fire instantly**, **email batches up
-across the day and arrives at 8am** (or whenever the digest
-schedule says) with a list of every completed run.
+across the day and arrives at the hour each user chose** (default
+8am, configurable per user via `preferences.digestEmail.{ hour,
+timezone }`).
+
+How the digest delivery time gets honored:
+
+1. `digestSchedule: { interval: "15 minutes" }` — every 15 minutes,
+   the framework walks the pending digest queues.
+2. For each user with pending items, it calls `flushWhen({ userId,
+   ctx, lastFlushAt })`. The predicate reads the user's preferred
+   hour and timezone, checks whether it's that hour now, and
+   whether we've already flushed today.
+3. If yes, the framework calls `renderDigest({ items, ctx, userId
+   })` to produce the email and dispatches it. `lastFlushAt` is
+   updated automatically.
+4. If no, items stay in the queue for the next pulse.
+
+A user who picks `{ hour: 17, timezone: "Europe/Oslo" }` gets a
+digest at 17:00 Norwegian local time every day they have pending
+runs, regardless of where the server runs.
 
 A user reading the page when a run finishes:
 
@@ -269,8 +311,15 @@ export const setPreferences = createMutation({
 	description: "Update notification preferences for the current user.",
 	input: v.object({
 		push:  v.boolean().optional(),
-		email: v.object({ enabled: v.boolean(), mode: v.string() }).optional(),
 		inApp: v.boolean().optional(),
+		email: v.object({
+			enabled: v.boolean(),
+			mode:    v.string().regex(/^(instant|digest)$/),
+		}).optional(),
+		digestEmail: v.object({
+			hour:     v.number().integer().min(0).max(23),
+			timezone: v.string(),   // IANA timezone name, e.g. "Europe/Oslo"
+		}).optional(),
 	}),
 	output: v.object({}),
 	run: async (opts) => {

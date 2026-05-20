@@ -156,12 +156,68 @@ minutes after each event.
 A channel using `digest` mode must declare:
 
 - `digestKey(input)` — what to group by (usually `recipientId`)
-- `digestSchedule` — when to flush (cron or interval)
-- `renderItem(opts)` — what to record per event (minimal — just enough to render the digest later)
-- `renderDigest({ items, ctx, userId })` — what the combined message looks like
+- `digestSchedule` — how often the framework checks each pending
+  group (cron or interval). NOT the time it actually fires
+- `renderItem(opts)` — what to record per event (minimal — just
+  enough to render the digest later)
+- `renderDigest({ items, ctx, userId })` — what the combined message
+  looks like
 
-The framework keeps the digest queue in the job store; flush jobs
-register at boot from `digestSchedule`.
+The framework keeps the digest queue in the job store. On each
+`digestSchedule` pulse, it walks every pending group and asks: is
+this group ready to flush? The default answer is "yes, every time"
+— pulse interval = flush interval. For per-user timing, declare
+`flushWhen`:
+
+### `flushWhen` — per-user digest timing
+
+`flushWhen({ userId, ctx, items, lastFlushAt })` returns `true` if
+the framework should render and send the digest for this user now,
+`false` to keep the items queued for the next pulse.
+
+Use it when you want each user to control **when** they receive
+their digest. The pulse stays fast (every 15 minutes, every hour);
+the predicate reads the user's preference and gates delivery.
+
+```ts
+email: {
+	mode:           "digest",
+	digestKey:      (input) => input.userId,
+	digestSchedule: { interval: "15 minutes" },   // tight pulse
+	flushWhen: async ({ userId, ctx, lastFlushAt }) => {
+		const user = await ctx.db.users.findOne({ _id: userId });
+		const hour = user?.preferences?.digestHour ?? 8;
+		const tz   = user?.preferences?.timezone   ?? "UTC";
+
+		// What hour is it for this user right now?
+		const userHour = Number(
+			new Date().toLocaleString("en-US", { hour: "2-digit", hour12: false, timeZone: tz }),
+		);
+
+		if (userHour !== hour) return false;            // not their hour
+		if (lastFlushAt && isSameDayInTz(lastFlushAt, new Date(), tz)) return false;  // already sent today
+		return true;
+	},
+	renderItem:   async (opts) => ({ /* ... */ }),
+	renderDigest: async ({ items, ctx, userId }) => ({ /* ... */ }),
+},
+```
+
+Per-user timezone + hour, configurable from your settings UI, fully
+honored. The framework persists `lastFlushAt` per `(notification,
+digestKey)` so you don't have to track it yourself.
+
+### Flush frequencies vs delivery time
+
+| Pulse interval (`digestSchedule`) | What it controls |
+|---|---|
+| Short (5–15 min) | How often the framework checks each user's `flushWhen`. The user can have minute-level precision on their delivery time. |
+| Medium (1 hour) | Cheaper. Users get hourly precision. Fine for daily digests. |
+| Long (1 day) | One flush attempt per day per user. Use only when delivery time is fixed for everyone. |
+
+For a true "fixed time, same for everyone" digest, omit `flushWhen`
+and set `digestSchedule` directly to that cron (`0 8 * * *`). The
+pulse and the flush coincide.
 
 ## Per-user preferences override the mode
 
