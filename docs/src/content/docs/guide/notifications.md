@@ -279,13 +279,23 @@ type ChannelPreference = {
 	enabled: boolean;
 	mode?:   "instant" | "deferred" | "digest";   // override the notification's default
 	delay?:  number;                              // override for deferred mode
+	digest?: DigestPreference | null;              // for digest mode: per-user schedule
+};
+
+type DigestPreference = {
+	cron:     string;   // standard 5-field cron expression
+	timezone: string;   // IANA tz, e.g. "Europe/Oslo"
 };
 ```
 
-`enabled: false` skips the channel entirely. `mode: "digest"` flips
-an instant channel into digest mode using the channel's
-`renderDigest` (which must therefore be defined). Missing `mode`
-keeps the notification's declared default.
+- `enabled: false` skips the channel entirely.
+- `mode: "digest"` flips an instant channel into digest mode using
+  the channel's `renderDigest` (which must therefore be defined).
+- `digest: { cron, timezone }` overrides the channel's `defaultCron`
+  for this user.
+- `digest: null` disables the digest for this user (same as
+  `enabled: false`, but more specific).
+- Missing `mode` keeps the notification's declared default.
 
 ## Channels keys match adapter names
 
