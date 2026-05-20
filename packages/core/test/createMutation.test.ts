@@ -78,6 +78,32 @@ describe("createMutation", () => {
 		).toThrow(/description/);
 	});
 
+	it("opts.tick(payload) emits a progress event during run", async () => {
+		const ticks: unknown[] = [];
+		const m = createMutation({
+			run: async (opts) => {
+				opts.tick({ kind: "status", message: "loading" });
+				opts.tick({ kind: "status", message: "saving" });
+				return undefined;
+			},
+		});
+		await m.run({ input: {}, ctx: {}, tick: (t: unknown) => ticks.push(t) });
+		expect(ticks).toHaveLength(2);
+	});
+
+	it("opts.tick validates against the progress schema when declared", async () => {
+		const { v } = await import("../src/index.ts");
+		const m = createMutation({
+			progress: v.object({ kind: v.literal("status"), message: v.string() }),
+			run: async (opts) => {
+				opts.tick({ kind: "status", message: "ok" });           // valid
+				opts.tick({ kind: "wrong" } as never);                   // invalid; should throw
+				return undefined;
+			},
+		});
+		await expect(m.run({ input: {}, ctx: {}, tick: () => undefined })).rejects.toThrow();
+	});
+
 	it("requires output when tool is set", () => {
 		expect(() =>
 			createMutation({

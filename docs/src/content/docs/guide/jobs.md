@@ -81,7 +81,9 @@ createJob({
 | `job.at(date, input)` | Enqueue for a specific time. Returns the job id |
 | `job.in(ms, input)` | Sugar for `at(new Date(Date.now() + ms), input)` |
 | `job.cancel(jobId)` | Remove a queued job |
-| `job.status(jobId)` | `{ state: "queued" \| "running" \| "completed" \| "failed", attempts, lastError? }` |
+| `job.status(jobId)` | `{ state: "queued" \| "running" \| "completed" \| "failed", attempts, lastError?, lastTick? }` |
+| `job.watch(jobId)` | Async iterable of progress ticks + the final result. `for await` yields `{ kind: "tick", payload }` and finally `{ kind: "result", value }` or `{ kind: "error", error }` |
+| `job.result(jobId)` | Promise that resolves with the final return value (or rejects on failure). Sugar for waiting without consuming ticks |
 
 Schedule on the action record (`cron`, `interval`) registers
 automatically at boot. App code calls `.now()` / `.at()` for ad-hoc
@@ -177,6 +179,47 @@ instead of concurrency.
 On SIGTERM, the worker stops pulling new jobs, waits for in-flight
 ones to complete (or hit timeout), calls `store.close()`, and exits.
 Apps in Kubernetes / Docker shut down cleanly.
+
+## Progress and status
+
+Long jobs can emit progress via `opts.tick()` — same API queries
+and mutations use. Declare a `progress` schema on the job to type
+the events; omit it for free-form `{ message, progress?, data? }`.
+
+```ts
+createJob({
+	description: "Generate the monthly report.",
+	input:    v.object({ month: v.string() }),
+	progress: v.object({ stage: v.string(), pct: v.number() }),
+	run: async (opts) => {
+		opts.tick({ stage: "loading", pct: 0.1 });
+		const data = await loadMonth(opts.input.month);
+
+		opts.tick({ stage: "aggregating", pct: 0.5 });
+		const report = await aggregate(data);
+
+		opts.tick({ stage: "rendering", pct: 0.9 });
+		await render(report);
+	},
+});
+```
+
+Observers tail the job:
+
+```ts
+const id = generateReport.now({ month: "2026-05" });
+
+for await (const event of generateReport.watch(id)) {
+	if (event.kind === "tick")   updateProgressBar(event.payload);
+	if (event.kind === "result") notify("Done");
+	if (event.kind === "error")  alert(event.error.message);
+}
+```
+
+`job.status(jobId)` includes the last tick payload so dashboards
+can read state without subscribing. The job store keeps ticks for a
+short window (configurable; default 5 minutes after completion) so
+late `watch()` calls can replay the recent history.
 
 ## Retries and backoff
 

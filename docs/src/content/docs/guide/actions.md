@@ -281,6 +281,34 @@ inferred from the async generator. We recommend declaring it for any
 subscription that crosses a trust boundary or that needs an LLM-facing
 surface.
 
+### `progress` (optional)
+
+A validator describing payloads streamed during a long call via
+`opts.tick(...)`. Available on **queries, mutations, jobs, and
+notifications** — any primitive whose `run` can take measurable time
+and benefits from intermediate status. The final return is still a
+single value (or void); progress events flow alongside it before the
+final result arrives.
+
+```ts
+progress: v.union([
+	v.object({ kind: v.literal("status"), message: v.string(), progress: v.number().optional() }),
+	v.object({ kind: v.literal("text_delta"), text: v.string() }),
+	v.object({ kind: v.literal("tool_call"), tool: v.string(), input: v.any() }),
+	v.object({ kind: v.literal("tool_result"), tool: v.string(), output: v.any() }),
+]),
+```
+
+`opts.tick(payload)` (see `run` below) validates against this schema
+and surfaces to the client via the RPC client's `onTick` callback
+or async iterator. Common shape across agent surfaces: a tagged
+union of status / tool_call / tool_result / text_delta events.
+
+If `progress` is omitted, `opts.tick()` accepts free-form
+`{ message, progress?, data? }` and emits without validation.
+
+See [Agents](/guide/agents/) for the full pattern.
+
 ### `run`
 
 The function that does the work. Always async. Receives a single `opts`
@@ -297,9 +325,28 @@ run: async opts => {
 - `opts.ctx` is whatever the calling surface decided to provide. For RPC,
   it's the per-request context. For agents, it's the agent's task
   context. For tests and scripts, it's whatever you pass to `.run()`.
-- Additional fields may be added on `opts` by specific surfaces (a queue
-  surface might add `opts.job`, an agent surface might add `opts.tool`).
-  Read them when you need them; destructure if you prefer.
+- `opts.tick(payload)` — emit a progress event during long-running
+  work. Validates against the action's `progress` schema if declared.
+  Callers receive ticks via the RPC client's `onTick` callback or
+  the streaming async iterator. Available on every kind that runs in
+  the foreground (query, mutation, job, notification); subscription's
+  `yield` already covers its streaming case.
+- Additional fields may be added on `opts` by specific surfaces (a job
+  worker adds `opts.job` with `{ id, attempt, scheduledAt }`; an agent
+  surface adds `opts.tool` with the inbound tool-call frame). Read
+  them when you need them.
+
+```ts
+run: async (opts) => {
+	opts.tick({ kind: "status", message: "Fetching…", progress: 0.1 });
+	const data = await load();
+
+	opts.tick({ kind: "status", message: "Processing…", progress: 0.6 });
+	const result = await process(data);
+
+	return result;
+},
+```
 
 `opts` is preferred over destructuring at the parameter list because it
 threads through `await someOtherAction.run(opts)` cleanly — no rebuilding

@@ -35,3 +35,9 @@ describe.todo("JobStore interface — enqueue, next, complete, fail, cancel, sta
 describe.todo("In-memory store — default; survives nothing");
 
 describe.todo("Bus events — job.enqueued, job.started, job.completed, job.failed, job.retried");
+
+describe.todo("opts.tick(payload) — emits progress; validated against progress schema if declared");
+describe.todo("job.watch(jobId) — async iterable yields { kind: 'tick' | 'result' | 'error' }");
+describe.todo("job.result(jobId) — promise of final value (or rejection)");
+describe.todo("job.status(jobId).lastTick — most recent tick payload");
+describe.todo("Tick history — kept for a configurable window after completion (default 5 min)");
