@@ -159,14 +159,26 @@ Browser bundle at `packages/ui/browser.js` (~13 kB).
 
 ## What still needs work
 
-1. Real LLM in `examples/research` — wired but commented as
+1. **Drop `@vyn/db-sqlite` and `@vyn/db-mongo` as packages.** Vyn's
+   stance: bring your own database. Apps import the driver
+   directly (`node:sqlite`, `mongodb`, `pg`, whatever) and wire it
+   into `staticContext`. The two adapter packages are an
+   unnecessary indirection — remove them and update the tutorials
+   to show direct driver usage.
+2. **Rewire `examples/research` to use real MongoDB** via the
+   `mongodb` driver directly. Drop the in-memory Map fallback.
+   Add a docker-compose.yml so the example boots its own Mongo
+   for development.
+3. **Rewire `examples/notes-sqlite` similarly** — drop the
+   `@vyn/db-sqlite` dependency, use `node:sqlite` directly. Keep
+   the example small enough to read in one sitting.
+4. Real LLM in `examples/research` — wired but commented as
    ANTHROPIC_API_KEY-gated; needs more polish + tool-use loop
-2. MongoDB integration test harness (docker-compose for CI)
-3. Tutorial doc reconciliation across the build-a-research-notebook
+5. Tutorial doc reconciliation across the build-a-research-notebook
    pages (some still reference the all-or-nothing tutorial flow
    while the example builds incrementally)
-4. UI behavior interaction tests via Playwright (currently
+6. UI behavior interaction tests via Playwright (currently
    happy-dom unit only; full keyboard / focus / ARIA needs a real
    browser)
-5. Form validation: native validity API + Vyn-side helpers
-6. `vyn build` actually building (vs. shipping sources directly)
+7. Form validation: native validity API + Vyn-side helpers
+8. `vyn build` actually building (vs. shipping sources directly)
