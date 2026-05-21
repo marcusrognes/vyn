@@ -24,6 +24,7 @@
 	},
 	"dependencies": {
 		"@vyn/core": "*",
+		"esbuild": "^0.24.0",
 		"ws": "^8.18.0"
 	},
 	"devDependencies": {

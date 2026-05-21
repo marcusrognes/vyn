@@ -2,8 +2,9 @@
 // vyn CLI. Subcommands: init, dev, build, check, gen, mcp, worker.
 
 import { spawn } from "node:child_process";
-import { mkdir, writeFile, readdir, stat, readFile } from "node:fs/promises";
+import { mkdir, writeFile, readdir, stat, readFile, rm } from "node:fs/promises";
 import { existsSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { join, dirname, relative, basename, extname } from "node:path";
 
 const cwd = process.cwd();
@@ -120,7 +121,53 @@ async function dev() {
 
 async function build() {
 	await gen();
-	console.log("[vyn] build: nothing to compile (Node strip-types runs sources directly).");
+
+	const publicDir = join(cwd, "public");
+	if (!existsSync(publicDir)) {
+		console.log("[vyn] build: no public/ directory — nothing to bundle.");
+		return;
+	}
+
+	const entries = await walkFiles(publicDir, /\.ts$/, ["dist"]);
+	if (entries.length === 0) {
+		console.log("[vyn] build: no .ts entries under public/ — nothing to bundle.");
+		return;
+	}
+
+	const distDir = join(publicDir, "dist");
+	await rm(distDir, { recursive: true, force: true });
+	await mkdir(distDir, { recursive: true });
+
+	const esbuild = await import("esbuild");
+	const manifest: Record<string, string> = {};
+
+	for (const entry of entries) {
+		const relTs  = "/" + relative(publicDir, entry).replace(/\\/g, "/");
+		const srcUrl = relTs.replace(/\.ts$/, ".js");
+
+		const result = await esbuild.build({
+			entryPoints: [entry],
+			bundle:      true,
+			format:      "esm",
+			platform:    "browser",
+			target:      "es2022",
+			write:       false,
+			minify:      true,
+			sourcemap:   false,
+			logLevel:    "silent",
+		});
+		const bytes = Buffer.from(result.outputFiles![0].contents);
+		const hash  = createHash("sha256").update(bytes).digest("hex").slice(0, 10);
+		const distRel = srcUrl.replace(/\.js$/, `.${hash}.js`);
+		const outPath = join(distDir, distRel);
+		await mkdir(dirname(outPath), { recursive: true });
+		await writeFile(outPath, bytes);
+		manifest[srcUrl] = "/dist" + distRel;
+		console.log(`  ${srcUrl} → ${manifest[srcUrl]} (${bytes.length} bytes)`);
+	}
+
+	await writeFile(join(distDir, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
+	console.log(`\n[vyn] build: ${entries.length} bundles → public/dist/, manifest at public/dist/manifest.json`);
 }
 
 async function check() {
@@ -238,13 +285,14 @@ async function gen() {
 	console.log(`[vyn] gen: wrote _vyn.gen.ts (${actionFiles.length} actions, ${routeFiles.length} routes)`);
 }
 
-async function walkFiles(dir: string, pattern: RegExp): Promise<string[]> {
+async function walkFiles(dir: string, pattern: RegExp, skipDirs: string[] = []): Promise<string[]> {
 	const entries = await readdir(dir);
 	const out: string[] = [];
 	for (const name of entries) {
+		if (skipDirs.includes(name)) continue;
 		const full = join(dir, name);
 		const s = await stat(full);
-		if (s.isDirectory()) out.push(...await walkFiles(full, pattern));
+		if (s.isDirectory()) out.push(...await walkFiles(full, pattern, skipDirs));
 		else if (pattern.test(name)) out.push(full);
 	}
 	return out;

@@ -12,6 +12,7 @@ import { handleRpc } from "./rpc.ts";
 import { handleMcp } from "./mcp.ts";
 import { attachWebSocket } from "./ws.ts";
 import { tryStatic } from "./static.ts";
+import { makeTryBundle, loadManifest } from "./bundle.ts";
 import { identityTransformer, type Transformer } from "./transformer.ts";
 import { EventBus, type BaseCtx, type CookieOpts } from "./ctx.ts";
 import { parseCookies, serializeCookie } from "./cookies.ts";
@@ -42,6 +43,8 @@ export async function serve<S extends object = {}, D extends object = {}>(opts: 
 	const publicDir   = opts.publicDir   ?? join(process.cwd(), "public");
 	const staticCtx   = (opts.staticContext ? await opts.staticContext() : ({} as S));
 	const indexHtml   = await readFile(join(publicDir, "index.html"), "utf-8").catch(() => undefined);
+	const manifest    = await loadManifest(publicDir);
+	const tryBundle   = makeTryBundle({ publicDir, manifest });
 	const bus         = new EventBus();
 
 	if (opts.notify) installNotify(opts.notify);
@@ -93,7 +96,8 @@ export async function serve<S extends object = {}, D extends object = {}>(opts: 
 			} else if (url2.pathname === "/_vyn/ui.js") {
 				response = await serveUiBundle();
 			} else {
-				response = await tryStatic(request, { root: publicDir, indexHtml });
+				response = await tryBundle(url2.pathname);
+				if (!response) response = await tryStatic(request, { root: publicDir, indexHtml });
 			}
 
 			if (!response) response = new Response("not found", { status: 404 });

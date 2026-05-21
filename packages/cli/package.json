@@ -27,6 +27,9 @@
 		"directory": "packages/cli"
 	},
 	"homepage": "https://rognes.guru/vyn/",
+	"dependencies": {
+		"esbuild": "^0.24.0"
+	},
 	"publishConfig": {
 		"access": "public"
 	}
