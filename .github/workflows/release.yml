@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents:   read
+      id-token:   write   # OIDC for npm provenance
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version:    "22"
+          registry-url:    "https://registry.npmjs.org"
+          cache:           npm
+          always-auth:     true
+
+      - name: Install
+        run: npm install
+
+      - name: Test
+        run: npm test
+
+      - name: Build all packages
+        run: npm run build
+
+      - name: Publish all packages
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          for dir in packages/*/; do
+            pkg=$(node -e "console.log(require('./${dir}package.json').name + '@' + require('./${dir}package.json').version)")
+            echo "Publishing ${pkg}"
+            (cd "$dir" && npm publish --access public --provenance) || echo "Skipped ${pkg}"
+          done

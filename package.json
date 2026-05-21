@@ -8,12 +8,14 @@
 		"examples/*"
 	],
 	"scripts": {
-		"docs:dev": "npm --workspace docs run dev",
-		"docs:build": "npm --workspace docs run build",
+		"docs:dev":     "npm --workspace docs run dev",
+		"docs:build":   "npm --workspace docs run build",
 		"docs:preview": "npm --workspace docs run preview",
-		"test": "vitest run",
-		"test:watch": "vitest",
-		"test:ui": "playwright test"
+		"test":         "vitest run",
+		"test:watch":   "vitest",
+		"test:ui":      "playwright test",
+		"build":        "npm run build --workspaces --if-present",
+		"publish:all":  "npm publish --workspaces --if-present --access public"
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.49.0",

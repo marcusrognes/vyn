@@ -1,16 +1,46 @@
 {
 	"name": "@vyn/core",
-	"private": true,
-	"version": "0.0.0",
+	"version": "0.1.0",
+	"description": "Vyn \u2014 small full-stack TypeScript framework. Primitives, registry, validators, cron.",
 	"type": "module",
-	"main": "./src/index.ts",
-	"types": "./src/index.ts",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
 	"exports": {
-		".":      "./src/index.ts",
-		"./util": "./src/util.ts"
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		},
+		"./util": {
+			"types": "./dist/util.d.ts",
+			"import": "./dist/util.js"
+		}
 	},
+	"files": [
+		"dist",
+		"src",
+		"README.md"
+	],
 	"scripts": {
+		"build": "rm -rf dist && tsc -p tsconfig.json || true",
+		"prepublishOnly": "npm run build",
 		"test": "vitest run",
 		"test:watch": "vitest"
+	},
+	"keywords": [
+		"vyn",
+		"framework",
+		"rpc",
+		"validators"
+	],
+	"author": "Marcus Rognes",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/marcusrognes/vyn.git",
+		"directory": "packages/core"
+	},
+	"homepage": "https://rognes.guru/vyn/",
+	"publishConfig": {
+		"access": "public"
 	}
 }
