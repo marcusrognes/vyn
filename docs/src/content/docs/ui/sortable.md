@@ -11,7 +11,7 @@ into a new position. Emits a `reorder` event with the moved item and
 its new index; the consumer updates the data.
 
 For cross-container drag-and-drop (moving items between lists), see
-[`drag-drop`](/ui/drag-drop/).
+[`drag-drop`](/vyn/ui/drag-drop/).
 
 ```html
 <ul data-sortable>
@@ -95,5 +95,5 @@ remove the delay.
 
 ## See also
 
-- [`@vyn/ui/drag-drop`](/ui/drag-drop/) — cross-container drag-and-drop
-- [`@vyn/ui/keyboard-nav`](/ui/keyboard-nav/) — for keyboard-only navigation between items when not reordering
+- [`@vyn/ui/drag-drop`](/vyn/ui/drag-drop/) — cross-container drag-and-drop
+- [`@vyn/ui/keyboard-nav`](/vyn/ui/keyboard-nav/) — for keyboard-only navigation between items when not reordering

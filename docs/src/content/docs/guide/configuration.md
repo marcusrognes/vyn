@@ -255,7 +255,7 @@ Pick the form that reads best for your codebase.
 
 ### When the split earns its keep
 
-For a tiny app — like the [todo tutorial](/tutorials/build-a-todo/),
+For a tiny app — like the [todo tutorial](/vyn/tutorials/build-a-todo/),
 where state is an in-memory `Map` — you don't need static ctx at all.
 A single `createContext: () => ({ todos })` works fine. The split
 becomes load-bearing once you have:
@@ -394,7 +394,7 @@ mutating something at module scope per-request, move it to ctx.
 
 ## See also
 
-- [Actions](/guide/actions/) — `opts.ctx` is what `run` receives
-- [Models](/guide/models/) — same `v.*` validators, same defaults rules
-- [Auth](/guide/auth/) — uses ctx to read and refresh the session
+- [Actions](/vyn/guide/actions/) — `opts.ctx` is what `run` receives
+- [Models](/vyn/guide/models/) — same `v.*` validators, same defaults rules
+- [Auth](/vyn/guide/auth/) — uses ctx to read and refresh the session
   (coming)

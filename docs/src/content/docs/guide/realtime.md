@@ -257,7 +257,7 @@ Your `subscription.emit(...)` calls do not change. The transport
 adapter handles cross-instance fan-out keyed by the subscription's
 registry name. Vyn ships transports for Redis, NATS, Postgres
 LISTEN/NOTIFY, MongoDB change streams, Postgres logical replication,
-Kafka, Redis Streams, and NATS JetStream — see [Transport](/guide/transport/)
+Kafka, Redis Streams, and NATS JetStream — see [Transport](/vyn/guide/transport/)
 for the full set, composable wrappers (logging, retry, multi-backend
 fan-out), and how to write a custom one.
 
@@ -288,13 +288,13 @@ run: async function* (opts) {
 },
 ```
 
-[Guards](/guide/guards/) covers the inline-helper pattern.
+[Guards](/vyn/guide/guards/) covers the inline-helper pattern.
 
 ## Presence
 
 Vyn does not ship a presence primitive. Presence is app-specific
 (who's online? per-thread? per-document?) and easy to build from
-`subscription.emit` plus a heartbeat. The [Build a chat](/tutorials/build-a-chat/)
+`subscription.emit` plus a heartbeat. The [Build a chat](/vyn/tutorials/build-a-chat/)
 tutorial (coming) implements it.
 
 ## Open questions
@@ -311,6 +311,6 @@ tutorial (coming) implements it.
 
 ## See also
 
-- [Actions](/guide/actions/) — the registry, the three primitives, the typed `.emit()` on subscriptions
-- [Guards](/guide/guards/) — inline access checks shared between mutations and subscriptions
-- [Errors](/guide/errors/) — `RpcError` thrown from `run`, surfaced to the client
+- [Actions](/vyn/guide/actions/) — the registry, the three primitives, the typed `.emit()` on subscriptions
+- [Guards](/vyn/guide/guards/) — inline access checks shared between mutations and subscriptions
+- [Errors](/vyn/guide/errors/) — `RpcError` thrown from `run`, surfaced to the client

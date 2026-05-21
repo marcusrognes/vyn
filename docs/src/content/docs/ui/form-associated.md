@@ -46,7 +46,7 @@ document.querySelector("form")!.addEventListener("submit", (e) => {
 
 The behavior reads `data-value` on the element as the source of
 truth. It works with anything that writes `data-value` —
-[`@vyn/ui/select`](/ui/select/), custom widgets, manual assignment.
+[`@vyn/ui/select`](/vyn/ui/select/), custom widgets, manual assignment.
 
 ## What it does
 
@@ -65,7 +65,7 @@ inside actual custom elements — you can't apply it to a plain
 element with a `data-value` that same form-participation contract
 without requiring a custom-element registration.
 
-For prebuilt widgets like [`<v-combobox>`](/ui/combobox/), the
+For prebuilt widgets like [`<v-combobox>`](/vyn/ui/combobox/), the
 custom element handles form association natively; the behavior is
 for the data-attribute path.
 
@@ -90,9 +90,9 @@ el.dataset.validity = "";                            // clear
 The browser's native error UI shows on submit, anchored to the
 element. For inline error display, listen to `invalid` and render
 your own message — pair with
-[`aria-describedby`](/ui/aria-describedby/).
+[`aria-describedby`](/vyn/ui/aria-describedby/).
 
 ## See also
 
-- [`@vyn/ui/select`](/ui/select/) — the primary writer of `data-value`
-- [`@vyn/ui/aria-describedby`](/ui/aria-describedby/) — for inline error messages
+- [`@vyn/ui/select`](/vyn/ui/select/) — the primary writer of `data-value`
+- [`@vyn/ui/aria-describedby`](/vyn/ui/aria-describedby/) — for inline error messages

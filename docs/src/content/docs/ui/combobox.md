@@ -166,6 +166,6 @@ combo.clear();                  // clears value and inputValue
 
 ## See also
 
-- [`@vyn/ui/select`](/ui/select/) — selection state via `data-select` (used for non-input listboxes)
-- [`@vyn/ui/popover`](/ui/popover/) — anchored positioning behavior used internally
-- [`@vyn/ui/keyboard-nav`](/ui/keyboard-nav/) — for listboxes that don't need a free-text input
+- [`@vyn/ui/select`](/vyn/ui/select/) — selection state via `data-select` (used for non-input listboxes)
+- [`@vyn/ui/popover`](/vyn/ui/popover/) — anchored positioning behavior used internally
+- [`@vyn/ui/keyboard-nav`](/vyn/ui/keyboard-nav/) — for listboxes that don't need a free-text input

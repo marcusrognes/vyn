@@ -13,12 +13,12 @@ a complex agent does. This page walks through how they compose.
 
 | Need | Primitive |
 |---|---|
-| Read data ("search notes", "fetch user") | [`createQuery`](/guide/actions/) with `tool: ...` |
-| Act on data ("create note", "send email") | [`createMutation`](/guide/actions/) with `tool: ...` |
+| Read data ("search notes", "fetch user") | [`createQuery`](/vyn/guide/actions/) with `tool: ...` |
+| Act on data ("create note", "send email") | [`createMutation`](/vyn/guide/actions/) with `tool: ...` |
 | Stream thought / tokens / tool calls back to the user | Any action with `progress` schema + `opts.tick(...)` |
-| Stay on a long-running conversation | [`createSubscription`](/guide/realtime/) |
-| Run overnight / scheduled / retryable work | [`createJob`](/guide/jobs/) |
-| Reach the user across channels | [`createNotification`](/guide/notifications/) |
+| Stay on a long-running conversation | [`createSubscription`](/vyn/guide/realtime/) |
+| Run overnight / scheduled / retryable work | [`createJob`](/vyn/guide/jobs/) |
+| Reach the user across channels | [`createNotification`](/vyn/guide/notifications/) |
 
 Every one of those is already in the registry. Tag with `tool: {}`
 and the MCP server exposes them as JSON-schema'd tools any LLM
@@ -139,7 +139,7 @@ opts.tick({ kind: "text_delta",  text: "Based on the results, " });
 
 The `progress` schema on the action types these events. Clients
 react via `onTick` (callback) or async iterator (see [Actions —
-`progress`](/guide/actions/#progress-optional)).
+`progress`](/vyn/guide/actions/#progress-optional)).
 
 ### Subscriptions for persistent agent threads
 
@@ -258,7 +258,7 @@ vyn mcp --stdio    # for Claude Desktop config
 serve({ port: 8000, mcp: true })   # HTTP at /mcp
 ```
 
-See [MCP](/guide/mcp/) for transport options and client config.
+See [MCP](/vyn/guide/mcp/) for transport options and client config.
 
 ## Patterns this composes
 
@@ -278,8 +278,8 @@ exist already cover it. Build the agent you need from the parts.
 
 ## See also
 
-- [Actions](/guide/actions/) — the registry and the five primitives
-- [Realtime](/guide/realtime/) — subscriptions for persistent agent streams
-- [Jobs](/guide/jobs/) — deferred / long-running agent work
-- [Notifications](/guide/notifications/) — agent → user delivery
-- [MCP](/guide/mcp/) — exposing tools to external LLMs
+- [Actions](/vyn/guide/actions/) — the registry and the five primitives
+- [Realtime](/vyn/guide/realtime/) — subscriptions for persistent agent streams
+- [Jobs](/vyn/guide/jobs/) — deferred / long-running agent work
+- [Notifications](/vyn/guide/notifications/) — agent → user delivery
+- [MCP](/vyn/guide/mcp/) — exposing tools to external LLMs

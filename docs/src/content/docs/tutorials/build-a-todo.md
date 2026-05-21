@@ -22,7 +22,7 @@ The whole app is fewer than 200 lines of code.
 
 ## Prerequisites
 
-- Vyn installed. See [Getting started](/getting-started/) for the install
+- Vyn installed. See [Getting started](/vyn/getting-started/) for the install
   step on your runtime of choice.
 - A working directory: `mkdir todo && cd todo && vyn init`.
 
@@ -88,7 +88,7 @@ kinds of discovery; you don't write a router config.
 The todo row's UI lives inline in `routes/index.js` because this app
 has exactly one route that renders it. When a second route would
 reuse the same markup, extract it into a
-`features/todos/todo-row.component.ts`. See [Components](/guide/components/).
+`features/todos/todo-row.component.ts`. See [Components](/vyn/guide/components/).
 
 ## Step 1 — the model
 
@@ -116,7 +116,7 @@ Note that `title` is the only required input — everything else has a
 default. `TodoSchema.create({ title: "Buy milk" })` will produce a fully
 populated object.
 
-If models are new to you, the [Models guide](/guide/models/) covers
+If models are new to you, the [Models guide](/vyn/guide/models/) covers
 defaults, constraints, derivations, and the `Note.create` factory in
 detail.
 
@@ -407,18 +407,18 @@ You have a working multi-tab realtime app driven entirely by typed
 actions and one subscription. From here:
 
 - **Persistence.** Swap the in-memory `Map` for SQLite in `createContext`.
-  The actions don't change. See [Database](/guide/database/) (coming).
+  The actions don't change. See [Database](/vyn/guide/database/) (coming).
 - **Auth.** Gate actions to a logged-in user and scope the list per-user.
-  See [Auth](/guide/auth/) (coming).
+  See [Auth](/vyn/guide/auth/) (coming).
 - **Categories or projects.** Add a `projectId` field to `Todo` and a
   `projectId` field to the subscription's input. Inside `run`, filter
   `opts.events` so a tab subscribed to one project only sees events
   for that project.
 - **Forms from models.** Generate the add form from `Todo`'s schema
   instead of writing the HTML by hand. See [Models — constraints are
-  data](/guide/models/#constraints-are-data).
+  data](/vyn/guide/models/#constraints-are-data).
 - **Agent feature.** Use `@vyn/agent` to run an in-process LLM that can
-  use the same tools, scoped to a single user. See [Agents](/guide/agents/)
+  use the same tools, scoped to a single user. See [Agents](/vyn/guide/agents/)
   (coming).
 
 If anything in this tutorial felt over-built or under-built, the source

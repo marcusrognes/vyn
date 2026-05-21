@@ -6,7 +6,7 @@ sidebar:
 ---
 
 `@vyn/ui/drag-drop` lets users move elements from a `data-drag`
-container into a `data-drop` zone. Unlike [`sortable`](/ui/sortable/)
+container into a `data-drop` zone. Unlike [`sortable`](/vyn/ui/sortable/)
 (which reorders within one list), `drag-drop` is for moving items
 between lists, into trash zones, or onto canvas surfaces.
 
@@ -127,5 +127,5 @@ or external file drops, use the native HTML5 DataTransfer API.
 
 ## See also
 
-- [`@vyn/ui/sortable`](/ui/sortable/) — within-list reordering
-- [`@vyn/ui/keyboard-nav`](/ui/keyboard-nav/) — for non-drag list navigation
+- [`@vyn/ui/sortable`](/vyn/ui/sortable/) — within-list reordering
+- [`@vyn/ui/keyboard-nav`](/vyn/ui/keyboard-nav/) — for non-drag list navigation

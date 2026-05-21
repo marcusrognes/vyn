@@ -7,7 +7,7 @@ sidebar:
 
 `@vyn/ui/select` is a small behavior module that adds selection
 state to any container of items. Pair it with
-[`@vyn/ui/keyboard-nav`](/ui/keyboard-nav/) for keyboard
+[`@vyn/ui/keyboard-nav`](/vyn/ui/keyboard-nav/) for keyboard
 operation; alone it handles mouse + programmatic selection and the
 `aria-selected` state.
 
@@ -160,11 +160,11 @@ ul.addEventListener("change", async (e) => {
 
 ~80 lines. The behavior is mostly attribute parsing + click handler
 + event dispatch. The keyboard work is offloaded to
-[`@vyn/ui/keyboard-nav`](/ui/keyboard-nav/), which you import
+[`@vyn/ui/keyboard-nav`](/vyn/ui/keyboard-nav/), which you import
 alongside.
 
 ## See also
 
-- [`@vyn/ui/keyboard-nav`](/ui/keyboard-nav/) — arrow keys and focus management; usually paired
-- [`@vyn/ui/form-associated`](/ui/form-associated/) — to make a `data-select` container submit a value with a `<form>`
-- [`<v-combobox>`](/ui/combobox/) — input + listbox widget when the `aria-activedescendant` pattern is needed
+- [`@vyn/ui/keyboard-nav`](/vyn/ui/keyboard-nav/) — arrow keys and focus management; usually paired
+- [`@vyn/ui/form-associated`](/vyn/ui/form-associated/) — to make a `data-select` container submit a value with a `<form>`
+- [`<v-combobox>`](/vyn/ui/combobox/) — input + listbox widget when the `aria-activedescendant` pattern is needed

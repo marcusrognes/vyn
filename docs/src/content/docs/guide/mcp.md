@@ -6,7 +6,7 @@ sidebar:
 ---
 
 :::caution
-Page coming. The shape is settled — see [Actions: the `tool` field](/guide/actions/#tool-llm-surfaces).
+Page coming. The shape is settled — see [Actions: the `tool` field](/vyn/guide/actions/#tool-llm-surfaces).
 This page will cover transport options, authentication, MCP client setup,
 and tool filtering in detail.
 :::

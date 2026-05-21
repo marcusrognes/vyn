@@ -14,7 +14,7 @@ subscription streams changes.
 Drop in an auth feature mirroring the earlier auth tutorial — the
 mechanics don't change. The relevant outputs are: a `requireSession`
 guard and `signup` / `login` / `logout` mutations. See
-[Build notes with auth](/tutorials/build-notes-with-auth/) for the
+[Build notes with auth](/vyn/tutorials/build-notes-with-auth/) for the
 full code; this tutorial assumes you've ported those files (in the
 new tutorial they live at `features/auth/`).
 
@@ -240,7 +240,7 @@ text search, realtime subscription scoped per-user. Tooling-wise:
 - `tool: {}` is set on the mutations so MCP exposes them too
 - The realtime subscription filters by user in `run`, not by
   declarative match — straight from
-  [`/guide/realtime/`](/guide/realtime/)
+  [`/guide/realtime/`](/vyn/guide/realtime/)
 
 Continue to **[3 · Agent](../3-agent/)** to add the AI assistant
 that searches your notes and the web, streams its thinking, and

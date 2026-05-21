@@ -107,7 +107,7 @@ cleanly.
 ## Composing with other behaviors
 
 `keyboard-nav` provides focus management and arrow keys. To add
-selection, pair with [`@vyn/ui/select`](/ui/select/):
+selection, pair with [`@vyn/ui/select`](/vyn/ui/select/):
 
 ```html
 <ul data-keyboard-nav data-select="single" data-value="editor">
@@ -127,7 +127,7 @@ ul.addEventListener("change", (e) => {
 });
 ```
 
-For floating menus, also pair with [`@vyn/ui/popover`](/ui/popover/):
+For floating menus, also pair with [`@vyn/ui/popover`](/vyn/ui/popover/):
 
 ```html
 <button data-popover-trigger="role-menu">Role ▾</button>
@@ -152,8 +152,8 @@ element:
 | Listbox               | `data-keyboard-nav` + `data-select` + `role="listbox"` |
 | Tabs                  | `data-keyboard-nav="horizontal"` + `data-select` + `role="tablist"` (+ panel show/hide via `data-tabs`) |
 | Dropdown              | trigger + popover + menu (composes the menu pattern inside a `data-popover` host) |
-| Combobox              | reach for the [`<v-combobox>`](/ui/combobox/) widget — the `aria-activedescendant` pattern is materially different |
-| Data grid             | reach for the [`<v-grid>`](/ui/grid/) widget — cell rendering + range select want encapsulated state |
+| Combobox              | reach for the [`<v-combobox>`](/vyn/ui/combobox/) widget — the `aria-activedescendant` pattern is materially different |
+| Data grid             | reach for the [`<v-grid>`](/vyn/ui/grid/) widget — cell rendering + range select want encapsulated state |
 
 ## Implementation note
 
@@ -163,6 +163,6 @@ requirements diverge.
 
 ## See also
 
-- [`@vyn/ui/select`](/ui/select/) — selection state wired via `data-select`
-- [`@vyn/ui/popover`](/ui/popover/) — anchored positioning via `data-popover`
-- [Components guide](/guide/components/) — write your own custom elements on top
+- [`@vyn/ui/select`](/vyn/ui/select/) — selection state wired via `data-select`
+- [`@vyn/ui/popover`](/vyn/ui/popover/) — anchored positioning via `data-popover`
+- [Components guide](/vyn/guide/components/) — write your own custom elements on top

@@ -68,4 +68,4 @@ prefix instead.
 
 ## See also
 
-- [`@vyn/ui/keyboard-nav`](/ui/keyboard-nav/) — for full arrow-key + typeahead lists; usually paired
+- [`@vyn/ui/keyboard-nav`](/vyn/ui/keyboard-nav/) — for full arrow-key + typeahead lists; usually paired

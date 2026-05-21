@@ -43,7 +43,7 @@ The fallback list lets the engine flip to the opposite side when
 there's no room. Pair with the native popover attribute and you
 have a complete anchored popover with no JavaScript.
 
-[`@vyn/ui/anchor`](/ui/anchor/) leads with this CSS-first approach
+[`@vyn/ui/anchor`](/vyn/ui/anchor/) leads with this CSS-first approach
 and falls back to JS positioning where needed.
 
 ### Popover API
@@ -60,7 +60,7 @@ rendering, Esc dismissal, outside-click dismissal, focus restoration.
 
 No JS. No `<v-popover>`. No `@vyn/ui/popover` for the common case.
 
-Use [`@vyn/ui/popover`](/ui/popover/) when you need anchored
+Use [`@vyn/ui/popover`](/vyn/ui/popover/) when you need anchored
 positioning (the native API doesn't ship anchor positioning
 universally yet) or to control state programmatically with the
 `data-popover` attribute pattern.
@@ -88,7 +88,7 @@ return value.
 The dialog handles focus trap. The form `method="dialog"` handles
 close + return value. The browser handles all of it.
 
-[`@vyn/ui/focus-trap`](/ui/focus-trap/) is for the rare non-dialog
+[`@vyn/ui/focus-trap`](/vyn/ui/focus-trap/) is for the rare non-dialog
 case where you need to constrain Tab focus inside a region that
 isn't a modal — for example, a drawer that should trap focus but
 not block the rest of the page.
@@ -121,7 +121,7 @@ error messages and screen-reader support.
 <input type="number" min="0" max="100" step="5">
 ```
 
-Pair with [`@vyn/ui/aria-describedby`](/ui/aria-describedby/) for
+Pair with [`@vyn/ui/aria-describedby`](/vyn/ui/aria-describedby/) for
 inline error text that screen readers announce alongside the input.
 
 ### Input type hints
@@ -153,9 +153,9 @@ basic theming.
 ### Form-associated custom elements
 
 For custom-element widgets that hold a value
-([`<v-combobox>`](/ui/combobox/) for example), use the native
+([`<v-combobox>`](/vyn/ui/combobox/) for example), use the native
 `formAssociated = true` + `ElementInternals` API — not Vyn's
-[`form-associated`](/ui/form-associated/) behavior. The behavior is
+[`form-associated`](/vyn/ui/form-associated/) behavior. The behavior is
 for plain HTML containers.
 
 ```ts
@@ -200,7 +200,7 @@ Set this on items inside a scroll container to control where
 }
 ```
 
-Pair with [`@vyn/ui/scroll-into-view`](/ui/scroll-into-view/);
+Pair with [`@vyn/ui/scroll-into-view`](/vyn/ui/scroll-into-view/);
 together they keep the focused item visible without overlap.
 
 ## Selection
@@ -225,14 +225,14 @@ association.
 </datalist>
 ```
 
-Reach for [`<v-combobox>`](/ui/combobox/) only when the visual
+Reach for [`<v-combobox>`](/vyn/ui/combobox/) only when the visual
 design requires custom styling or async data loading that
 `<datalist>` can't provide.
 
 ## Clipboard
 
 `navigator.clipboard.writeText(string)` is universal. The
-[`@vyn/ui/copy`](/ui/copy/) behavior wraps it with feedback and
+[`@vyn/ui/copy`](/vyn/ui/copy/) behavior wraps it with feedback and
 announcement, but for one-off cases the native call is enough.
 
 ## CSS

@@ -60,24 +60,24 @@ framework runtime to think about.
 
 | Module | Behavior | Composes via |
 |---|---|---|
-| [`@vyn/ui/keyboard-nav`](/ui/keyboard-nav/)        | Arrow keys, Home/End, roving tabindex                          | `data-keyboard-nav` |
-| [`@vyn/ui/typeahead`](/ui/typeahead/)              | Letter-key buffer + jump                                       | `data-typeahead` |
-| [`@vyn/ui/select`](/ui/select/)                    | Single/multi selection state via `data-value`; `aria-selected` | `data-select` |
-| [`@vyn/ui/popover`](/ui/popover/)                  | Anchored positioning + open/close                              | `data-popover` |
-| [`@vyn/ui/anchor`](/ui/anchor/)                    | Position one element relative to another (flip, offset)        | `data-anchor` |
-| [`@vyn/ui/dismiss`](/ui/dismiss/)                  | Esc + outside click + focus-out → `dismiss` event              | `data-dismiss` |
-| [`@vyn/ui/focus-trap`](/ui/focus-trap/)            | Contain Tab focus inside an element                            | `data-focus-trap` |
-| [`@vyn/ui/aria-describedby`](/ui/aria-describedby/) | Wire `aria-describedby` between two elements                  | `data-describes` |
-| [`@vyn/ui/tooltip`](/ui/tooltip/)                  | Hover/focus + describedby; composes anchor + dismiss + describedby | `data-tooltip` |
-| [`@vyn/ui/form-associated`](/ui/form-associated/)  | Custom value-holders participate in `<form>` submission         | `data-form-name` |
-| [`@vyn/ui/live`](/ui/live/)                        | `aria-live` region for ad-hoc announcements                    | `liveRegion(message)` helper |
-| [`@vyn/ui/sort`](/ui/sort/)                        | Column-header sort buttons with `aria-sort`                    | `data-sort-key` |
-| [`@vyn/ui/edit`](/ui/edit/)                        | Inline-editable cells (Enter to edit, Esc to cancel, Enter/Tab to commit) | `data-editable` |
-| [`@vyn/ui/sortable`](/ui/sortable/)                | Drag to reorder a list; emits `reorder`                         | `data-sortable` |
-| [`@vyn/ui/drag-drop`](/ui/drag-drop/)              | Cross-container drag-and-drop with keyboard fallback           | `data-drag` / `data-drop` |
-| [`@vyn/ui/auto-resize`](/ui/auto-resize/)          | `<textarea>` grows with content                                | `data-auto-resize` |
-| [`@vyn/ui/copy`](/ui/copy/)                        | Button copies a target's text to clipboard with feedback        | `data-copy` |
-| [`@vyn/ui/scroll-into-view`](/ui/scroll-into-view/) | Scroll element into view on focus or attribute change          | `data-scroll-into-view` |
+| [`@vyn/ui/keyboard-nav`](/vyn/ui/keyboard-nav/)        | Arrow keys, Home/End, roving tabindex                          | `data-keyboard-nav` |
+| [`@vyn/ui/typeahead`](/vyn/ui/typeahead/)              | Letter-key buffer + jump                                       | `data-typeahead` |
+| [`@vyn/ui/select`](/vyn/ui/select/)                    | Single/multi selection state via `data-value`; `aria-selected` | `data-select` |
+| [`@vyn/ui/popover`](/vyn/ui/popover/)                  | Anchored positioning + open/close                              | `data-popover` |
+| [`@vyn/ui/anchor`](/vyn/ui/anchor/)                    | Position one element relative to another (flip, offset)        | `data-anchor` |
+| [`@vyn/ui/dismiss`](/vyn/ui/dismiss/)                  | Esc + outside click + focus-out → `dismiss` event              | `data-dismiss` |
+| [`@vyn/ui/focus-trap`](/vyn/ui/focus-trap/)            | Contain Tab focus inside an element                            | `data-focus-trap` |
+| [`@vyn/ui/aria-describedby`](/vyn/ui/aria-describedby/) | Wire `aria-describedby` between two elements                  | `data-describes` |
+| [`@vyn/ui/tooltip`](/vyn/ui/tooltip/)                  | Hover/focus + describedby; composes anchor + dismiss + describedby | `data-tooltip` |
+| [`@vyn/ui/form-associated`](/vyn/ui/form-associated/)  | Custom value-holders participate in `<form>` submission         | `data-form-name` |
+| [`@vyn/ui/live`](/vyn/ui/live/)                        | `aria-live` region for ad-hoc announcements                    | `liveRegion(message)` helper |
+| [`@vyn/ui/sort`](/vyn/ui/sort/)                        | Column-header sort buttons with `aria-sort`                    | `data-sort-key` |
+| [`@vyn/ui/edit`](/vyn/ui/edit/)                        | Inline-editable cells (Enter to edit, Esc to cancel, Enter/Tab to commit) | `data-editable` |
+| [`@vyn/ui/sortable`](/vyn/ui/sortable/)                | Drag to reorder a list; emits `reorder`                         | `data-sortable` |
+| [`@vyn/ui/drag-drop`](/vyn/ui/drag-drop/)              | Cross-container drag-and-drop with keyboard fallback           | `data-drag` / `data-drop` |
+| [`@vyn/ui/auto-resize`](/vyn/ui/auto-resize/)          | `<textarea>` grows with content                                | `data-auto-resize` |
+| [`@vyn/ui/copy`](/vyn/ui/copy/)                        | Button copies a target's text to clipboard with feedback        | `data-copy` |
+| [`@vyn/ui/scroll-into-view`](/vyn/ui/scroll-into-view/) | Scroll element into view on focus or attribute change          | `data-scroll-into-view` |
 
 Each behavior is ~50-150 LOC. The whole set fits in one mental model:
 a few hundred lines that turn HTML into accessible UI.
@@ -124,10 +124,10 @@ to express purely through data-attributes. These ship as
 
 | Widget | What it adds | Why a custom element |
 |---|---|---|
-| [`<v-grid>`](/ui/grid/)       | Data-driven cell rendering, range select, inline edit                  | Cell rendering and range selection model want encapsulated state |
-| [`<v-table>`](/ui/table/)     | Data-driven `<table>` with sort and row select                          | Same as grid but read-mostly and based on native `<table>` |
-| [`<v-combobox>`](/ui/combobox/) | Input + listbox with `aria-activedescendant` (input keeps focus)     | The virtual-focus pattern is materially different from roving tabindex |
-| [`<v-toaster>`](/ui/toast/)    | Queue, position stacking, dedup, route-survival                        | Queue management needs encapsulated state |
+| [`<v-grid>`](/vyn/ui/grid/)       | Data-driven cell rendering, range select, inline edit                  | Cell rendering and range selection model want encapsulated state |
+| [`<v-table>`](/vyn/ui/table/)     | Data-driven `<table>` with sort and row select                          | Same as grid but read-mostly and based on native `<table>` |
+| [`<v-combobox>`](/vyn/ui/combobox/) | Input + listbox with `aria-activedescendant` (input keeps focus)     | The virtual-focus pattern is materially different from roving tabindex |
+| [`<v-toaster>`](/vyn/ui/toast/)    | Queue, position stacking, dedup, route-survival                        | Queue management needs encapsulated state |
 
 Everything else that used to be a widget — menus, dropdowns,
 listboxes, dialogs, popovers, tooltips, tabs, buttons, switches,
@@ -209,6 +209,6 @@ compose these — read any of their sources to write your own.
 
 ## See also
 
-- [Components](/guide/components/) — write your own custom elements
+- [Components](/vyn/guide/components/) — write your own custom elements
   when you need them
 - The behavior reference pages above, each linked from the table

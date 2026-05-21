@@ -204,7 +204,7 @@ attached, so the model can react sensibly to "you're forbidden" vs
 "the resource doesn't exist." MCP and CLI map them to their protocol
 shapes the same way.
 
-See [Errors](/guide/errors/) (coming) for the full list and how each
+See [Errors](/vyn/guide/errors/) (coming) for the full list and how each
 surface translates them.
 
 ## When to extract a guard
@@ -239,9 +239,9 @@ production runs.
 
 ## See also
 
-- [Actions](/guide/actions/) — guards live inside `run`, not as an
+- [Actions](/vyn/guide/actions/) — guards live inside `run`, not as an
   action field
-- [Configuration](/guide/configuration/) — what's on `ctx` for guards
+- [Configuration](/vyn/guide/configuration/) — what's on `ctx` for guards
   to read
-- [Errors](/guide/errors/) — `RpcError` categories and surface mapping
+- [Errors](/vyn/guide/errors/) — `RpcError` categories and surface mapping
   (coming)

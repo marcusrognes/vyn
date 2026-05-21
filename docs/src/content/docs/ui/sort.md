@@ -109,5 +109,5 @@ column by cycling it back to unsorted.
 
 ## See also
 
-- [`<v-table>`](/ui/table/) — composes this for the prebuilt sortable table
-- [`<v-grid>`](/ui/grid/) — composes this for the data-driven grid
+- [`<v-table>`](/vyn/ui/table/) — composes this for the prebuilt sortable table
+- [`<v-grid>`](/vyn/ui/grid/) — composes this for the data-driven grid

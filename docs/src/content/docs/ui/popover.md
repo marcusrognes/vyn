@@ -32,8 +32,8 @@ doesn't cover:
    ships in Chromium only as of 2026, so cross-browser anchoring
    needs JS.
 2. **Composition with other behaviors** — combining popover with
-   [`keyboard-nav`](/ui/keyboard-nav/), [`select`](/ui/select/),
-   [`typeahead`](/ui/typeahead/) on the same element is what makes
+   [`keyboard-nav`](/vyn/ui/keyboard-nav/), [`select`](/vyn/ui/select/),
+   [`typeahead`](/vyn/ui/typeahead/) on the same element is what makes
    dropdown menus and listboxes work. The behavior reads/writes the
    open state via `data-open` so other behaviors can coordinate.
 
@@ -42,7 +42,7 @@ doesn't cover:
 | Need | Use |
 |---|---|
 | A simple floating panel with default dismiss | Native `popover` attribute + `popovertarget` |
-| Anchored to a trigger (positioning) | `@vyn/ui/popover` + [`@vyn/ui/anchor`](/ui/anchor/) |
+| Anchored to a trigger (positioning) | `@vyn/ui/popover` + [`@vyn/ui/anchor`](/vyn/ui/anchor/) |
 | Composed with `keyboard-nav` / `select` / `typeahead` | `@vyn/ui/popover` |
 | Modal blocking | Not a popover — use `<dialog>.showModal()` instead |
 
@@ -72,11 +72,11 @@ available, then layers anchored positioning on top.
 | Attribute | Type | Default | What it does |
 |---|---|---|---|
 | `data-popover` | boolean | required | Activates the behavior |
-| `data-anchor` | string | unset | id of the anchor element. When set, [`anchor`](/ui/anchor/) is composed automatically |
+| `data-anchor` | string | unset | id of the anchor element. When set, [`anchor`](/vyn/ui/anchor/) is composed automatically |
 | `data-placement` | placement | `"bottom-start"` | Position relative to anchor |
 | `data-offset` | number | `4` | Pixel gap |
 | `data-open` | boolean | `false` | Open state; reflected; assign to toggle |
-| `data-dismiss-on` | string | `"escape outside"` | What dismisses the popover. Forwarded to [`dismiss`](/ui/dismiss/) |
+| `data-dismiss-on` | string | `"escape outside"` | What dismisses the popover. Forwarded to [`dismiss`](/vyn/ui/dismiss/) |
 
 ## Attributes (on the trigger)
 
@@ -109,6 +109,6 @@ itself as needed.
 ## See also
 
 - Native [Popover API](https://developer.mozilla.org/en-US/docs/Web/API/Popover_API) — use this first
-- [`@vyn/ui/anchor`](/ui/anchor/) — positioning primitive composed automatically when `data-anchor` is set
-- [`@vyn/ui/dismiss`](/ui/dismiss/) — for popovers that need custom dismiss semantics
-- [Native platform](/guide/native-platform/) — what the browser already ships
+- [`@vyn/ui/anchor`](/vyn/ui/anchor/) — positioning primitive composed automatically when `data-anchor` is set
+- [`@vyn/ui/dismiss`](/vyn/ui/dismiss/) — for popovers that need custom dismiss semantics
+- [Native platform](/vyn/guide/native-platform/) — what the browser already ships

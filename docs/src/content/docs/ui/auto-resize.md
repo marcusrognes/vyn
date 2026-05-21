@@ -39,4 +39,4 @@ import "@vyn/ui/auto-resize";
 
 ## See also
 
-- [Components guide](/guide/components/) — for writing your own input behaviors
+- [Components guide](/vyn/guide/components/) — for writing your own input behaviors

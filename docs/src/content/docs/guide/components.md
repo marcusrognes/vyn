@@ -134,7 +134,7 @@ less painful:
 
 - **Inline the HTML instead.** For simple row rendering, just use
   `html`...`` inside the parent and skip the component entirely. See
-  the [Build a todo app](/tutorials/build-a-todo/) tutorial — it
+  the [Build a todo app](/vyn/tutorials/build-a-todo/) tutorial — it
   renders each row inline because the row's logic fits in five lines.
 - **Reach for a `mount` helper.** A small helper that creates the
   element, sets props, and returns it — encapsulates the dance:
@@ -255,9 +255,9 @@ patterns inside a single route, inline HTML is honest and short.
 
 ## See also
 
-- [Actions](/guide/actions/) — components don't call actions directly;
+- [Actions](/vyn/guide/actions/) — components don't call actions directly;
   they emit events for the route module to dispatch
-- [Realtime](/guide/realtime/) — components react to props changing,
+- [Realtime](/vyn/guide/realtime/) — components react to props changing,
   not to subscriptions; the route owns the subscription
-- [Build a todo app](/tutorials/build-a-todo/) — the tutorial renders
+- [Build a todo app](/vyn/tutorials/build-a-todo/) — the tutorial renders
   todo rows inline, no component needed for a single-route app

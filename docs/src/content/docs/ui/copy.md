@@ -57,8 +57,8 @@ wins.
 ## ARIA
 
 After a successful copy, the behavior announces "Copied to
-clipboard" via [`liveRegion`](/ui/live/). No focus shift, no popup.
+clipboard" via [`liveRegion`](/vyn/ui/live/). No focus shift, no popup.
 
 ## See also
 
-- [`@vyn/ui/live`](/ui/live/) — used internally for the announcement
+- [`@vyn/ui/live`](/vyn/ui/live/) — used internally for the announcement

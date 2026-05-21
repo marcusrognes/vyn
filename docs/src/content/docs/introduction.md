@@ -19,6 +19,6 @@ that literally — if a concept feels underexplained here, open the file.
 
 ## Where to go next
 
-- New to Vyn? Start with [Getting started](/getting-started/).
-- Want the pitch? Read [Why Vyn?](/why-vyn/).
-- Need a specific API? Jump to the [API reference](/api/server/).
+- New to Vyn? Start with [Getting started](/vyn/getting-started/).
+- Want the pitch? Read [Why Vyn?](/vyn/why-vyn/).
+- Need a specific API? Jump to the [API reference](/vyn/api/server/).

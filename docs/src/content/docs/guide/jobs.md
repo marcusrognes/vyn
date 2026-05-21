@@ -287,7 +287,7 @@ use. The framework emits:
 - `job.retried` `{ name, id, attempt, nextRunAt }`
 
 Listen on `ctx.bus` (the in-process bus) or pipe to your logger /
-APM via the [transport](/guide/transport/) wrapper pattern.
+APM via the [transport](/vyn/guide/transport/) wrapper pattern.
 
 ## When NOT to use a job
 
@@ -303,7 +303,7 @@ this email, expire this token, summarize this thread overnight.
 
 ## See also
 
-- [Actions](/guide/actions/) — the registry that holds jobs alongside other primitives
-- [Notifications](/guide/notifications/) — built on top of jobs; per-channel send semantics
-- [Configuration](/guide/configuration/) — `serve({ jobs })` shape
-- [Transport](/guide/transport/) — similar pluggable-adapter pattern
+- [Actions](/vyn/guide/actions/) — the registry that holds jobs alongside other primitives
+- [Notifications](/vyn/guide/notifications/) — built on top of jobs; per-channel send semantics
+- [Configuration](/vyn/guide/configuration/) — `serve({ jobs })` shape
+- [Transport](/vyn/guide/transport/) — similar pluggable-adapter pattern

@@ -242,7 +242,7 @@ export const greet = createQuery({
 });
 ```
 
-See [Models](/guide/models/) for sharing schemas across actions.
+See [Models](/vyn/guide/models/) for sharing schemas across actions.
 
 ### `output`
 
@@ -307,7 +307,7 @@ union of status / tool_call / tool_result / text_delta events.
 If `progress` is omitted, `opts.tick()` accepts free-form
 `{ message, progress?, data? }` and emits without validation.
 
-See [Agents](/guide/agents/) for the full pattern.
+See [Agents](/vyn/guide/agents/) for the full pattern.
 
 ### `run`
 
@@ -463,7 +463,7 @@ relevant subscription, and return. Each subscription's `run` decides
 whether the event matters for the connected client; the client decides
 whether the event matters for its cache.
 
-See [Realtime](/guide/realtime/) for the full pattern: subscription
+See [Realtime](/vyn/guide/realtime/) for the full pattern: subscription
 declaration, access checks inside `run`, filtering by input, and the
 client-side `invalidateOn` / `updateOn` query options that translate
 events into cache effects.
@@ -511,7 +511,7 @@ const cat = await rpc.notes.categories.list.query({});
 ```
 
 The RPC path is the registry name — there is no separate override. To
-change the path, rename or move the action file. [RPC](/guide/rpc/)
+change the path, rename or move the action file. [RPC](/vyn/guide/rpc/)
 covers the surface in detail.
 
 ### MCP server
@@ -537,7 +537,7 @@ For local clients that expect a stdio subprocess (Claude Desktop), run:
 vyn mcp --stdio
 ```
 
-Same app, same registry, stdio transport instead of HTTP. [MCP](/guide/mcp/)
+Same app, same registry, stdio transport instead of HTTP. [MCP](/vyn/guide/mcp/)
 covers the full surface.
 
 ### In-process agent
@@ -562,8 +562,8 @@ const result = await agent.run({
 ```
 
 Tools come from the same `tool` definitions. Agents respect
-`tool.dangerous` by pausing for confirmation. [Agents](/guide/agents/)
-and [MCP](/guide/mcp/) cover these surfaces in detail (coming).
+`tool.dangerous` by pausing for confirmation. [Agents](/vyn/guide/agents/)
+and [MCP](/vyn/guide/mcp/) cover these surfaces in detail (coming).
 
 ### CLI
 
@@ -688,7 +688,7 @@ guarantee is that every caller sees the same validated shape.
 ### Authorization
 
 Authorization is not an action field. It belongs to a layer that runs
-before the action and may decline to invoke it. See [Guards](/guide/guards/)
+before the action and may decline to invoke it. See [Guards](/vyn/guide/guards/)
 (coming) for the pattern. Until that page lands, do the check inside
 `run` — the action is still the single source of truth, and the check
 runs uniformly across every surface.
@@ -698,10 +698,10 @@ runs uniformly across every surface.
 If `run` would take longer than a single request can hold, write a
 mutation that enqueues itself rather than executing inline. The action's
 registry name is the queue job key. The queue runner is a custom surface
-consuming the registry; see [Background work](/guide/background/) (coming).
+consuming the registry; see [Background work](/vyn/guide/background/) (coming).
 
 ## See also
 
-- [Models](/guide/models/) — shared schemas referenced by actions
-- [RPC](/guide/rpc/) — the typed client built from the registry
-- [Realtime](/guide/realtime/) — cache invalidation and subscriptions
+- [Models](/vyn/guide/models/) — shared schemas referenced by actions
+- [RPC](/vyn/guide/rpc/) — the typed client built from the registry
+- [Realtime](/vyn/guide/realtime/) — cache invalidation and subscriptions

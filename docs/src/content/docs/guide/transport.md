@@ -411,6 +411,6 @@ the module's HMR dispose hook.
 
 ## See also
 
-- [Realtime](/guide/realtime/) — subscriptions and the `.emit()` shape
-- [Configuration](/guide/configuration/) — `serve()` options
-- [Actions](/guide/actions/) — the registry that produces transport names
+- [Realtime](/vyn/guide/realtime/) — subscriptions and the `.emit()` shape
+- [Configuration](/vyn/guide/configuration/) — `serve()` options
+- [Actions](/vyn/guide/actions/) — the registry that produces transport names

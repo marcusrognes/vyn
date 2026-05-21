@@ -6,8 +6,8 @@ sidebar:
 ---
 
 `@vyn/ui/tooltip` is a hover/focus-driven floating label. It wraps
-[`anchor`](/ui/anchor/), [`dismiss`](/ui/dismiss/), and
-[`aria-describedby`](/ui/aria-describedby/) into one
+[`anchor`](/vyn/ui/anchor/), [`dismiss`](/vyn/ui/dismiss/), and
+[`aria-describedby`](/vyn/ui/aria-describedby/) into one
 data-attribute. The tooltip target must have its own accessible
 name — the tooltip is **supplementary**, not the label.
 
@@ -32,7 +32,7 @@ tooltip shows on hover (after a short delay) or on focus
 |---|---|---|---|
 | `data-tooltip` | boolean | required | Activates the behavior |
 | `data-tooltip-for` | string | required | id of the target element |
-| `data-placement` | placement | `"top"` | See [anchor](/ui/anchor/) |
+| `data-placement` | placement | `"top"` | See [anchor](/vyn/ui/anchor/) |
 | `data-offset` | number | `4` | Pixel gap |
 | `data-show-delay` | number | `500` | ms before showing on hover (no delay on focus) |
 | `data-hide-delay` | number | `0` | ms before hiding on leave |
@@ -48,7 +48,7 @@ tooltip shows on hover (after a short delay) or on focus
   stays on the target.
 - **Hover into the tooltip itself:** does NOT keep it open. Tooltips
   are non-interactive; for hoverable content use a
-  [`popover`](/ui/popover/).
+  [`popover`](/vyn/ui/popover/).
 
 ## ARIA
 
@@ -65,13 +65,13 @@ target has its own accessible name; the tooltip adds detail.
   `aria-label`).
 - **For actions.** Tooltips never receive focus and can't contain
   interactive elements. For action menus, use a
-  [`popover`](/ui/popover/).
+  [`popover`](/vyn/ui/popover/).
 - **For form errors.** Show errors inline so they appear with the
-  field; use [`aria-describedby`](/ui/aria-describedby/) directly.
+  field; use [`aria-describedby`](/vyn/ui/aria-describedby/) directly.
 
 ## See also
 
-- [`@vyn/ui/anchor`](/ui/anchor/) — positioning primitive
-- [`@vyn/ui/dismiss`](/ui/dismiss/) — Esc handling
-- [`@vyn/ui/aria-describedby`](/ui/aria-describedby/) — for non-floating descriptions
-- [`@vyn/ui/popover`](/ui/popover/) — for interactive floating content
+- [`@vyn/ui/anchor`](/vyn/ui/anchor/) — positioning primitive
+- [`@vyn/ui/dismiss`](/vyn/ui/dismiss/) — Esc handling
+- [`@vyn/ui/aria-describedby`](/vyn/ui/aria-describedby/) — for non-floating descriptions
+- [`@vyn/ui/popover`](/vyn/ui/popover/) — for interactive floating content

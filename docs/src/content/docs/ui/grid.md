@@ -3,7 +3,7 @@ title: <v-grid>
 description: A keyboard-navigable data grid built from divs with the ARIA grid pattern. Two-dimensional arrow-key navigation, sortable columns, optional inline editing.
 ---
 
-A two-dimensional data grid. Unlike [`<v-table>`](/ui/table/) which
+A two-dimensional data grid. Unlike [`<v-table>`](/vyn/ui/table/) which
 wraps the native `<table>` element and is the right choice for
 read-mostly tabular data, `<v-grid>` is the right choice when you
 need a spreadsheet-like experience: cell-level focus, range
@@ -163,7 +163,7 @@ until edit is committed or cancelled.
 - **Large datasets need virtualization.** The current implementation
   renders every row; rendering >5000 rows starts to feel slow on
   low-end devices. A `<v-virtual-grid>` is in the roadmap (see
-  [Open questions](/ui/#open-questions)).
+  [Open questions](/vyn/ui/#open-questions)).
 
 ## Programmatic control
 
@@ -206,6 +206,6 @@ grid.addEventListener("activate", (e: CustomEvent) => {
 
 ## See also
 
-- [`<v-table>`](/ui/table/) — wraps native `<table>`; simpler, less power
-- [`@vyn/ui/keyboard-nav`](/ui/keyboard-nav/) + [`@vyn/ui/select`](/ui/select/) — write your own selection list from plain HTML when a custom element is overkill
-- [Components guide](/guide/components/) — for writing your own
+- [`<v-table>`](/vyn/ui/table/) — wraps native `<table>`; simpler, less power
+- [`@vyn/ui/keyboard-nav`](/vyn/ui/keyboard-nav/) + [`@vyn/ui/select`](/vyn/ui/select/) — write your own selection list from plain HTML when a custom element is overkill
+- [Components guide](/vyn/guide/components/) — for writing your own

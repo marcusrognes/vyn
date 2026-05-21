@@ -108,6 +108,6 @@ after flip. Use the state attribute for direction-aware styling:
 ## See also
 
 - Native [CSS Anchor Positioning](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_anchor_positioning) — use this first
-- [`@vyn/ui/popover`](/ui/popover/) — anchor + open/close + dismiss
-- [`@vyn/ui/tooltip`](/ui/tooltip/) — anchor + dismiss + describedby + hover/focus
-- [Native platform](/guide/native-platform/) — what the browser ships
+- [`@vyn/ui/popover`](/vyn/ui/popover/) — anchor + open/close + dismiss
+- [`@vyn/ui/tooltip`](/vyn/ui/tooltip/) — anchor + dismiss + describedby + hover/focus
+- [Native platform](/vyn/guide/native-platform/) — what the browser ships

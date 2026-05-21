@@ -86,11 +86,11 @@ release();
   the native `inert` attribute on the page's main content while the
   drawer is open. Pair with `data-focus-trap` on the drawer for the
   inside-trap behavior.
-- For Esc-to-close, pair with [`dismiss`](/ui/dismiss/).
+- For Esc-to-close, pair with [`dismiss`](/vyn/ui/dismiss/).
 
 ## See also
 
 - Native [`<dialog>.showModal()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLDialogElement/showModal) — use this for modals
 - Native [`inert` attribute](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/inert) — for marking rest-of-page non-interactive
-- [`@vyn/ui/dismiss`](/ui/dismiss/) — for Esc / outside / focus-out dismissal
-- [Native platform](/guide/native-platform/) — what the browser already ships
+- [`@vyn/ui/dismiss`](/vyn/ui/dismiss/) — for Esc / outside / focus-out dismissal
+- [Native platform](/vyn/guide/native-platform/) — what the browser already ships

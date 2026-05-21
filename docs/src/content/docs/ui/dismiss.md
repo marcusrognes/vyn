@@ -68,7 +68,7 @@ changes" prompts that the native API doesn't provide.
 
 ## Composing
 
-For dropdown menus, [`popover`](/ui/popover/) bundles `dismiss`
+For dropdown menus, [`popover`](/vyn/ui/popover/) bundles `dismiss`
 internally. Reach for `dismiss` directly when:
 
 - You're working with a non-popover element (sidebar, drawer, custom
@@ -80,5 +80,5 @@ internally. Reach for `dismiss` directly when:
 ## See also
 
 - Native [Popover API](https://developer.mozilla.org/en-US/docs/Web/API/Popover_API) — handles Esc + outside-click for `popover` elements automatically
-- [`@vyn/ui/popover`](/ui/popover/) — composes `dismiss` with anchor positioning
-- [`@vyn/ui/focus-trap`](/ui/focus-trap/) — for modal-style focus containment
+- [`@vyn/ui/popover`](/vyn/ui/popover/) — composes `dismiss` with anchor positioning
+- [`@vyn/ui/focus-trap`](/vyn/ui/focus-trap/) — for modal-style focus containment

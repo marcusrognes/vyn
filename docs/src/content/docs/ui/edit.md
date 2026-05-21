@@ -96,5 +96,5 @@ Use the state attribute for editing-mode styling:
 
 ## See also
 
-- [`<v-grid>`](/ui/grid/) — composes this for spreadsheet-like grids
-- [`@vyn/ui/keyboard-nav`](/ui/keyboard-nav/) — for cell-to-cell navigation between edits
+- [`<v-grid>`](/vyn/ui/grid/) — composes this for spreadsheet-like grids
+- [`@vyn/ui/keyboard-nav`](/vyn/ui/keyboard-nav/) — for cell-to-cell navigation between edits

@@ -85,7 +85,7 @@ Notable shapes:
   `*.actions.ts` files anywhere underneath; Vyn picks them up.
 - `env.ts` declares the env schema with `v.object({...}).parse(...)`.
   Boot fails if a required variable is missing — see
-  [Configuration](/guide/configuration/).
+  [Configuration](/vyn/guide/configuration/).
 - `server.ts` wires `staticContext` and `createContext`. The scaffold
   leaves both minimal; you fill them in as the app grows.
 
@@ -169,13 +169,13 @@ fetch, no code generation step on the client.
 
 ## Next steps
 
-- **[Build a todo app](/tutorials/build-a-todo/)** — a complete realtime
+- **[Build a todo app](/vyn/tutorials/build-a-todo/)** — a complete realtime
   app in under 200 lines. Best place to go after this.
-- **[Build notes with auth](/tutorials/build-notes-with-auth/)** — a
+- **[Build notes with auth](/vyn/tutorials/build-notes-with-auth/)** — a
   multi-user app with SQLite, sessions, and per-user scoping.
-- **[Actions](/guide/actions/)** — the registry of callable things and
+- **[Actions](/vyn/guide/actions/)** — the registry of callable things and
   the three primitives that populate it.
-- **[Configuration](/guide/configuration/)** — env validation and the
+- **[Configuration](/vyn/guide/configuration/)** — env validation and the
   three-layer ctx.
 
 ## Troubleshooting

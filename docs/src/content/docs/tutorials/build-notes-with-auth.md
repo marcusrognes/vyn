@@ -26,10 +26,10 @@ The whole app is around 400 lines of code.
 
 ## Prerequisites
 
-- Finish the [todo app tutorial](/tutorials/build-a-todo/) first — this
+- Finish the [todo app tutorial](/vyn/tutorials/build-a-todo/) first — this
   tutorial assumes you understand actions, models, components, and
   routes.
-- Vyn installed. See [Getting started](/getting-started/) for the
+- Vyn installed. See [Getting started](/vyn/getting-started/) for the
   install step on your runtime of choice.
 - A working directory: `mkdir notes && cd notes && vyn init`.
 
@@ -249,7 +249,7 @@ export function requireSession(opts: { ctx: Ctx }) {
 }
 ```
 
-When a [Guards](/guide/guards/) page lands, this helper becomes a
+When a [Guards](/vyn/guide/guards/) page lands, this helper becomes a
 proper guard registered against actions. For now the inline pattern is
 clear and short.
 
@@ -773,8 +773,8 @@ runs no matter the surface.
 
 ## See also
 
-- [Configuration](/guide/configuration/) — env validation and three-layer ctx
-- [Actions](/guide/actions/) — the registry and the three primitives
-- [Models](/guide/models/) — schemas, defaults, derivations
-- [Components](/guide/components/) — the render-function flavor used here
-- [Realtime](/guide/realtime/) — `onChanged.emit` + client-side patches
+- [Configuration](/vyn/guide/configuration/) — env validation and three-layer ctx
+- [Actions](/vyn/guide/actions/) — the registry and the three primitives
+- [Models](/vyn/guide/models/) — schemas, defaults, derivations
+- [Components](/vyn/guide/components/) — the render-function flavor used here
+- [Realtime](/vyn/guide/realtime/) — `onChanged.emit` + client-side patches

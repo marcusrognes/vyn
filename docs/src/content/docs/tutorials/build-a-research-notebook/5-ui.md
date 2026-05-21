@@ -468,13 +468,13 @@ You have a complete app:
   collaborator presence.
 - **Eval / observability.** Hook `notify.failed`, `job.failed`, and
   the agent's tool-result events into your APM via the
-  [transport wrapper](/guide/transport/) pattern.
+  [transport wrapper](/vyn/guide/transport/) pattern.
 - **Mobile.** The Web Push channel already works on mobile browsers;
   wrap the same pages in a PWA shell for installable behavior.
 
 ## See also
 
-- [Agents](/guide/agents/) — the composition pattern this tutorial demonstrates
-- [Jobs](/guide/jobs/), [Notifications](/guide/notifications/), [Transport](/guide/transport/)
-- [Configuration](/guide/configuration/) — `transformer`, `staticContext`, `createContext`, `notify`, `jobs`
-- [Build notes with auth](/tutorials/build-notes-with-auth/) — the simpler tutorial this builds on
+- [Agents](/vyn/guide/agents/) — the composition pattern this tutorial demonstrates
+- [Jobs](/vyn/guide/jobs/), [Notifications](/vyn/guide/notifications/), [Transport](/vyn/guide/transport/)
+- [Configuration](/vyn/guide/configuration/) — `transformer`, `staticContext`, `createContext`, `notify`, `jobs`
+- [Build notes with auth](/vyn/tutorials/build-notes-with-auth/) — the simpler tutorial this builds on

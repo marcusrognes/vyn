@@ -37,10 +37,10 @@ small.
 
 ## Prerequisites
 
-- Finish [Build notes with auth](/tutorials/build-notes-with-auth/)
+- Finish [Build notes with auth](/vyn/tutorials/build-notes-with-auth/)
   first — this tutorial assumes you understand actions, models,
   components, ctx layers, and basic auth.
-- Vyn installed. See [Getting started](/getting-started/).
+- Vyn installed. See [Getting started](/vyn/getting-started/).
 - MongoDB running locally (or a connection URL to a hosted instance).
   `docker run -d -p 27017:27017 mongo:7` is the fastest path.
 - An API key for the LLM provider you're using. The tutorial uses
@@ -78,7 +78,7 @@ they cross-link freely after.
 
 ## See also
 
-- [Actions](/guide/actions/) — the registry and the five primitives this tutorial uses
-- [Jobs](/guide/jobs/) — what powers the deep-research run
-- [Notifications](/guide/notifications/) — multi-channel send semantics
-- [Agents](/guide/agents/) — the composition pattern this tutorial demonstrates
+- [Actions](/vyn/guide/actions/) — the registry and the five primitives this tutorial uses
+- [Jobs](/vyn/guide/jobs/) — what powers the deep-research run
+- [Notifications](/vyn/guide/notifications/) — multi-channel send semantics
+- [Agents](/vyn/guide/agents/) — the composition pattern this tutorial demonstrates

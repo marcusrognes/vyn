@@ -101,5 +101,5 @@ into view on its own focus."
 
 ## See also
 
-- [`@vyn/ui/keyboard-nav`](/ui/keyboard-nav/) — usually paired
+- [`@vyn/ui/keyboard-nav`](/vyn/ui/keyboard-nav/) — usually paired
 - Native [`scrollIntoView`](https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView) — what this wraps

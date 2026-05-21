@@ -8,7 +8,7 @@ navigation, sortable column headers, and accessible row selection.
 Use it for read-mostly tabular data — feeds, lists, dashboards —
 where the native semantics carry their weight. For spreadsheet-like
 editing or large datasets that need virtualization, reach for
-[`<v-grid>`](/ui/grid/).
+[`<v-grid>`](/vyn/ui/grid/).
 
 `<v-table>` accepts either authored HTML (write your own `<tr>` and
 `<td>` elements as children) or a data-driven config (assign
@@ -169,6 +169,6 @@ refresh();
 
 ## See also
 
-- [`<v-grid>`](/ui/grid/) — for editable / range-select / dense data
-- [`@vyn/ui/keyboard-nav`](/ui/keyboard-nav/) + [`@vyn/ui/select`](/ui/select/) — for single-column selection without a widget
-- [Components guide](/guide/components/) — for writing your own
+- [`<v-grid>`](/vyn/ui/grid/) — for editable / range-select / dense data
+- [`@vyn/ui/keyboard-nav`](/vyn/ui/keyboard-nav/) + [`@vyn/ui/select`](/vyn/ui/select/) — for single-column selection without a widget
+- [Components guide](/vyn/guide/components/) — for writing your own

@@ -13,8 +13,8 @@ delivery.
 
 Notifications are job-backed: each channel send becomes a retryable
 job under the hood. Failures retry with the same backoff semantics
-as [jobs](/guide/jobs/). The two primitives share enough that
-`createNotification` is structurally a [`createJob`](/guide/jobs/)
+as [jobs](/vyn/guide/jobs/). The two primitives share enough that
+`createNotification` is structurally a [`createJob`](/vyn/guide/jobs/)
 specialization for the common "deliver this to a person through some
 channel" pattern.
 
@@ -211,7 +211,7 @@ The cron syntax is standard 5-field cron. Common pickers map to:
 | Never                     | omitted (channel disabled in prefs) |
 
 Your settings UI generates the cron string from a friendly picker
-(see [the research-notebook tutorial](/tutorials/build-a-research-notebook/5-ui/)
+(see [the research-notebook tutorial](/vyn/tutorials/build-a-research-notebook/5-ui/)
 for one); users with custom needs can paste a raw cron string into
 an advanced field.
 
@@ -749,7 +749,7 @@ bus event.
 
 ## See also
 
-- [Jobs](/guide/jobs/) — the foundation; notifications are job-backed
-- [Actions](/guide/actions/) — the registry that holds notifications alongside jobs and other primitives
-- [Realtime](/guide/realtime/) — in-app notifications usually pair with a subscription
-- [Configuration](/guide/configuration/) — `serve({ notify })` shape
+- [Jobs](/vyn/guide/jobs/) — the foundation; notifications are job-backed
+- [Actions](/vyn/guide/actions/) — the registry that holds notifications alongside jobs and other primitives
+- [Realtime](/vyn/guide/realtime/) — in-app notifications usually pair with a subscription
+- [Configuration](/vyn/guide/configuration/) — `serve({ notify })` shape

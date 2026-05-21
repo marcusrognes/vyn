@@ -47,7 +47,7 @@ description after the input's label.
 
 ## Composing
 
-For tooltips, [`tooltip`](/ui/tooltip/) wraps this behavior plus
+For tooltips, [`tooltip`](/vyn/ui/tooltip/) wraps this behavior plus
 positioning and hover/focus handling. Reach for `data-describes`
 directly when you want the describedby relationship without the
 floating UI.
@@ -66,5 +66,5 @@ is invalid, so screen readers announce it only when relevant.
 
 ## See also
 
-- [`@vyn/ui/tooltip`](/ui/tooltip/) — wraps this with hover/focus floating UI
-- [`@vyn/ui/live`](/ui/live/) — for one-off announcements not tied to a specific element
+- [`@vyn/ui/tooltip`](/vyn/ui/tooltip/) — wraps this with hover/focus floating UI
+- [`@vyn/ui/live`](/vyn/ui/live/) — for one-off announcements not tied to a specific element

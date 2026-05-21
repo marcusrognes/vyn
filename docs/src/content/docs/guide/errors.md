@@ -198,8 +198,8 @@ a framework version bump, not per-app.
 
 ## See also
 
-- [Actions](/guide/actions/) — `run` throws; surfaces render
-- [Guards](/guide/guards/) — the common shape of `unauthorized` /
+- [Actions](/vyn/guide/actions/) — `run` throws; surfaces render
+- [Guards](/vyn/guide/guards/) — the common shape of `unauthorized` /
   `forbidden` failures
-- [Configuration](/guide/configuration/) — production vs development
+- [Configuration](/vyn/guide/configuration/) — production vs development
   error verbosity

@@ -80,7 +80,7 @@ export type NoteAgent = v.Infer<typeof NoteAgentSchema>;
 ```
 
 `pick`, `omit`, `partial`, `extend`, and `merge` are the standard tools.
-See the [v.\* reference](/api/core/#validators) for the full list.
+See the [v.\* reference](/vyn/api/core/#validators) for the full list.
 
 ## Constraints
 
@@ -343,7 +343,7 @@ Vyn models are not:
 - ORM entities. They have no `.save()` method. They don't know about
   your database. They describe shape, not behavior.
 - Database schema. You can derive a `CREATE TABLE` from a model, and a
-  helper exists for SQLite (see [Database](/guide/database/), coming),
+  helper exists for SQLite (see [Database](/vyn/guide/database/), coming),
   but the model is not the source of truth for the column types — the
   database is.
 - Class instances. Models are validator records that produce plain
@@ -354,5 +354,5 @@ takes the model as input. Behavior lives in the registry.
 
 ## See also
 
-- [Actions](/guide/actions/) — how models are referenced by callable units
-- [RPC](/guide/rpc/) — how the typed client uses model types end-to-end
+- [Actions](/vyn/guide/actions/) — how models are referenced by callable units
+- [RPC](/vyn/guide/rpc/) — how the typed client uses model types end-to-end

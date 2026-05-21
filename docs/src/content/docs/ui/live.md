@@ -52,15 +52,15 @@ function liveRegion(
 
 ## When to use this vs other patterns
 
-- For toasts with visible UI, use the [`<v-toaster>`](/ui/toast/)
+- For toasts with visible UI, use the [`<v-toaster>`](/vyn/ui/toast/)
   widget — it composes `liveRegion` internally with a visual stack.
 - For per-field form errors, use
-  [`aria-describedby`](/ui/aria-describedby/) — the error is
+  [`aria-describedby`](/vyn/ui/aria-describedby/) — the error is
   announced when the field receives focus.
 - For loading states, use `aria-busy` on the affected element.
   `liveRegion` is overkill for "loading…" indicators.
 
 ## See also
 
-- [`<v-toaster>`](/ui/toast/) — visual toasts that compose this
-- [`@vyn/ui/aria-describedby`](/ui/aria-describedby/) — for per-element descriptions
+- [`<v-toaster>`](/vyn/ui/toast/) — visual toasts that compose this
+- [`@vyn/ui/aria-describedby`](/vyn/ui/aria-describedby/) — for per-element descriptions

@@ -141,6 +141,6 @@ toast.info("3 new messages");
 
 ## See also
 
-- [`@vyn/ui/focus-trap`](/ui/focus-trap/) + native `<dialog>` — for interactive modal dialogs
-- [`@vyn/ui/live`](/ui/live/) — for one-off `aria-live` announcements without the toast UI
-- [Components guide](/guide/components/) — for writing your own
+- [`@vyn/ui/focus-trap`](/vyn/ui/focus-trap/) + native `<dialog>` — for interactive modal dialogs
+- [`@vyn/ui/live`](/vyn/ui/live/) — for one-off `aria-live` announcements without the toast UI
+- [Components guide](/vyn/guide/components/) — for writing your own
