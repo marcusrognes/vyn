@@ -31,13 +31,14 @@ Vyn's shape. Swapping to SQLite (or any other store) is a one-file
 change once you finish; see the [Next steps](#next-steps) section.
 
 :::note
-**Server vs browser code.** Files under `features/` and `server.ts`
-run on Node — write them as `.ts` and Node 22+'s
-`--experimental-strip-types` flag executes them directly. Files
-under `public/` ship to the browser; write them as `.js` so the
-browser can load them without a build step (the framework ships
-`@vyn/client` at `/_vyn/client.js` for import). The completed
-example lives in
+**Server vs browser code.** Everything is TypeScript. Files under
+`features/` and `server.ts` run on Node via 22+'s
+`--experimental-strip-types`. Files under `public/**/*.ts` are
+bundled on demand by `@vyn/server` when the browser requests their
+`.js` sibling — `<script src="/routes/index.js">` resolves to a
+bundle of `public/routes/index.ts`. Production `vyn build` writes
+the same bundles to `public/dist/` with content hashes and a
+manifest. The completed example lives in
 [`examples/todo`](https://github.com/marcusrognes/vyn/tree/main/examples/todo).
 :::
 
@@ -77,7 +78,7 @@ todo/                                     project root
     ├── style.css                         a little polish
     └── routes/
         ├── index.html                    page content for `/`
-        └── index.js                      page logic for `/`
+        └── index.ts                      page logic for `/` (bundled on request)
 ```
 
 The whole "todos" feature is one directory: model and actions.
@@ -295,13 +296,16 @@ button { background: none; border: 0; cursor: pointer; padding: .25rem; }
 
 ## Step 5 — the route module
 
-The route at `/` is `public/routes/index.js`. Vyn runs it when the
-user navigates to `/` because it sits next to `index.html`. This file
+The route at `/` is `public/routes/index.ts`. Vyn bundles it on
+the first request to `/routes/index.js` (the path the SPA shell's
+`<script>` tag uses) and serves the result with no-cache headers
+in dev. Edits to the file — or to any of its imports — invalidate
+the cache automatically. This file
 renders the list, hooks the form, subscribes to changes, and
 delegates clicks for toggle/remove.
 
 ```ts
-// public/routes/index.js
+// public/routes/index.ts
 import { createApp, $, html, render } from "@vyn/client";
 import type { AppRouter } from "../../_vyn.gen.ts";
 import type { Todo } from "../../features/todos/todo.ts";

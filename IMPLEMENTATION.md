@@ -80,7 +80,7 @@ Every public surface implemented + tested:
 - `vyn init` — scaffolds package.json + tsconfig + server.ts + SPA shell
 - `vyn dev` — boots app + watches features/ + public/routes/ and
   re-runs gen on changes
-- `vyn build` — placeholder
+- `vyn build` — bundles `public/**/*.ts` to `public/dist/` with content hashes + `manifest.json`. Server reads the manifest at boot and serves hashed files with immutable cache.
 - `vyn check` — `tsc --noEmit`
 - `vyn gen` — emits _vyn.gen.ts with action imports + route array
 - `vyn mcp --stdio` — JSON-RPC over stdin/stdout
@@ -193,4 +193,4 @@ Browser bundle at `packages/ui/browser.js` (~13 kB).
    happy-dom unit only; full keyboard / focus / ARIA needs a real
    browser)
 8. Form validation: native validity API + Vyn-side helpers
-9. `vyn build` actually building (vs. shipping sources directly)
+9. ~~`vyn build` actually building (vs. shipping sources directly)~~ — done, see CLI section.

@@ -1,7 +1,8 @@
 # Vyn
 
 Small full-stack TypeScript framework. Five action primitives, no
-magic, runs on Node 22+ without bundlers.
+magic, one zero-config bundler step for browser code. Runs on
+Node 22+.
 
 - **Docs**: <https://rognes.guru/vyn/>
 - **Status**: pre-1.0 — the API is in place, the example apps work,
@@ -109,7 +110,8 @@ configuration.
 - **WebSocket** — `/ws` multiplexes subscriptions. Frame shape `{ id, action, op, input }` → `{ id, kind, payload }`.
 - **MCP** — `/mcp` speaks JSON-RPC 2.0. `vyn mcp --stdio` runs the same surface over stdin/stdout for Claude Desktop.
 - **Static** — anything under `public/` is served as-is; route HTML files become pages via the SPA shell.
-- **Browser runtime** — `/_vyn/client.js` (~11 kB) and `/_vyn/ui.js` (~13 kB) are served directly; no bundler required.
+- **Browser runtime** — `/_vyn/client.js` (~11 kB) and `/_vyn/ui.js` (~13 kB) are served directly.
+- **Browser source** — `public/**/*.ts` is bundled on demand in dev (esbuild, mtime cache) and pre-bundled with content hashes via `vyn build` in prod. `<script src="/foo.js">` resolves to the sibling `foo.ts`.
 
 ## Contributing
 
