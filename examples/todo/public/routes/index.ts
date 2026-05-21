@@ -1,12 +1,14 @@
-// Browser-side route logic. Vanilla ES module — served as-is.
-import { createApp, html, render } from "/_vyn/client.js";
+// Browser-side route logic. Bundled on demand by @vyn/server.
+import { createApp } from "@vyn/client";
+import type { AppRouter } from "../../_vyn.gen.ts";
+import type { Todo } from "../../features/todos/todo.ts";
 
-const { rpc, cache } = createApp({ baseUrl: location.origin });
+const { rpc, cache } = createApp<AppRouter>({ baseUrl: location.origin });
 
-const listEl = document.getElementById("list");
-const form   = document.getElementById("add");
+const listEl = document.getElementById("list")!;
+const form   = document.getElementById("add") as HTMLFormElement;
 
-function paint(todos) {
+function paint(todos: Todo[]) {
 	listEl.innerHTML = "";
 	for (const t of todos) {
 		const li = document.createElement("li");
@@ -20,19 +22,17 @@ function paint(todos) {
 	}
 }
 
-function escape(s) {
+function escape(s: string): string {
 	return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-// Initial load + cache subscription
 cache.subscribe(rpc.todos.list, paint, {});
 const initial = await rpc.todos.list.query({});
 cache.set(rpc.todos.list, {}, initial);
 
-// Realtime updates
 rpc.todos.onChanged.listen({}, {
 	onValue(event) {
-		cache.patch(rpc.todos.list, (list) => {
+		cache.patch(rpc.todos.list, (list: Todo[]) => {
 			switch (event.kind) {
 				case "added":   return [event.todo, ...list];
 				case "toggled": return list.map((t) => t._id === event.todo._id ? event.todo : t);
@@ -43,19 +43,17 @@ rpc.todos.onChanged.listen({}, {
 	},
 });
 
-// Add a todo
 form.addEventListener("submit", async (e) => {
 	e.preventDefault();
-	const input = form.elements.title;
+	const input = form.elements.namedItem("title") as HTMLInputElement;
 	const title = input.value.trim();
 	if (!title) return;
 	input.value = "";
 	await rpc.todos.add.mutate({ title });
 });
 
-// Toggle / remove via event delegation
 listEl.addEventListener("click", async (e) => {
-	const t = e.target;
+	const t = e.target as HTMLElement;
 	if (t.dataset.toggle) {
 		await rpc.todos.toggle.mutate({ _id: t.dataset.toggle });
 	} else if (t.dataset.remove) {
