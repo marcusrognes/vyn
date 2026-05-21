@@ -172,13 +172,25 @@ Browser bundle at `packages/ui/browser.js` (~13 kB).
 3. **Rewire `examples/notes-sqlite` similarly** — drop the
    `@vyn/db-sqlite` dependency, use `node:sqlite` directly. Keep
    the example small enough to read in one sitting.
-4. Real LLM in `examples/research` — wired but commented as
+4. **`opts` must be inferred, never annotated.** Today every
+   example writes `run: async (opts: { input: { ... }; ctx: Ctx })
+   => ...`. The contract is: `input` flows from the schema, `ctx`
+   flows from app-side module augmentation. Apps declare once:
+   ```ts
+   declare module "@vyn/core" {
+     interface VynCtx extends MyCtx {}
+   }
+   ```
+   then every `run` body just writes `run: async (opts) => ...` and
+   `opts.input` + `opts.ctx` are typed correctly. Same pattern
+   tRPC uses. Removes the biggest DX friction in the codebase.
+5. Real LLM in `examples/research` — wired but commented as
    ANTHROPIC_API_KEY-gated; needs more polish + tool-use loop
-5. Tutorial doc reconciliation across the build-a-research-notebook
+6. Tutorial doc reconciliation across the build-a-research-notebook
    pages (some still reference the all-or-nothing tutorial flow
    while the example builds incrementally)
-6. UI behavior interaction tests via Playwright (currently
+7. UI behavior interaction tests via Playwright (currently
    happy-dom unit only; full keyboard / focus / ARIA needs a real
    browser)
-7. Form validation: native validity API + Vyn-side helpers
-8. `vyn build` actually building (vs. shipping sources directly)
+8. Form validation: native validity API + Vyn-side helpers
+9. `vyn build` actually building (vs. shipping sources directly)
