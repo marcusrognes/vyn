@@ -91,7 +91,7 @@ describe("createSubscription", () => {
 			},
 		});
 		const iter = s.run({ input: {}, ctx: {}, signal: new AbortController().signal });
-		await expect(iter.next()).rejects.toThrowError(RpcError);
+		await expect(iter.next()).rejects.toThrow(RpcError);
 	});
 
 	it("registers itself in the global registry on declaration", async () => {

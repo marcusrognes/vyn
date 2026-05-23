@@ -281,7 +281,7 @@ describe("createJob", () => {
 				run:     async () => { throw new Error("boom"); },
 			});
 			const id = await j.now({});
-			await expect(j.result(id)).rejects.toThrowError(/boom/);
+			await expect(j.result(id)).rejects.toThrow(/boom/);
 		});
 
 		it(".status(jobId).lastTick is the most recent tick payload", async () => {

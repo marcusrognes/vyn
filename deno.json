@@ -1,0 +1,22 @@
+{
+	"tasks": {
+		"test":       "deno test -A --no-check --unstable-node-globals --unstable-bare-node-builtins packages/",
+		"test:core":  "deno test -A --no-check --unstable-node-globals --unstable-bare-node-builtins packages/core/test/",
+		"test:watch": "deno test -A --no-check --unstable-node-globals --unstable-bare-node-builtins --watch packages/",
+		"check":      "deno check packages/core/src/ packages/server/src/ packages/client/src/"
+	},
+	"imports": {
+		"vitest":         "./test-shim.ts",
+		"@vyn/core":      "./packages/core/src/index.ts",
+		"@vyn/core/util": "./packages/core/src/util.ts",
+		"@vyn/server":    "./packages/server/src/index.ts",
+		"@vyn/client":    "./packages/client/src/index.ts",
+		"@vyn/auth":      "./packages/auth/src/index.ts"
+	},
+	"nodeModulesDir": "auto",
+	"compilerOptions": {
+		"lib": ["deno.window", "dom", "dom.iterable", "esnext"],
+		"strict": true
+	},
+	"unstable": ["node-globals", "bare-node-builtins"]
+}
