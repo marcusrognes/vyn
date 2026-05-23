@@ -13,7 +13,7 @@ wire transformer, and wire Tailwind into the SPA shell.
 ## Scaffold
 
 ```sh
-deno create npm:vyn notebook
+deno create npm:vyn -- notebook
 cd notebook
 deno add npm:mongodb npm:superjson npm:@anthropic-ai/sdk
 deno add npm:tailwindcss npm:@tailwindcss/postcss

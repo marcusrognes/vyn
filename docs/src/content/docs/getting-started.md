@@ -18,7 +18,7 @@ the scaffolder drops the files and writes a `deno.json` with the
 standard tasks.
 
 ```sh
-deno create jsr:@vynjs/create my-app
+deno create jsr:@vynjs/create -- my-app
 cd my-app
 deno task dev
 ```
@@ -27,7 +27,7 @@ Equivalent invocations if you'd rather skip the `create` indirection:
 
 ```sh
 deno run -A jsr:@vynjs/cli init my-app     # straight to the CLI
-deno create npm:vyn my-app                 # via npm:create-vyn
+deno create npm:vyn -- my-app                 # via npm:create-vyn
 ```
 
 The dev server is now listening on `http://localhost:8000`. Open it

@@ -3,7 +3,7 @@
 Scaffolder for [Vyn](https://github.com/marcusrognes/vyn) apps.
 
 ```sh
-deno create npm:vyn my-app
+deno create npm:vyn -- my-app
 # or
 npm create vyn@latest my-app
 ```

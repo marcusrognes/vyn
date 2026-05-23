@@ -2,7 +2,7 @@
 // create-vyn — scaffolds a Vyn app by delegating to @vynjs/cli's init.
 //
 // Usage:
-//   deno create npm:vyn my-app
+//   deno create npm:vyn -- my-app
 //   npm create vyn@latest my-app
 //   npx create-vyn@latest my-app
 

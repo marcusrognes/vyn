@@ -1,7 +1,7 @@
 // @vynjs/create — scaffolds a Vyn app.
 //
 // Usage:
-//   deno create jsr:@vynjs/create my-app
+//   deno create jsr:@vynjs/create -- my-app
 //   deno run -A jsr:@vynjs/create my-app
 //
 // Delegates to `@vynjs/cli init <dir>` so the scaffold template lives
