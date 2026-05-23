@@ -305,6 +305,32 @@ function literal<L extends string | number | boolean>(value: L): Schema<L> {
 	});
 }
 
+// v.enum(["A", "B"] as const)  → Schema<"A" | "B">
+// v.enum(MyTsEnum)             → Schema<MyTsEnum>
+//
+// TS `enum X { A = "A" }` compiles to { A: "A" } at runtime, so
+// Object.values() yields the string members. Numeric enums also work but
+// the produced Schema will accept the string keys *and* the numeric values
+// — best practice is string enums.
+function enumOf<const L extends string>(values: readonly L[]): Schema<L>;
+function enumOf<E extends Record<string, string | number>>(obj: E): Schema<E[keyof E] & (string | number)>;
+function enumOf(values: any): Schema<any> {
+	const list: (string | number)[] = Array.isArray(values)
+		? values
+		: Object.values(values).filter((v) => typeof v === "string" || typeof v === "number");
+	const set = new Set<string | number>(list);
+	return makeSchema<string | number>({
+		kind:   "enum",
+		schema: { enum: list },
+		parse:  (input, path) => {
+			if ((typeof input !== "string" && typeof input !== "number") || !set.has(input)) {
+				fail(path, "enum", { expected: list.map(String).join("|") });
+			}
+			return input;
+		},
+	});
+}
+
 // ─── arrays ──────────────────────────────────────────────────────────
 
 function array<T>(item: Schema<T>): ArraySchema<T> {
@@ -498,6 +524,7 @@ export const v = {
 	any,
 	unknown,
 	literal,
+	enum: enumOf,
 	array,
 	object,
 	union,

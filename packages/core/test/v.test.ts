@@ -224,4 +224,34 @@ describe("v.* validators", () => {
 			expect(true).toBe(true);
 		});
 	});
+
+	describe("v.enum", () => {
+		it("accepts values from a const string array", () => {
+			const Color = v.enum(["red", "green", "blue"] as const);
+			expect(Color.parse("red")).toBe("red");
+			expect(() => Color.parse("yellow")).toThrow();
+			expect(() => Color.parse(1)).toThrow();
+		});
+
+		it("accepts values from a TS string enum object", () => {
+			enum Status { ACTIVE = "ACTIVE", DONE = "DONE" }
+			const S = v.enum(Status);
+			expect(S.parse("ACTIVE")).toBe("ACTIVE");
+			expect(S.parse("DONE")).toBe("DONE");
+			expect(() => S.parse("UNKNOWN")).toThrow();
+		});
+
+		it("emits JSON Schema with enum array", () => {
+			const Color = v.enum(["red", "green"] as const);
+			expect(Color.schema).toEqual({ enum: ["red", "green"] });
+		});
+
+		it("composes with .optional / .nullable / .default", () => {
+			const Color = v.enum(["red", "green"] as const).default("red");
+			const S = v.object({ c: Color });
+			expect(S.parse({}).c).toBe("red");
+			expect(S.parse({ c: "green" }).c).toBe("green");
+			expect(() => S.parse({ c: "blue" })).toThrow();
+		});
+	});
 });
