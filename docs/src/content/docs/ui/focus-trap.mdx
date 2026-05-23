@@ -10,15 +10,16 @@ import LiveExample from "../../../components/LiveExample.astro";
 <LiveExample title="Non-modal drawer with focus trap" height="320px"
 	behaviors={["focus-trap"]}
 	html={`
-<button id="outer">Outer button (still focusable)</button>
-<button id="open">Open drawer</button>
+<button>Outer button (still focusable)</button>
+<button onclick="drawer.hidden = false">Open drawer</button>
+
 <aside id="drawer" data-focus-trap hidden>
 	<h3>Settings</h3>
 	<input type="text" placeholder="Name">
 	<input type="email" placeholder="Email">
 	<div class="row">
-		<button id="cancel">Cancel</button>
-		<button id="save" class="primary">Save</button>
+		<button onclick="drawer.hidden = true">Cancel</button>
+		<button onclick="drawer.hidden = true" class="primary">Save</button>
 	</div>
 </aside>
 `}
@@ -35,12 +36,6 @@ aside {
 aside h3 { margin: 0 0 0.6rem; }
 aside input { display: block; width: 100%; padding: 0.45rem 0.6rem; margin-bottom: 0.5rem; border: 1px solid #cbd5e1; border-radius: 6px; font: inherit; box-sizing: border-box; }
 aside .row { display: flex; justify-content: flex-end; gap: 0.4rem; margin-top: 0.6rem; }
-`}
-	js={`
-const drawer = document.getElementById("drawer");
-document.getElementById("open").addEventListener("click", () => { drawer.hidden = false; });
-document.getElementById("cancel").addEventListener("click", () => { drawer.hidden = true; });
-document.getElementById("save").addEventListener("click",   () => { drawer.hidden = true; });
 `}
 />
 

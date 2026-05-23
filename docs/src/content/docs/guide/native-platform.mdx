@@ -241,10 +241,10 @@ close + return value. The browser handles all of it.
 
 <LiveExample title="Modal dialog with form method=dialog" height="260px"
 	html={`
-<button id="open" class="danger">Delete project…</button>
+<button class="danger" onclick="confirmDlg.showModal()">Delete project…</button>
 <p id="out" class="out">Nothing deleted yet.</p>
 
-<dialog id="confirm">
+<dialog id="confirmDlg" onclose="out.textContent = this.returnValue === 'confirm' ? 'Project deleted.' : 'Cancelled.'">
 	<h2>Delete this project?</h2>
 	<p>All boards, tasks, and members will be removed. This action cannot be undone.</p>
 	<form method="dialog" class="actions">
@@ -270,16 +270,6 @@ dialog::backdrop { background: rgb(15 23 42 / 0.4); backdrop-filter: blur(2px); 
 dialog h2 { margin: 0 0 0.35rem; font-size: 1.05rem; }
 dialog p { margin: 0 0 1rem; color: #475569; }
 .actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
-`}
-	js={`
-const dlg  = document.getElementById("confirm");
-const out  = document.getElementById("out");
-document.getElementById("open").addEventListener("click", () => dlg.showModal());
-dlg.addEventListener("close", () => {
-	out.textContent = dlg.returnValue === "confirm"
-		? "Project deleted."
-		: "Cancelled.";
-});
 `}
 />
 
