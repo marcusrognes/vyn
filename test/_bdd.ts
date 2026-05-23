@@ -1,14 +1,10 @@
-// Vitest-compatible shim backed by Deno std. Lets existing vitest tests
-// run under `deno test`. Wire-up: deno.json imports map "vitest" → this file.
+// Vyn's tiny BDD wrapper around Deno std. Exposes the surface vyn tests use:
+//   describe / it / beforeEach / beforeAll / afterEach / afterAll
+//   it.each / describe.each  — parameterized tests
+//   it.todo / it.skip        — pending / skipped tests (placeholder bodies OK)
+//   expect                   — from @std/expect (jest-compatible)
 //
-// Surface covered:
-//   - describe / it / beforeEach / beforeAll / afterEach / afterAll (BDD)
-//   - it.each / describe.each (vitest parameterized tests)
-//   - expect from @std/expect (jest-compatible matcher set)
-//
-// Notes:
-//   - `toThrowError` is not in @std/expect — use `toThrow` instead (test
-//     files have been updated).
+// Imported from tests via the "vyn:test" alias in deno.json.
 
 import {
 	describe as _describe,
@@ -17,8 +13,8 @@ import {
 	beforeAll,
 	afterEach,
 	afterAll,
-} from "jsr:@std/testing@^1.0.0/bdd";
-export { expect } from "jsr:@std/expect@^1.0.0";
+} from "jsr:@std/testing@^1/bdd";
+export { expect } from "jsr:@std/expect@^1";
 
 type TestFn  = (...args: any[]) => any;
 type EachRow = readonly unknown[] | Record<string, unknown> | unknown;
@@ -43,22 +39,18 @@ function makeEach(base: (name: string, fn: TestFn) => void) {
 		return (template: string, fn: (...args: unknown[]) => unknown) => {
 			for (const row of rows) {
 				const name = format(template, row as EachRow);
-				if (Array.isArray(row)) {
-					base(name, () => (fn as any)(...row));
-				} else {
-					base(name, () => (fn as any)(row));
-				}
+				if (Array.isArray(row)) base(name, () => (fn as any)(...row));
+				else                    base(name, () => (fn as any)(row));
 			}
 		};
 	};
 }
 
-// vitest exposes `.todo` (placeholder, name only) and `.skip` on it/describe.
-// std/testing/bdd uses `.ignore` and requires a fn — supply a noop when only
-// a name is passed.
 function ignoreShim(base: (name: string, fn: TestFn) => void) {
 	return (name: string, fn?: TestFn) => base(name, fn ?? (() => {}));
 }
+
+export { beforeEach, beforeAll, afterEach, afterAll };
 
 export const it = Object.assign(_it, {
 	each: makeEach(_it as any),
@@ -70,4 +62,3 @@ export const describe = Object.assign(_describe, {
 	todo: ignoreShim((_describe as any).ignore),
 	skip: ignoreShim((_describe as any).ignore),
 });
-export { beforeEach, beforeAll, afterEach, afterAll };

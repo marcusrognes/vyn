@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vyn:test";
 
 // Contracts from /guide/notifications/#in-app-inbox
 // @vyn/notify-inbox lives in a separate package once implementation

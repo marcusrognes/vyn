@@ -1,4 +1,4 @@
-import { describe, it } from "vitest";
+import { describe, it } from "vyn:test";
 
 // Contracts to implement (one test file each, mirroring the docs).
 // This file stubs the index so CI surfaces what's missing.

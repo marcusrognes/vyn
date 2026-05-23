@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach } from "vyn:test";
 import { createNotification, installNotify, flushNow, _resetNotifyRuntime, _getQueueSize } from "../src/index.ts";
 
 describe("notify-runtime", () => {

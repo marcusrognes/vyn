@@ -1,4 +1,4 @@
-import { describe, it } from "vitest";
+import { describe, it } from "vyn:test";
 
 // Per-behavior contracts. Each will get its own file as implementations
 // land. Playwright-driven integration tests live under test/playwright/.

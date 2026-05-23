@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach } from "vyn:test";
 import "../../src/select.ts";
 
 beforeEach(() => { document.body.innerHTML = ""; });

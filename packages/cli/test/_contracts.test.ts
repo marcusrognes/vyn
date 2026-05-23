@@ -1,4 +1,4 @@
-import { describe, it } from "vitest";
+import { describe, it } from "vyn:test";
 
 describe.todo("vyn init — scaffolds files into the current directory, non-destructive");
 describe.todo("vyn create <name> — mkdir + init combined");

@@ -1,4 +1,4 @@
-import { describe, it } from "vitest";
+import { describe, it } from "vyn:test";
 
 describe.todo("createApp<AppRouter>() returns { rpc, cache } typed against the router");
 

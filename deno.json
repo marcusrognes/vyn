@@ -6,7 +6,7 @@
 		"check":      "deno check packages/core/src/ packages/server/src/ packages/client/src/"
 	},
 	"imports": {
-		"vitest":         "./test-shim.ts",
+		"vyn:test":       "./test/_bdd.ts",
 		"@vyn/core":      "./packages/core/src/index.ts",
 		"@vyn/core/util": "./packages/core/src/util.ts",
 		"@vyn/server":    "./packages/server/src/index.ts",

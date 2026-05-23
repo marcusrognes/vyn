@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach } from "vyn:test";
 import { createQuery, createMutation, createSubscription, registry } from "../src/index.ts";
 
 // Contracts from /guide/actions/#the-registry

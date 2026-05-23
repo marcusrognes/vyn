@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach } from "vyn:test";
 import { inboxAdapter, type InboxRow, type InboxStore } from "../src/index.ts";
 
 function memStore(): InboxStore & { _rows: InboxRow[] } {

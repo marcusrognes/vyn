@@ -1,4 +1,4 @@
-import { describe, it } from "vitest";
+import { describe, it } from "vyn:test";
 
 describe.todo("hashPassword — produces a verifiable, salted hash (scrypt by default)");
 describe.todo("verifyPassword — true on correct, false on wrong, timing-safe compare");

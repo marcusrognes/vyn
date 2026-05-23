@@ -1,4 +1,4 @@
-import { describe, it } from "vitest";
+import { describe, it } from "vyn:test";
 
 // node:sqlite is experimental in Node 22+ and Vitest's Vite-based
 // resolver can't (yet) load it cleanly. Tests pass at the runtime

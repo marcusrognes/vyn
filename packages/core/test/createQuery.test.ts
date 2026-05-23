@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vyn:test";
 import { createQuery } from "../src/index.ts";
 
 // Contracts from /guide/actions/#the-three-primitives

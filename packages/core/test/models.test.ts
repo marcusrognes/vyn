@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vyn:test";
 import { v } from "../src/index.ts";
 
 // Models page is mostly covered by v.test.ts; this file pins the

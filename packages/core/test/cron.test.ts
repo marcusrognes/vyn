@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vyn:test";
 import { parseCron, previousTick, nextTick } from "../src/cron.ts";
 
 describe("parseCron", () => {
