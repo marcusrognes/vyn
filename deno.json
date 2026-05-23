@@ -18,12 +18,7 @@
 		"publish:jsr":  "deno publish"
 	},
 	"imports": {
-		"vyn:test":         "./test/_bdd.ts",
-		"@vynjs/core":      "./packages/core/src/index.ts",
-		"@vynjs/core/util": "./packages/core/src/util.ts",
-		"@vynjs/server":    "./packages/server/src/index.ts",
-		"@vynjs/client":    "./packages/client/src/index.ts",
-		"@vynjs/auth":      "./packages/auth/src/index.ts"
+		"vyn:test": "./test/_bdd.ts"
 	},
 	"nodeModulesDir": "auto",
 	"compilerOptions": {
