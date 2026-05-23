@@ -8,10 +8,9 @@
 		"start": "node --experimental-strip-types server.ts"
 	},
 	"dependencies": {
-		"@vynjs/core":      "*",
-		"@vynjs/server":    "*",
-		"@vynjs/client":    "*",
-		"@vynjs/auth":      "*",
-		"@vynjs/db-sqlite": "*"
+		"@vynjs/core":   "*",
+		"@vynjs/server": "*",
+		"@vynjs/client": "*",
+		"@vynjs/auth":   "*"
 	}
 }

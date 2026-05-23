@@ -1,5 +1,5 @@
 import type { BaseCtx } from "@vynjs/server";
-import type { Collection } from "@vynjs/db-sqlite";
+import type { Collection } from "./lib/sqlite.ts";
 import type { SessionStore } from "@vynjs/auth";
 import type { Note } from "./features/notes/note.ts";
 

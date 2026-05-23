@@ -1,6 +1,6 @@
 import { serve } from "@vynjs/server";
 import { createMemorySessionStore } from "@vynjs/auth";
-import { openSqlite } from "@vynjs/db-sqlite";
+import { openSqlite } from "./lib/sqlite.ts";
 import "./_vyn.gen.ts";
 import type { Note } from "./features/notes/note.ts";
 import type { User } from "./ctx.ts";
