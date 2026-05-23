@@ -2,7 +2,7 @@
 import "./features/notes/notes.actions.ts";
 import "./features/agent/agent.actions.ts";
 import "./features/agent/deep-research.actions.ts";
-import "@vyn/notify-inbox/actions";
+import "./features/inbox/inbox.actions.ts";
 
 export const routes = [
 	{ pattern: "/",                file: "/routes/index.html" },

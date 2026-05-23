@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach } from "vyn:test";
-import { inboxAdapter, type InboxRow, type InboxStore } from "../src/index.ts";
+import { inboxAdapter, type InboxRow, type InboxStore } from "./inbox.ts";
 
 function memStore(): InboxStore & { _rows: InboxRow[] } {
 	const rows: InboxRow[] = [];
@@ -22,7 +22,7 @@ function memStore(): InboxStore & { _rows: InboxRow[] } {
 	};
 }
 
-describe("@vyn/notify-inbox", () => {
+describe("@vynjs/notify-inbox", () => {
 	it("send persists a row with default fields", async () => {
 		const store = memStore();
 		const adapter = inboxAdapter({ collection: store });

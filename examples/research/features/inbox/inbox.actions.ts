@@ -1,9 +1,8 @@
-// Prebuilt inbox.* actions apps can wire in by importing this module.
-// They expect the inbox adapter to be installed under `ctx.inbox`
-// (or pass a custom resolver).
+// Inbox actions — copied into this app from the docs recipe.
+// They expect the inbox adapter to be installed under `ctx.inbox`.
 
-import { createQuery, createMutation, createSubscription, v, RpcError } from "@vyn/core";
-import type { InboxRow, InboxStore } from "./index.ts";
+import { createQuery, createMutation, createSubscription, v, RpcError } from "@vynjs/core";
+import type { InboxRow, InboxStore } from "./inbox.ts";
 
 type InboxCtx = { userId: string | null; inbox: InboxStore };
 
@@ -21,7 +20,7 @@ function requireUser(opts: { ctx: InboxCtx }): string {
 	return opts.ctx.userId;
 }
 
-export const list = createQuery({
+export const list =createQuery({
 	name:        "inbox.list",
 	description: "List the current user's inbox rows, newest first.",
 	input:       v.object({
@@ -40,7 +39,7 @@ export const list = createQuery({
 	},
 });
 
-export const count = createQuery({
+export const count =createQuery({
 	name:        "inbox.count",
 	description: "Count the current user's inbox rows.",
 	input:       v.object({ unreadOnly: v.boolean().default(false) }),
@@ -54,7 +53,7 @@ export const count = createQuery({
 	},
 });
 
-export const markRead = createMutation({
+export const markRead =createMutation({
 	name:        "inbox.markRead",
 	description: "Mark an inbox row as read.",
 	input:       v.object({ _id: v.string() }),

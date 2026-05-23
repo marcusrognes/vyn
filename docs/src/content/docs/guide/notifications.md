@@ -22,7 +22,7 @@ channel" pattern.
 
 ```ts
 // features/notifications/welcome.actions.ts
-import { createNotification, v } from "@vyn/core";
+import { createNotification, v } from "@vynjs/core";
 
 export const welcome = createNotification({
 	description: "Welcome a newly-signed-up user.",
@@ -359,20 +359,25 @@ in exchange for fewer deliveries.
 
 The in-app channel is more than an event stream — it's typically
 also a persisted notification list the user reads in a bell
-dropdown. Vyn ships `@vyn/notify-inbox` as the canonical in-app
-adapter: it both emits to a subscription (for live badge updates)
+dropdown. There is no `@vynjs/notify-inbox` package — the inbox is a
+**recipe**: ~50 lines of code apps copy into their own `features/`
+folder and wire to their own store. The
+[`research` example](https://github.com/marcusrognes/vyn/tree/main/examples/research/features/inbox)
+ships the canonical version; copy it as a starting point.
+
+The adapter both emits to a subscription (for live badge updates)
 and persists each notification to a collection (for the dropdown
-list).
+list):
 
 ```ts
-import { serve } from "@vyn/server";
-import { inboxAdapter } from "@vyn/notify-inbox";
+// features/inbox/inbox.ts (copied from the recipe)
+import { inboxAdapter } from "./inbox.ts";
 
 serve({
 	notify: {
 		// ...
 		inApp: inboxAdapter({
-			collection: "notifications",         // MongoDB / SQLite collection
+			collection: notes,                   // any store with insertOne()
 			subscription: onNotification,        // your existing subscription
 		}),
 	},
@@ -393,13 +398,14 @@ type InboxRow = {
 };
 ```
 
-It also exposes a set of actions you can import directly into your
-router:
+The recipe also includes a set of actions you register under your
+own action root:
 
 ```ts
+// features/inbox/inbox.actions.ts
 import {
 	list, count, markRead, markAllRead, onNew,
-} from "@vyn/notify-inbox/actions";
+} from "./inbox.actions.ts";
 ```
 
 These are pre-built `createQuery` / `createMutation` /
@@ -429,7 +435,7 @@ component:
 
 ```ts
 // public/routes/_bell.ts (route-local helper)
-import { $, html, render } from "@vyn/client";
+import { $, html, render } from "@vynjs/client";
 import { rpc, cache } from "./_app.ts";
 
 const badge    = $<HTMLSpanElement>("#badge");
@@ -573,9 +579,9 @@ notification.preview({ userId: "u-1" });
 Configure adapters once on `serve()`:
 
 ```ts
-import { serve } from "@vyn/server";
-import { postmarkAdapter } from "@vyn/notify-postmark";
-import { webPushAdapter }  from "@vyn/notify-web-push";
+import { serve } from "@vynjs/server";
+import { postmarkAdapter } from "@vynjs/notify-postmark";
+import { webPushAdapter }  from "@vynjs/notify-web-push";
 import { onNotification }  from "./features/inbox/inbox.actions.ts";
 
 serve({
@@ -603,13 +609,13 @@ what you use:
 
 | Package | Channel |
 |---|---|
-| `@vyn/notify-postmark` | Email via Postmark |
-| `@vyn/notify-ses`      | Email via Amazon SES |
-| `@vyn/notify-sendgrid` | Email via SendGrid |
-| `@vyn/notify-smtp`     | Email via any SMTP host |
-| `@vyn/notify-web-push` | Web Push (browser notifications) |
-| `@vyn/notify-fcm`      | Firebase Cloud Messaging |
-| `@vyn/notify-apns`     | Apple Push Notification service |
+| `@vynjs/notify-postmark` | Email via Postmark |
+| `@vynjs/notify-ses`      | Email via Amazon SES |
+| `@vynjs/notify-sendgrid` | Email via SendGrid |
+| `@vynjs/notify-smtp`     | Email via any SMTP host |
+| `@vynjs/notify-web-push` | Web Push (browser notifications) |
+| `@vynjs/notify-fcm`      | Firebase Cloud Messaging |
+| `@vynjs/notify-apns`     | Apple Push Notification service |
 
 In-app uses an existing subscription as the channel — no separate
 package. Mutations call `notification.send(...)`; the framework

@@ -1,5 +1,5 @@
-import type { BaseCtx } from "@vyn/server";
-import type { InboxRow } from "@vyn/notify-inbox";
+import type { BaseCtx } from "@vynjs/server";
+import type { InboxRow } from "./features/inbox/inbox.ts";
 
 export type Note = {
 	_id:       string;

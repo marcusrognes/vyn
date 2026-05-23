@@ -1,5 +1,5 @@
 {
-	"name": "@vyn/example-research",
+	"name": "@vynjs/example-research",
 	"private": true,
 	"version": "0.0.0",
 	"type": "module",
@@ -8,10 +8,9 @@
 		"start": "node --experimental-strip-types server.ts"
 	},
 	"dependencies": {
-		"@vyn/core":          "*",
-		"@vyn/server":        "*",
-		"@vyn/client":        "*",
-		"@vyn/notify-inbox":  "*",
-		"superjson":          "^2.2.2"
+		"@vynjs/core":   "*",
+		"@vynjs/server": "*",
+		"@vynjs/client": "*",
+		"superjson":     "^2.2.2"
 	}
 }

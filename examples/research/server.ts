@@ -1,5 +1,5 @@
-import { serve } from "@vyn/server";
-import { inboxAdapter, type InboxRow } from "@vyn/notify-inbox";
+import { serve } from "@vynjs/server";
+import { inboxAdapter, type InboxRow } from "./features/inbox/inbox.ts";
 import { transformer } from "./transform.ts";
 import "./_vyn.gen.ts";
 import { onNotification } from "./features/agent/deep-research.actions.ts";

@@ -1,8 +1,9 @@
-// @vyn/notify-inbox — adapter that persists each delivery to a
-// collection AND optionally re-emits on a subscription so connected
-// clients see live updates.
+// Inbox adapter — persists each delivery to a collection AND
+// optionally re-emits on a subscription so connected clients see
+// live updates. Recipe code: copy this file into your app's
+// features/ folder and tweak to fit. See docs/guide/notifications.
 
-import type { NotificationAdapter, SubscriptionAction } from "@vyn/core";
+import type { NotificationAdapter, SubscriptionAction } from "@vynjs/core";
 
 export type InboxRow = {
 	_id:          string;
