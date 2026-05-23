@@ -132,6 +132,20 @@ h1 { margin: 0 0 0.5rem; }
 		await writeFile(full, content);
 		console.log(`create ${path}`);
 	}
+
+	// Populate deno.lock + node_modules so the browser bundler (which uses
+	// @luca/esbuild-deno-loader, requires a lockfile) works on first run.
+	console.log("\nResolving dependencies (deno install)…");
+	const install = await new Deno.Command("deno", {
+		args:   ["install"],
+		cwd:    targetDir,
+		stdout: "inherit",
+		stderr: "inherit",
+	}).output();
+	if (install.code !== 0) {
+		console.warn("\n[vyn] deno install failed. Run it manually before `deno task dev`.");
+	}
+
 	if (targetArg) {
 		console.log(`\nDone. Next:\n  cd ${targetArg}\n  deno task dev`);
 	} else {

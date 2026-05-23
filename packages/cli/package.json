@@ -1,6 +1,6 @@
 {
 	"name": "@vynjs/cli",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"description": "Vyn CLI \u2014 init, dev, build, check, gen, mcp, worker.",
 	"type": "module",
 	"main": "./dist/index.js",
