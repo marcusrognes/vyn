@@ -24,9 +24,25 @@ export type SubscriptionHandlers<O> = {
 	onEnd?:    () => void;
 };
 
+// Action types in @vynjs/core erase their I/O generics onto `Schema<unknown>`
+// at the `input`/`output` fields. The original `O` survives in `run`'s
+// return type, so we infer from there. Same for `I` via run's opts.input.
+type RunInput<T>  = T extends { run: (opts: { input: infer I } & Record<string, unknown>) => unknown } ? I : unknown;
+type RunOutput<T> = T extends { run: (...args: never[]) => Promise<infer O> } ? O : unknown;
+
 export type RpcClient<R> = {
-	[K in keyof R]: R[K] extends Record<string, unknown>
-		? RpcClient<R[K]> & RpcCallable<any, any>
+	[K in keyof R]:
+		R[K] extends { kind: "query" }
+			? { query(input?: RunInput<R[K]>, opts?: CallOpts): Promise<RunOutput<R[K]>> }
+		: R[K] extends { kind: "mutation" }
+			? { mutate(input?: RunInput<R[K]>, opts?: CallOpts): Promise<RunOutput<R[K]>> }
+		: R[K] extends { kind: "subscription" }
+			? {
+				listen(input: RunInput<R[K]>, handlers: SubscriptionHandlers<RunOutput<R[K]>>): () => void;
+				iterate(input: RunInput<R[K]>, opts?: { signal?: AbortSignal }): AsyncIterable<RunOutput<R[K]>>;
+			}
+		: R[K] extends Record<string, unknown>
+			? RpcClient<R[K]>
 		: RpcCallable<any, any>;
 };
 
