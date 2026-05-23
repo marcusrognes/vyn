@@ -17,21 +17,40 @@ class VGridElement extends HTMLElement {
 			c.setAttribute("tabindex", i === 0 ? "0" : "-1");
 		});
 		this.addEventListener("keydown", (e) => this.#onKey(e));
-		this.addEventListener("focus",   (e) => this.#cells()[this.#active]?.focus(), true);
+		this.addEventListener("focus", (e) => {
+			// Only redirect when the grid host itself takes focus (e.g.
+			// programmatic .focus()). Skip when a descendant cell got the
+			// focus — otherwise a click on cell N would snap back to cell #active.
+			if (e.target !== this) return;
+			this.#cells()[this.#active]?.focus();
+		}, true);
+		this.addEventListener("focusin", (e) => {
+			const i = this.#cells().indexOf(e.target as HTMLElement);
+			if (i >= 0) this.#activate(i);
+		});
+		this.addEventListener("click", (e) => {
+			const cells = this.#cells();
+			const cell = cells.find((c) => c.contains(e.target as Node));
+			if (cell) this.#focus(cells.indexOf(cell));
+		});
 	}
 
 	#cells(): HTMLElement[] {
 		return [...this.children].filter((c): c is HTMLElement => c instanceof HTMLElement);
 	}
 
-	#focus(i: number) {
+	#activate(i: number) {
 		const cells = this.#cells();
-		if (i < 0 || i >= cells.length) return;
+		if (i < 0 || i >= cells.length || i === this.#active) return;
 		cells[this.#active]?.setAttribute("tabindex", "-1");
 		this.#active = i;
 		cells[i].setAttribute("tabindex", "0");
-		cells[i].focus();
 		this.dispatchEvent(new CustomEvent("cellfocus", { detail: { index: i, cell: cells[i] } }));
+	}
+
+	#focus(i: number) {
+		this.#activate(i);
+		this.#cells()[i]?.focus();
 	}
 
 	#onKey(e: KeyboardEvent) {
