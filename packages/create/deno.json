@@ -1,0 +1,11 @@
+{
+	"name": "@vynjs/create",
+	"version": "0.2.0",
+	"description": "Vyn scaffolder. Run via `deno create jsr:@vynjs/create my-app`.",
+	"exports": {
+		".": "./mod.ts"
+	},
+	"publish": {
+		"include": ["mod.ts", "README.md", "LICENSE", "deno.json"]
+	}
+}

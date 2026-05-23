@@ -42,7 +42,20 @@ Usage:
 // ─── init ────────────────────────────────────────────────────────────
 
 async function init() {
-	const name = basename(cwd);
+	// Optional second arg = target directory. `vyn init my-app` scaffolds
+	// into ./my-app/ (created if missing); `vyn init` scaffolds into the
+	// current directory.
+	const targetArg = argv[1];
+	let targetDir   = cwd;
+	if (targetArg) {
+		targetDir = join(cwd, targetArg);
+		if (existsSync(targetDir)) {
+			console.error(`error: ${targetArg} already exists`);
+			Deno.exit(1);
+		}
+		await mkdir(targetDir, { recursive: true });
+	}
+	const name = basename(targetDir);
 	const VYN  = "jsr:@vynjs/cli@^0.2";
 	const files: Array<[string, string]> = [
 		["deno.json", JSON.stringify({
@@ -113,13 +126,17 @@ h1 { margin: 0 0 0.5rem; }
 	];
 
 	for (const [path, content] of files) {
-		const full = join(cwd, path);
+		const full = join(targetDir, path);
 		if (existsSync(full)) { console.log(`skip ${path} (exists)`); continue; }
 		await mkdir(dirname(full), { recursive: true });
 		await writeFile(full, content);
 		console.log(`create ${path}`);
 	}
-	console.log("\nDone. Next: deno task dev");
+	if (targetArg) {
+		console.log(`\nDone. Next:\n  cd ${targetArg}\n  deno task dev`);
+	} else {
+		console.log("\nDone. Next: deno task dev");
+	}
 }
 
 // ─── dev ─────────────────────────────────────────────────────────────
