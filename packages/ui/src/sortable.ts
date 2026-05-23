@@ -1,5 +1,19 @@
 // data-sortable on a container — drag children to reorder.
 // Pointer-based; keyboard fallback via Space-to-pickup + arrows.
+//
+// Add `data-sortable-group="<name>"` to multiple containers to let
+// items move between them. Each container still fires its own
+// `reorder` event with its current order. The destination also
+// fires `move` with { id, from, to } when a cross-container move
+// commits.
+
+type Drag = {
+	node:          HTMLElement;
+	fromContainer: HTMLElement;
+	group?:        string;
+};
+
+let currentDrag: Drag | null = null;
 
 function init() {
 	document.querySelectorAll<HTMLElement>("[data-sortable]:not([data-sortable-wired])").forEach(wire);
@@ -7,38 +21,84 @@ function init() {
 
 function wire(container: HTMLElement) {
 	container.dataset.sortableWired = "true";
-	let dragEl: HTMLElement | null = null;
+	const group = container.dataset.sortableGroup;
 	let pickedKeyboard: HTMLElement | null = null;
 
 	function items(): HTMLElement[] {
 		return [...container.children].filter((c): c is HTMLElement => c instanceof HTMLElement);
 	}
 
-	function fireReorder() {
-		container.dispatchEvent(new CustomEvent("reorder", {
-			detail: { order: items().map((el, i) => ({ index: i, id: el.dataset.id ?? el.id })) },
-		}));
+	function orderOf(c: HTMLElement) {
+		return [...c.children]
+			.filter((el): el is HTMLElement => el instanceof HTMLElement)
+			.map((el, i) => ({ index: i, id: el.dataset.id ?? el.id }));
+	}
+
+	function fireReorder(c: HTMLElement) {
+		c.dispatchEvent(new CustomEvent("reorder", { detail: { order: orderOf(c) } }));
 	}
 
 	container.addEventListener("dragstart", (e) => {
-		const t = (e.target as HTMLElement);
+		const t = e.target as HTMLElement;
 		if (!container.contains(t) || t.parentElement !== container) return;
-		dragEl = t;
+		currentDrag = { node: t, fromContainer: container, group };
 		t.dataset.state = "dragging";
 		e.dataTransfer?.setData("text/plain", "");
 	});
 
 	container.addEventListener("dragover", (e) => {
+		if (!currentDrag) return;
+
+		// Same container? Always accept. Different container? Only if groups match.
+		const sameContainer = currentDrag.fromContainer === container || currentDrag.node.parentElement === container;
+		const groupsMatch   = currentDrag.group !== undefined && currentDrag.group === group;
+		if (!sameContainer && !groupsMatch) return;
+
 		e.preventDefault();
-		const target = (e.target as HTMLElement).closest<HTMLElement>(":scope > *");
-		if (!target || !dragEl || target === dragEl) return;
-		const rect = target.getBoundingClientRect();
+
+		let target = e.target as HTMLElement | null;
+		while (target && target.parentElement !== container) target = target.parentElement;
+
+		const peers = items().filter((c) => c !== currentDrag!.node);
+
+		if (!target || target === currentDrag.node) {
+			if (peers.length === 0) {
+				container.appendChild(currentDrag.node);
+				return;
+			}
+			const firstRect = peers[0].getBoundingClientRect();
+			const lastRect  = peers[peers.length - 1].getBoundingClientRect();
+			if (e.clientY < firstRect.top)        container.insertBefore(currentDrag.node, peers[0]);
+			else if (e.clientY > lastRect.bottom) container.appendChild(currentDrag.node);
+			return;
+		}
+
+		const rect  = target.getBoundingClientRect();
 		const after = (e.clientY - rect.top) > rect.height / 2;
-		target.parentNode!.insertBefore(dragEl, after ? target.nextSibling : target);
+		container.insertBefore(currentDrag.node, after ? target.nextSibling : target);
 	});
 
 	container.addEventListener("dragend", () => {
-		if (dragEl) { delete dragEl.dataset.state; dragEl = null; fireReorder(); }
+		if (!currentDrag) return;
+		const { node, fromContainer } = currentDrag;
+		delete node.dataset.state;
+
+		const dest = node.parentElement;
+		if (dest && dest !== fromContainer) {
+			fireReorder(fromContainer);
+			fireReorder(dest);
+			dest.dispatchEvent(new CustomEvent("move", {
+				detail: {
+					id:   node.dataset.id ?? node.id,
+					from: fromContainer,
+					to:   dest,
+				},
+			}));
+		} else if (dest) {
+			fireReorder(dest);
+		}
+
+		currentDrag = null;
 	});
 
 	for (const item of items()) item.setAttribute("draggable", "true");
@@ -53,7 +113,7 @@ function wire(container: HTMLElement) {
 			if (pickedKeyboard) {
 				delete pickedKeyboard.dataset.state;
 				pickedKeyboard = null;
-				fireReorder();
+				fireReorder(container);
 			} else {
 				pickedKeyboard = active;
 				active.dataset.state = "picked";
