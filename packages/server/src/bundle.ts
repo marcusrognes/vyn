@@ -1,20 +1,19 @@
 // On-demand .ts → .js bundler for files under publicDir.
 //
 // Dev (no manifest): GET /foo.js → look for sibling foo.ts → bundle and
-// return as JS. Cache the result keyed by every input file's mtime so
-// editing a transitive import invalidates correctly.
+// return as JS. Cache the result keyed by the entry file's mtime so
+// editing it invalidates correctly.
 //
 // Prod (manifest passed): look up the pathname in the manifest and serve
 // the hashed dist/ file with an immutable cache-control header.
 //
-// Uses `npm:esbuild` + `jsr:@luca/esbuild-deno-loader` so bare specifiers
-// declared in the consuming deno.json import map (e.g. "@vynjs/client") resolve
-// in browser bundles. esbuild's metafile drives the transitive-input cache.
+// Bundling is delegated to `deno bundle` (subprocess against the running
+// Deno binary). Deno's bundle subcommand wraps esbuild internally and
+// resolves the app's jsr:/npm: specifiers without a third-party plugin,
+// so no npm:esbuild import is needed in vyn source.
 
 import { readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
-import { denoPlugins } from "jsr:@luca/esbuild-deno-loader@^0.11.0";
-import * as esbuild from "npm:esbuild@^0.24.0";
 
 export type Manifest = Record<string, string>;  // srcUrl (e.g. "/routes/index.js") → hashed dist path ("/dist/routes/index.a1b2c3.js")
 
@@ -23,9 +22,9 @@ export type BundleOpts = {
 	manifest?: Manifest | null;  // present in prod, null/undefined in dev
 };
 
-type CacheEntry = { js: string; inputs: Map<string, number> };
+type CacheEntry = { js: string; entryMtime: number };
 
-export function makeTryBundle(opts: BundleOpts) {
+export function makeTryBundle(opts: BundleOpts): (pathname: string) => Promise<Response | null> {
 	const cache = new Map<string, CacheEntry>();
 
 	return async function tryBundle(pathname: string): Promise<Response | null> {
@@ -52,22 +51,24 @@ export function makeTryBundle(opts: BundleOpts) {
 
 		// Dev path — find sibling .ts, bundle on demand.
 		const tsPath = join(opts.publicDir, safe.slice(0, -3) + ".ts");
+		let entryMtime: number;
 		try {
 			const s = await stat(tsPath);
 			if (!s.isFile()) return null;
+			entryMtime = s.mtimeMs;
 		} catch {
 			return null;
 		}
 
 		const cached = cache.get(tsPath);
-		if (cached && await inputsUnchanged(cached.inputs)) {
+		if (cached && cached.entryMtime === entryMtime) {
 			return jsResponse(cached.js);
 		}
 
 		try {
-			const built = await bundleEntry(tsPath);
-			cache.set(tsPath, built);
-			return jsResponse(built.js);
+			const js = await bundleEntry(tsPath);
+			cache.set(tsPath, { js, entryMtime });
+			return jsResponse(js);
 		} catch (e) {
 			const msg = (e as Error).message;
 			console.error(`[vyn] bundle ${tsPath} failed:\n${msg}`);
@@ -77,18 +78,6 @@ export function makeTryBundle(opts: BundleOpts) {
 			});
 		}
 	};
-}
-
-async function inputsUnchanged(inputs: Map<string, number>): Promise<boolean> {
-	for (const [path, mtime] of inputs) {
-		try {
-			const s = await stat(path);
-			if (s.mtimeMs !== mtime) return false;
-		} catch {
-			return false;
-		}
-	}
-	return true;
 }
 
 function jsResponse(js: string): Response {
@@ -101,28 +90,22 @@ function jsResponse(js: string): Response {
 	});
 }
 
-async function bundleEntry(entryPath: string): Promise<CacheEntry> {
-	const result = await esbuild.build({
-		entryPoints: [entryPath],
-		bundle:      true,
-		format:      "esm",
-		platform:    "browser",
-		target:      "es2022",
-		write:       false,
-		metafile:    true,
-		sourcemap:   "inline",
-		logLevel:    "silent",
-		plugins:     denoPlugins({ loader: "portable" }),
+async function bundleEntry(entryPath: string): Promise<string> {
+	const cmd = new Deno.Command(Deno.execPath(), {
+		args: [
+			"bundle",
+			"--platform=browser",
+			"--minify",
+			entryPath,
+		],
+		stdout: "piped",
+		stderr: "piped",
 	});
-	const js = result.outputFiles![0].text;
-	const inputs = new Map<string, number>();
-	for (const path of Object.keys(result.metafile!.inputs)) {
-		try {
-			const s = await stat(path);
-			inputs.set(path, s.mtimeMs);
-		} catch { /* generated/virtual input, skip */ }
+	const { code, stdout, stderr } = await cmd.output();
+	if (code !== 0) {
+		throw new Error(new TextDecoder().decode(stderr));
 	}
-	return { js, inputs };
+	return new TextDecoder().decode(stdout);
 }
 
 // Read public/dist/manifest.json if present. Returns null in dev (no build run).

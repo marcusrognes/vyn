@@ -133,19 +133,6 @@ h1 { margin: 0 0 0.5rem; }
 		console.log(`create ${path}`);
 	}
 
-	// Populate deno.lock + node_modules so the browser bundler (which uses
-	// @luca/esbuild-deno-loader, requires a lockfile) works on first run.
-	console.log("\nResolving dependencies (deno install)…");
-	const install = await new Deno.Command("deno", {
-		args:   ["install"],
-		cwd:    targetDir,
-		stdout: "inherit",
-		stderr: "inherit",
-	}).output();
-	if (install.code !== 0) {
-		console.warn("\n[vyn] deno install failed. Run it manually before `deno task dev`.");
-	}
-
 	if (targetArg) {
 		console.log(`\nDone. Next:\n  cd ${targetArg}\n  deno task dev`);
 	} else {
@@ -207,27 +194,28 @@ async function build() {
 	await rm(distDir, { recursive: true, force: true });
 	await mkdir(distDir, { recursive: true });
 
-	const { denoPlugins } = await import("jsr:@luca/esbuild-deno-loader@^0.11.0");
-	const esbuild = await import("npm:esbuild@^0.24.0");
 	const manifest: Record<string, string> = {};
 
 	for (const entry of entries) {
 		const relTs  = "/" + relative(publicDir, entry).replace(/\\/g, "/");
 		const srcUrl = relTs.replace(/\.ts$/, ".js");
 
-		const result = await esbuild.build({
-			entryPoints: [entry],
-			bundle:      true,
-			format:      "esm",
-			platform:    "browser",
-			target:      "es2022",
-			write:       false,
-			minify:      true,
-			sourcemap:   false,
-			logLevel:    "silent",
-			plugins:     denoPlugins({ loader: "portable" }),
+		const cmd = new Deno.Command(Deno.execPath(), {
+			args: [
+				"bundle",
+				"--platform=browser",
+				"--minify",
+				entry,
+			],
+			stdout: "piped",
+			stderr: "piped",
 		});
-		const bytes = result.outputFiles![0].contents as Uint8Array;
+		const { code, stdout, stderr } = await cmd.output();
+		if (code !== 0) {
+			console.error(new TextDecoder().decode(stderr));
+			throw new Error(`bundle failed for ${entry}`);
+		}
+		const bytes = stdout;
 		const digest = await crypto.subtle.digest("SHA-256", new Uint8Array(bytes));
 		const hash = encodeHex(new Uint8Array(digest)).slice(0, 10);
 		const distRel = srcUrl.replace(/\.js$/, `.${hash}.js`);

@@ -1,6 +1,6 @@
 {
 	"name": "@vynjs/server",
-	"version": "0.2.0",
+	"version": "0.2.1",
 	"description": "Vyn server \u2014 serve(), RPC dispatcher, MCP, WebSocket, transformers.",
 	"type": "module",
 	"main": "./dist/index.js",
