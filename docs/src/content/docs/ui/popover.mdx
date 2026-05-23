@@ -5,6 +5,36 @@ sidebar:
   order: 7
 ---
 
+import LiveExample from "../../../components/LiveExample.astro";
+
+<LiveExample title="data-popover with trigger" height="240px"
+	behaviors={["popover"]}
+	html={`
+<button id="filters-trigger">Filters</button>
+<div id="filters-pop" data-popover data-popover-trigger="filters-trigger">
+	<strong>Filter notes</strong>
+	<label><input type="checkbox" checked> Unread</label>
+	<label><input type="checkbox"> Starred</label>
+	<label><input type="checkbox"> Archived</label>
+</div>
+`}
+	css={`
+:root { accent-color: #4f46e5; }
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; }
+button { padding: 0.5rem 0.9rem; border-radius: 8px; border: 1px solid #cbd5e1; background: white; cursor: pointer; font: inherit; }
+#filters-pop {
+	margin: 6px 0 0; padding: 0.75rem 0.9rem; min-width: 200px;
+	border: 1px solid #e2e8f0; border-radius: 10px;
+	background: white;
+	box-shadow: 0 10px 25px -5px rgb(15 23 42 / 0.15);
+	display: none;
+}
+#filters-pop[data-open="true"] { display: block; }
+#filters-pop strong { display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 0.4rem; }
+#filters-pop label { display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0; }
+`}
+/>
+
 For most popovers, **use the native [Popover API](https://developer.mozilla.org/en-US/docs/Web/API/Popover_API)** —
 it's universally supported in current browsers, and it handles
 top-layer rendering, Esc dismissal, outside-click dismissal, and

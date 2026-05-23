@@ -3,6 +3,40 @@ title: <v-combobox>
 description: A text input paired with a listbox of suggestions. Type-to-filter, arrow keys to navigate, Enter to commit. The hardest accessible widget done right.
 ---
 
+import LiveExample from "../../../components/LiveExample.astro";
+
+<LiveExample title="Autocomplete combobox" height="260px"
+	behaviors={["v-combobox"]}
+	html={`
+<label class="field">
+	<span>Assign to…</span>
+	<v-combobox id="assignee" placeholder="Type to filter"
+		data-suggestions='[
+			{"value":"ada","label":"Ada Lovelace"},
+			{"value":"grace","label":"Grace Hopper"},
+			{"value":"linus","label":"Linus Pauling"},
+			{"value":"marie","label":"Marie Curie"},
+			{"value":"barbara","label":"Barbara Liskov"}
+		]'></v-combobox>
+</label>
+<p id="out" class="out">No selection yet.</p>
+`}
+	css={`
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; }
+.field { display: block; max-width: 22rem; }
+.field span { display: block; font-size: 0.78rem; font-weight: 600; margin-bottom: 0.3rem; color: #334155; }
+v-combobox { display: block; width: 100%; }
+v-combobox input { font: inherit; }
+.out { font: 12px ui-monospace, Menlo, monospace; color: #4338ca; margin: 0.75rem 0 0; }
+`}
+	js={`
+const combo = document.getElementById("assignee");
+combo.addEventListener("change", (e) => {
+	document.getElementById("out").textContent = "value = " + (e.detail?.value ?? combo.value);
+});
+`}
+/>
+
 A combobox is a text input with an associated listbox of options.
 The user types to filter, navigates with arrow keys, and commits a
 choice with Enter. It's the right primitive for autocomplete, tag

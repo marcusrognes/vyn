@@ -5,22 +5,35 @@ sidebar:
   order: 18
 ---
 
+import LiveExample from "../../../components/LiveExample.astro";
+
 `@vyn/ui/copy` makes a button copy a target element's text to the
 clipboard. The button briefly flips to a `data-state="copied"`
 state so your CSS can show "Copied!" feedback; ARIA announces the
 result.
 
-```html
-<pre><code id="snippet">npm create vyn@latest my-app</code></pre>
-<button data-copy="snippet">Copy</button>
-```
+<LiveExample title="Copy a snippet to clipboard" height="200px"
+	behaviors={["copy"]}
+	html={`
+<pre><code id="snippet">deno create vyn@latest my-app</code></pre>
+<button data-copy="#snippet" aria-label="Copy snippet">
+	<span class="default">Copy</span>
+	<span class="copied">✓ Copied</span>
+</button>
+`}
+	css={`
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; display: flex; align-items: center; gap: 0.5rem; }
+pre { margin: 0; padding: 0.55rem 0.8rem; background: #0f172a; color: #e2e8f0; border-radius: 8px; font: 13px ui-monospace, Menlo, monospace; }
+button { padding: 0.5rem 0.85rem; border-radius: 8px; border: 1px solid #cbd5e1; background: white; cursor: pointer; font: inherit; box-shadow: 0 1px 2px rgb(15 23 42 / 0.05); }
+button:hover { background: #f1f5f9; }
+button .copied { display: none; color: #16a34a; }
+button[data-state="copied"] .default { display: none; }
+button[data-state="copied"] .copied { display: inline; }
+`}
+/>
 
-```ts
-import "@vyn/ui/copy";
-```
-
-That's it. Click copies the code; the button visually says "Copied"
-for ~1.5s; assistive tech is informed via `live` announcement.
+Click copies the code; the button visually says "Copied" for ~1.5s;
+assistive tech is informed via `live` announcement.
 
 ## Attributes
 

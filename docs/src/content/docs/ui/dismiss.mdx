@@ -5,6 +5,52 @@ sidebar:
   order: 5
 ---
 
+import LiveExample from "../../../components/LiveExample.astro";
+
+<LiveExample title="Drawer that dismisses on Esc / outside-click" height="280px"
+	behaviors={["dismiss", "focus-trap"]}
+	html={`
+<button id="open" class="trigger">Open drawer</button>
+<p id="out" class="out">Drawer closed.</p>
+<aside id="drawer" tabindex="-1"
+	data-dismiss data-dismiss-on="escape outside"
+	data-focus-trap hidden>
+	<h3>Settings</h3>
+	<p>Click outside or press <kbd>Esc</kbd> to dismiss.</p>
+	<button id="save">Save</button>
+</aside>
+`}
+	css={`
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; min-height: 200px; }
+.trigger { padding: 0.5rem 0.9rem; border-radius: 8px; border: 1px solid #cbd5e1; background: white; cursor: pointer; font: inherit; box-shadow: 0 1px 2px rgb(15 23 42 / 0.05); }
+.out { color: #64748b; margin: 1rem 0 0; }
+aside { position: fixed; top: 0; right: 0; bottom: 0; width: 16rem; padding: 1rem 1.25rem; background: white; border-left: 1px solid #e2e8f0; box-shadow: -10px 0 25px -5px rgb(15 23 42 / 0.1); }
+aside:focus { outline: none; }
+aside h3 { margin: 0 0 0.4rem; }
+aside p { margin: 0 0 1rem; color: #475569; }
+aside button { padding: 0.4rem 0.85rem; background: #4f46e5; color: white; border: 0; border-radius: 6px; cursor: pointer; }
+kbd { font: 0.85em ui-monospace, Menlo, monospace; background: #f1f5f9; border: 1px solid #cbd5e1; padding: 0 0.3em; border-radius: 4px; }
+`}
+	js={`
+const drawer = document.getElementById("drawer");
+const out    = document.getElementById("out");
+
+document.getElementById("open").addEventListener("click", () => {
+	drawer.hidden = false;
+	out.textContent = "Drawer open.";
+	// Next frame so the un-hide has flushed before we move focus.
+	requestAnimationFrame(() => {
+		(drawer.querySelector("button") || drawer).focus();
+	});
+});
+
+drawer.addEventListener("dismissed", (e) => {
+	drawer.hidden = true;
+	out.textContent = "Dismissed via " + e.detail.reason + ".";
+});
+`}
+/>
+
 The native [Popover API](https://developer.mozilla.org/en-US/docs/Web/API/Popover_API)
 already handles Esc and outside-click dismissal for elements with
 the `popover` attribute. **Use it first** — the browser ships the

@@ -5,6 +5,39 @@ sidebar:
   order: 12
 ---
 
+import LiveExample from "../../../components/LiveExample.astro";
+
+<LiveExample title="Announce to screen readers" height="220px"
+	behaviors={["live"]}
+	html={`
+<p class="hint">Each click triggers a polite or assertive announcement. Open your screen reader to hear them.</p>
+<button id="polite">Announce polite</button>
+<button id="assertive">Announce assertive</button>
+<p id="log" class="log"></p>
+`}
+	css={`
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; }
+.hint { margin: 0 0 0.75rem; color: #64748b; font-size: 0.8rem; max-width: 28rem; }
+button { padding: 0.5rem 0.9rem; margin-right: 0.4rem; border-radius: 8px; border: 1px solid #cbd5e1; background: white; cursor: pointer; font: inherit; }
+.log { margin: 1rem 0 0; color: #4338ca; font: 12px ui-monospace, Menlo, monospace; }
+`}
+	js={`
+import { live } from "@vyn/ui/live";
+
+let n = 0;
+document.getElementById("polite").addEventListener("click", () => {
+	const msg = "Note saved (" + (++n) + ")";
+	live(msg);
+	document.getElementById("log").textContent = "polite: " + msg;
+});
+document.getElementById("assertive").addEventListener("click", () => {
+	const msg = "Connection lost";
+	live(msg, { assertive: true });
+	document.getElementById("log").textContent = "assertive: " + msg;
+});
+`}
+/>
+
 `@vyn/ui/live` exposes a single function: `liveRegion(message, level?)`.
 It announces `message` to screen readers via a shared off-screen
 region with the right `aria-live` politeness. Use it for status

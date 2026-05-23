@@ -1,0 +1,369 @@
+---
+title: sort
+description: Column-header sort buttons with aria-sort wiring. Apply data-sort to the thead (or any container); data-sort-key on each sortable header. One event from one place.
+sidebar:
+  order: 13
+---
+
+import LiveExample from "../../../components/LiveExample.astro";
+
+<LiveExample title="Sortable table headers" height="320px"
+	behaviors={["sort"]}
+	html={`
+<table>
+	<thead data-sort>
+		<tr>
+			<th data-sort-key="name">Name</th>
+			<th data-sort-key="email">Email</th>
+			<th data-sort-key="role">Role</th>
+		</tr>
+	</thead>
+	<tbody id="rows">
+		<tr><td>Ada Lovelace</td><td>ada@example.com</td><td>Admin</td></tr>
+		<tr><td>Grace Hopper</td><td>grace@example.com</td><td>Editor</td></tr>
+		<tr><td>Linus Pauling</td><td>linus@example.com</td><td>Viewer</td></tr>
+		<tr><td>Marie Curie</td><td>marie@example.com</td><td>Editor</td></tr>
+	</tbody>
+</table>
+`}
+	css={`
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; }
+table { border-collapse: collapse; width: 100%; background: white; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 2px rgb(15 23 42 / 0.04); }
+th, td { padding: 0.55rem 0.85rem; text-align: left; border-bottom: 1px solid #f1f5f9; }
+th { background: #f8fafc; font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; cursor: pointer; user-select: none; }
+th[data-sort-key]::after { content: " ⇅"; opacity: 0.4; }
+th[aria-sort="ascending"]::after  { content: " ↑"; opacity: 1; color: #4f46e5; }
+th[aria-sort="descending"]::after { content: " ↓"; opacity: 1; color: #4f46e5; }
+tbody tr:last-child td { border-bottom: 0; }
+`}
+	js={`
+const tbody = document.getElementById("rows");
+document.querySelector("thead").addEventListener("sort", (e) => {
+	const { key, direction } = e.detail;
+	if (!direction) return;
+	const rows = [...tbody.querySelectorAll("tr")];
+	const idx  = ["name", "email", "role"].indexOf(key);
+	rows.sort((a, b) => {
+		const av = a.cells[idx].textContent.toLowerCase();
+		const bv = b.cells[idx].textContent.toLowerCase();
+		return (av < bv ? -1 : av > bv ? 1 : 0) * (direction === "asc" ? 1 : -1);
+	});
+	for (const r of rows) tbody.append(r);
+});
+`}
+/>
+
+`@vyn/ui/sort` turns elements with `data-sort-key="..."` into
+keyboard-accessible sort buttons. Apply `data-sort` to the container
+(typically the `<thead>`); apply `data-sort-key` to each sortable
+header. The container scopes the "one column at a time" rule and is
+where the `sort` event lands.
+
+## Composing with sortable + selection
+
+Real tables usually want more than column sort — manual drag-order,
+multi-row selection, bulk actions. Drop in [`sortable`](/vyn/ui/sortable/)
+on the `<tbody>` and a couple of checkboxes; gate which behavior owns
+the order with a mode toggle.
+
+<LiveExample title="Advanced table — sort, drag-reorder, multi-select" height="540px"
+	behaviors={["sort", "sortable"]}
+	html={`
+<div class="toolbar">
+	<fieldset class="modes">
+		<legend>Order by</legend>
+		<label><input type="radio" name="mode" value="column" checked> Column sort</label>
+		<label><input type="radio" name="mode" value="manual"> Manual (drag)</label>
+	</fieldset>
+	<button id="delete" type="button" disabled>Delete <span id="count">0</span></button>
+</div>
+
+<table>
+	<thead data-sort>
+		<tr>
+			<th class="check"><input type="checkbox" id="all" aria-label="Select all rows"></th>
+			<th data-sort-key="task">Task</th>
+			<th data-sort-key="owner">Owner</th>
+			<th data-sort-key="status">Status</th>
+		</tr>
+	</thead>
+	<tbody data-sortable id="rows">
+		<tr data-id="t-1"><td class="check"><input type="checkbox" aria-label="Select row"></td><td>Write release notes</td><td>Ada</td><td>In progress</td></tr>
+		<tr data-id="t-2"><td class="check"><input type="checkbox" aria-label="Select row"></td><td>Triage bug reports</td><td>Grace</td><td>Todo</td></tr>
+		<tr data-id="t-3"><td class="check"><input type="checkbox" aria-label="Select row"></td><td>Set up CI</td><td>Linus</td><td>Done</td></tr>
+		<tr data-id="t-4"><td class="check"><input type="checkbox" aria-label="Select row"></td><td>Polish landing page</td><td>Marie</td><td>In progress</td></tr>
+		<tr data-id="t-5"><td class="check"><input type="checkbox" aria-label="Select row"></td><td>Cut v0.7</td><td>Barbara</td><td>Todo</td></tr>
+	</tbody>
+</table>
+
+<p id="status" class="status">5 rows. None selected.</p>
+`}
+	css={`
+:root { accent-color: #4f46e5; }
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; }
+
+.toolbar { display: flex; align-items: end; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.75rem; }
+.modes { border: 0; padding: 0; margin: 0; display: flex; gap: 1rem; }
+.modes legend { padding: 0; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 0.3rem; }
+.modes label { display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer; font-size: 0.85rem; }
+#delete { padding: 0.45rem 0.85rem; font: inherit; cursor: pointer; background: #dc2626; color: white; border: 1px solid #dc2626; border-radius: 8px; }
+#delete:disabled { background: #f1f5f9; color: #94a3b8; border-color: #e2e8f0; cursor: not-allowed; }
+#delete:not(:disabled):hover { background: #b91c1c; border-color: #b91c1c; }
+
+table { border-collapse: collapse; width: 100%; background: white; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 2px rgb(15 23 42 / 0.04); transition: opacity 150ms; }
+table[data-mode="manual"] thead { opacity: 0.45; pointer-events: none; }
+th, td { padding: 0.55rem 0.85rem; text-align: left; border-bottom: 1px solid #f1f5f9; }
+th { background: #f8fafc; font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; cursor: pointer; user-select: none; }
+th.check, td.check { width: 2rem; text-align: center; }
+th[data-sort-key]::after { content: " ⇅"; opacity: 0.4; }
+th[aria-sort="ascending"]::after  { content: " ↑"; opacity: 1; color: #4f46e5; }
+th[aria-sort="descending"]::after { content: " ↓"; opacity: 1; color: #4f46e5; }
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr.selected { background: #eef2ff; }
+tbody tr[draggable="true"] { cursor: grab; }
+tbody tr[draggable="true"]:active { cursor: grabbing; }
+tbody tr[data-state="dragging"] { opacity: 0.4; background: #eef2ff; }
+tbody td:focus, tbody td:focus-visible { outline: 2px solid #4f46e5; outline-offset: -2px; }
+
+.status { font: 12px ui-monospace, Menlo, monospace; color: #4338ca; margin: 0.85rem 0 0; }
+`}
+	js={`
+const thead   = document.querySelector("thead");
+const tbody   = document.getElementById("rows");
+const table   = tbody.closest("table");
+const status  = document.getElementById("status");
+const allCb   = document.getElementById("all");
+const delBtn  = document.getElementById("delete");
+const countEl = document.getElementById("count");
+
+let mode = "column";
+
+function rows() { return [...tbody.querySelectorAll("tr")]; }
+function rowChecks() { return rows().map((tr) => tr.querySelector("input[type=checkbox]")); }
+function selected() { return rows().filter((tr) => tr.querySelector("input[type=checkbox]").checked); }
+
+function paintSelection() {
+	for (const tr of rows()) {
+		tr.classList.toggle("selected", tr.querySelector("input[type=checkbox]").checked);
+	}
+	const sel = selected();
+	countEl.textContent = sel.length;
+	delBtn.disabled = sel.length === 0;
+	allCb.checked = sel.length > 0 && sel.length === rows().length;
+	allCb.indeterminate = sel.length > 0 && sel.length < rows().length;
+	if (mode === "column") {
+		status.textContent = sel.length === 0
+			? rows().length + " rows. None selected."
+			: sel.length + " of " + rows().length + " selected.";
+	}
+}
+
+function applyMode() {
+	table.dataset.mode = mode;
+	for (const tr of rows()) tr.setAttribute("draggable", mode === "manual" ? "true" : "false");
+	if (mode === "manual") status.textContent = "Manual mode — drag rows to reorder.";
+	else                   paintSelection();
+}
+
+for (const r of document.querySelectorAll("input[name=mode]")) {
+	r.addEventListener("change", (e) => { mode = e.target.value; applyMode(); });
+}
+
+allCb.addEventListener("change", () => {
+	for (const cb of rowChecks()) cb.checked = allCb.checked;
+	paintSelection();
+});
+tbody.addEventListener("change", (e) => {
+	if (e.target.matches("input[type=checkbox]")) paintSelection();
+});
+delBtn.addEventListener("click", () => {
+	for (const tr of selected()) tr.remove();
+	allCb.checked = false;
+	paintSelection();
+	wireCellTabindex();
+});
+
+const KEYS = ["", "task", "owner", "status"];
+thead.addEventListener("sort", (e) => {
+	if (mode !== "column") return;
+	const { key, direction } = e.detail;
+	if (!direction) return;
+	const idx = KEYS.indexOf(key);
+	const sorted = rows().sort((a, b) => {
+		const av = a.cells[idx].textContent.toLowerCase();
+		const bv = b.cells[idx].textContent.toLowerCase();
+		return (av < bv ? -1 : av > bv ? 1 : 0) * (direction === "asc" ? 1 : -1);
+	});
+	for (const r of sorted) tbody.append(r);
+});
+
+tbody.addEventListener("reorder", (e) => {
+	if (mode !== "manual") return;
+	status.textContent = "Manual order: " + e.detail.order.map((o) => o.id).join(" → ");
+	wireCellTabindex();  // re-pin tabindex after DOM reshuffle
+});
+
+// 2-D arrow-key cell navigation (roving tabindex).
+function wireCellTabindex() {
+	const cells = tbody.querySelectorAll("td");
+	const hasFocus = [...cells].some((c) => c.getAttribute("tabindex") === "0");
+	cells.forEach((c, i) => c.setAttribute("tabindex", (!hasFocus && i === 0) || c.getAttribute("tabindex") === "0" ? "0" : "-1"));
+}
+wireCellTabindex();
+
+tbody.addEventListener("keydown", (e) => {
+	const cell = document.activeElement;
+	if (!(cell instanceof HTMLElement) || cell.tagName !== "TD" || !tbody.contains(cell)) return;
+
+	const tr     = cell.parentElement;
+	const trList = rows();
+	const rowIdx = trList.indexOf(tr);
+	const colIdx = [...tr.cells].indexOf(cell);
+	const cols   = tr.cells.length;
+
+	let next = null;
+	switch (e.key) {
+		case "ArrowDown":  next = trList[rowIdx + 1]?.cells[colIdx]; break;
+		case "ArrowUp":    next = trList[rowIdx - 1]?.cells[colIdx]; break;
+		case "ArrowRight": next = tr.cells[colIdx + 1];              break;
+		case "ArrowLeft":  next = tr.cells[colIdx - 1];              break;
+		case "Home":       next = tr.cells[0];                       break;
+		case "End":        next = tr.cells[cols - 1];                break;
+		case " ": {
+			const cb = cell.querySelector("input[type=checkbox]");
+			if (cb) { e.preventDefault(); cb.click(); }
+			return;
+		}
+	}
+	if (next) {
+		e.preventDefault();
+		cell.setAttribute("tabindex", "-1");
+		next.setAttribute("tabindex", "0");
+		next.focus();
+	}
+});
+
+applyMode();
+`}
+/>
+
+**What's happening above**
+
+- A mode toggle flips `draggable` on every `<tr>`: `true` for manual,
+  `false` for column. Sortable's wired listeners stay attached but
+  the browser only emits `dragstart` on draggable elements, so manual
+  mode silently disables drag-reorder when off.
+- Sort and reorder handlers both gate on the same `mode` flag so the
+  "off" behavior is ignored, not torn down.
+- Multi-row selection is plain checkboxes — header checkbox toggles
+  all, derives `indeterminate` state from the row checks, and a
+  "Delete N" button enables itself off the selection count.
+- The `<thead>` visually dims and stops accepting clicks in manual
+  mode via a `data-mode="manual"` attribute on `<table>` and one CSS
+  rule.
+- Tab into the table, then **↑ ↓ ← →** move between cells, **Home/End**
+  jump to row start/end, and **Space** toggles the checkbox in the
+  current cell. The roving-tabindex setup lives in `wireCellTabindex`
+  and gets re-pinned after delete or reorder so focus never strands
+  on a removed row.
+
+The behavior is controlled: the event tells you what changed; you
+decide how to sort (client-side, server-side, hybrid) and pass the
+result back.
+
+```html
+<table>
+	<thead data-sort>
+		<tr>
+			<th data-sort-key="name">Name</th>
+			<th data-sort-key="email">Email</th>
+			<th data-sort-key="createdAt" data-sort-direction="desc">Joined</th>
+			<th>Actions</th>
+		</tr>
+	</thead>
+	<tbody>…</tbody>
+</table>
+```
+
+```ts
+import "@vyn/ui/sort";
+
+document.querySelector("thead")!.addEventListener("sort", (e) => {
+	const { key, direction } = (e as CustomEvent<{
+		key: string;
+		direction: "asc" | "desc" | null;
+	}>).detail;
+	// reorder your data
+});
+```
+
+## Attributes (on the container)
+
+| Attribute | Type | Default | What it does |
+|---|---|---|---|
+| `data-sort` | boolean | required | Activates the behavior; scopes single-active-sort to this container |
+| `data-sort-multi` | `"true" \| "false"` | `"false"` | Allow multiple columns sorted simultaneously (multi-column sort) |
+
+## Attributes (on items)
+
+| Attribute | Type | What it does |
+|---|---|---|
+| `data-sort-key` | string | Stable id surfaced in the `sort` event |
+| `data-sort-direction` | `"asc" \| "desc" \| ""` | Current direction. Set by the behavior on the active header; cleared on the others (unless `data-sort-multi`) |
+| `data-sort-default` | `"asc" \| "desc"` | Initial direction when first activating (default `"asc"`) |
+| `data-sort-disabled` | boolean | Header isn't sortable; not focusable |
+
+## Events
+
+| Event | Detail | When |
+|---|---|---|
+| `sort` | `{ key: string; direction: "asc" \| "desc" \| null; sortState: Array<{key, direction}> }` | A sort header was activated. `direction` is `null` when cycling back to unsorted. `sortState` is the full active sort list (for multi-column) |
+
+The event fires on the **container** (the `data-sort` element), not
+on each header. One listener at the thead level covers every column.
+
+The cycle is **asc → desc → unsorted → asc → ...** by default
+(or `desc → asc → unsorted → desc → ...` when
+`data-sort-default="desc"`).
+
+## Keyboard
+
+| Key | Effect |
+|---|---|
+| `Enter`, `Space` (on sortable header) | Activate; cycle direction |
+| `Tab` / `Shift+Tab` | Move between sortable headers (native focus order) |
+
+Sort headers are made focusable automatically — the behavior sets
+`tabindex="0"` and `role="button"` on each `[data-sort-key]`
+element.
+
+## ARIA
+
+| Element | Attribute | Value |
+|---|---|---|
+| sortable header | `role` | `"button"` (delegated within the `<th>`) |
+| sortable header | `aria-sort` | `"ascending"` / `"descending"` / `"none"` |
+
+Screen readers announce the sort state ("Name, sortable, ascending").
+
+## Multi-column sort
+
+With `data-sort-multi="true"`, activating a column adds it to the
+sort stack instead of replacing the active column. The event's
+`sortState` array carries the full ordered list. The user clears a
+column by cycling it back to unsorted.
+
+```html
+<thead data-sort data-sort-multi="true">
+	<tr>
+		<th data-sort-key="status">Status</th>
+		<th data-sort-key="priority">Priority</th>
+		<th data-sort-key="updatedAt">Updated</th>
+	</tr>
+</thead>
+```
+
+## See also
+
+- [`<v-table>`](/vyn/ui/table/) — composes this for the prebuilt sortable table
+- [`<v-grid>`](/vyn/ui/grid/) — composes this for the data-driven grid

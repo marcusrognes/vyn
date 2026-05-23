@@ -3,6 +3,33 @@ title: <v-table>
 description: A sortable data table built on the native <table> element. Keyboard cell navigation, sortable columns, and read-mostly semantics. For spreadsheet-like editing use <v-grid>.
 ---
 
+import LiveExample from "../../../components/LiveExample.astro";
+
+<LiveExample title="Data-driven sortable table" height="320px"
+	behaviors={["v-table"]}
+	html={`
+<v-table id="orders"
+	columns='[
+		{"key":"id","label":"ID","sortable":true},
+		{"key":"customer","label":"Customer","sortable":true},
+		{"key":"total","label":"Total","sortable":true}
+	]'
+	rows='[
+		{"id":1024,"customer":"Acme Co.","total":"$1,240"},
+		{"id":1025,"customer":"Globex","total":"$890"},
+		{"id":1026,"customer":"Initech","total":"$2,150"},
+		{"id":1027,"customer":"Stark Industries","total":"$640"}
+	]'></v-table>
+`}
+	css={`
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; }
+v-table table { border-collapse: collapse; width: 100%; background: white; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 2px rgb(15 23 42 / 0.04); }
+v-table th, v-table td { padding: 0.55rem 0.85rem; text-align: left; border-bottom: 1px solid #f1f5f9; }
+v-table th { background: #f8fafc; font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; cursor: pointer; user-select: none; }
+v-table tbody tr:last-child td { border-bottom: 0; }
+`}
+/>
+
 A wrapper around the native `<table>` that adds keyboard cell
 navigation, sortable column headers, and accessible row selection.
 Use it for read-mostly tabular data — feeds, lists, dashboards —

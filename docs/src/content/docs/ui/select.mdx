@@ -5,29 +5,47 @@ sidebar:
   order: 3
 ---
 
+import LiveExample from "../../../components/LiveExample.astro";
+
 `@vyn/ui/select` is a small behavior module that adds selection
 state to any container of items. Pair it with
 [`@vyn/ui/keyboard-nav`](/vyn/ui/keyboard-nav/) for keyboard
 operation; alone it handles mouse + programmatic selection and the
 `aria-selected` state.
 
-```html
-<ul data-select="single" data-value="editor" data-keyboard-nav>
-	<li data-value="admin">Admin</li>
-	<li data-value="editor">Editor</li>
-	<li data-value="viewer">Viewer</li>
+<LiveExample title="Multi-select listbox (ctrl-toggle, shift-range)" height="280px"
+	behaviors={["select", "keyboard-nav"]}
+	html={`
+<ul id="roles" role="listbox" aria-multiselectable="true"
+	data-keyboard-nav data-select="multiple" data-value="editor">
+	<li role="option" data-value="admin">Admin</li>
+	<li role="option" data-value="editor">Editor</li>
+	<li role="option" data-value="viewer">Viewer</li>
+	<li role="option" data-value="auditor">Auditor</li>
+	<li role="option" data-value="billing">Billing</li>
 </ul>
-```
-
-```ts
-import "@vyn/ui/select";
-import "@vyn/ui/keyboard-nav";
-
-document.querySelector("ul")!.addEventListener("change", (e) => {
-	const { value } = (e as CustomEvent<{ value: string | string[] }>).detail;
-	// single: "editor"; multiple: ["admin", "editor"]
+<p id="out" class="out">editor</p>
+`}
+	css={`
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; }
+#roles { list-style: none; margin: 0; padding: 4px; max-width: 18rem; background: white; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: 0 1px 2px rgb(15 23 42 / 0.04); }
+#roles li { padding: 0.45rem 0.7rem; border-radius: 6px; cursor: pointer; user-select: none; }
+#roles li:focus-visible { outline: none; background: #f1f5f9; }
+#roles li[aria-selected="true"] { background: #eef2ff; color: #4338ca; font-weight: 600; }
+.out { font: 12px ui-monospace, Menlo, monospace; background: #eef2ff; color: #4338ca; display: inline-block; padding: 0.3rem 0.6rem; border-radius: 6px; margin: 0.75rem 0 0; }
+`}
+	js={`
+const list = document.getElementById("roles");
+const out  = document.getElementById("out");
+list.addEventListener("change", (e) => {
+	const { value } = e.detail;
+	out.textContent = Array.isArray(value) ? value.join(", ") || "—" : value || "—";
 });
-```
+`}
+/>
+
+Click to select. Hold **Ctrl/⌘** to toggle. Hold **Shift** to extend a
+range from the anchor. Arrow keys move focus; **Space** activates.
 
 ## What it does
 
@@ -36,9 +54,32 @@ For every element with `[data-select]`:
 - Tracks selection via the container's `data-value` attribute
   (single: one string; multiple: comma-separated)
 - Adds `aria-selected="true"` to items whose `data-value` matches
-- Wires click to set or toggle selection
+- Wires click — with modifier-aware behavior in multi mode (see below)
 - Wires Enter/Space (via keyboard-nav's `activate` event) to do the same
+- Tracks the **selection anchor** on `data-sel-anchor` for shift-range
+  selects
 - Fires `change` on the container with the new value(s)
+
+## Mouse interaction
+
+**Single (`data-select="single"`)**
+
+Click sets selection to the clicked item. The anchor moves with it.
+
+**Multiple (`data-select="multiple"`)**
+
+| Gesture                  | Effect                                                      |
+|---|---|
+| plain click              | Selection becomes just this item. Anchor moves to it        |
+| ctrl/cmd + click         | Toggle this item in/out of the selection. Anchor moves to it |
+| shift + click            | Selection becomes the range from anchor → this item         |
+| ctrl/cmd + shift + click | Adds the anchor → this item range to the existing selection |
+
+If no anchor exists yet, a shift+click behaves like a plain click on
+the target item.
+
+The anchor is stored on `container.dataset.selAnchor`. You can clear
+or set it programmatically if you need to override range behavior.
 
 ## Attributes (on the container)
 
@@ -158,13 +199,14 @@ ul.addEventListener("change", async (e) => {
 
 ## Implementation note
 
-~80 lines. The behavior is mostly attribute parsing + click handler
-+ event dispatch. The keyboard work is offloaded to
-[`@vyn/ui/keyboard-nav`](/vyn/ui/keyboard-nav/), which you import
-alongside.
+~110 lines. The behavior is mostly attribute parsing + click handler
++ event dispatch + modifier math for range selection. The keyboard
+work is offloaded to [`@vyn/ui/keyboard-nav`](/vyn/ui/keyboard-nav/),
+which you import alongside.
 
 ## See also
 
 - [`@vyn/ui/keyboard-nav`](/vyn/ui/keyboard-nav/) — arrow keys and focus management; usually paired
+- [`@vyn/ui/drag-drop`](/vyn/ui/drag-drop/) — reads this behavior's selection state to drag multiple items at once
 - [`@vyn/ui/form-associated`](/vyn/ui/form-associated/) — to make a `data-select` container submit a value with a `<form>`
 - [`<v-combobox>`](/vyn/ui/combobox/) — input + listbox widget when the `aria-activedescendant` pattern is needed

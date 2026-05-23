@@ -5,6 +5,27 @@ sidebar:
   order: 10
 ---
 
+import LiveExample from "../../../components/LiveExample.astro";
+
+<LiveExample title="Hover / focus tooltip" height="240px"
+	behaviors={["tooltip"]}
+	html={`
+<button id="save" aria-label="Save">💾</button>
+<div id="save-tip" data-tooltip-for="save">Save current draft (⌘S)</div>
+`}
+	css={`
+body { margin: 0; padding: 2.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; }
+button { padding: 0.5rem 0.85rem; font-size: 18px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; cursor: pointer; }
+#save-tip {
+	padding: 0.4rem 0.65rem; background: #0f172a; color: white;
+	border-radius: 6px; font-size: 0.8rem;
+	opacity: 0; transition: opacity 150ms;
+	pointer-events: none;
+}
+#save-tip[data-state="visible"] { opacity: 1; }
+`}
+/>
+
 `@vyn/ui/tooltip` is a hover/focus-driven floating label. It wraps
 [`anchor`](/vyn/ui/anchor/), [`dismiss`](/vyn/ui/dismiss/), and
 [`aria-describedby`](/vyn/ui/aria-describedby/) into one

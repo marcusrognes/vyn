@@ -5,6 +5,32 @@ sidebar:
   order: 17
 ---
 
+import LiveExample from "../../../components/LiveExample.astro";
+
+<LiveExample title="Textarea that grows with content" height="300px"
+	behaviors={["auto-resize"]}
+	html={`
+<label class="field">
+	<span>Compose</span>
+	<textarea data-auto-resize data-min-rows="2" data-max-rows="8"
+		placeholder="Start typing — the textarea grows…"></textarea>
+</label>
+`}
+	css={`
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; }
+.field { display: block; max-width: 26rem; }
+.field span { display: block; font-weight: 600; font-size: 0.78rem; margin-bottom: 0.3rem; color: #334155; }
+textarea {
+	width: 100%; padding: 0.55rem 0.75rem;
+	font: inherit; line-height: 1.5; resize: none;
+	background: white; box-sizing: border-box;
+	border: 1px solid #cbd5e1; border-radius: 8px;
+	box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+textarea:focus { outline: 0; border-color: #4f46e5; box-shadow: 0 0 0 3px rgb(79 70 229 / 0.18); }
+`}
+/>
+
 `@vyn/ui/auto-resize` makes a `<textarea>` grow to fit its content
 as the user types. No fixed `rows` attribute, no scrollbar until a
 configurable maximum.

@@ -3,6 +3,42 @@ title: <v-toast>
 description: Transient notifications announced via an aria-live region. Stack, auto-dismiss, queue, and survive route transitions.
 ---
 
+import LiveExample from "../../../components/LiveExample.astro";
+
+<LiveExample title="Trigger toast notifications" height="280px"
+	behaviors={["v-toaster"]}
+	html={`
+<button id="info">Info</button>
+<button id="ok">Success</button>
+<button id="warn">Warning</button>
+<button id="err">Error</button>
+<v-toaster id="toasts" position="bottom-end"></v-toaster>
+`}
+	css={`
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; min-height: 200px; }
+button { padding: 0.5rem 0.9rem; margin-right: 0.4rem; border-radius: 8px; border: 1px solid #cbd5e1; background: white; cursor: pointer; font: inherit; }
+v-toaster > div {
+	pointer-events: auto;
+	padding: 0.65rem 0.85rem; min-width: 14rem;
+	background: white; color: #0f172a;
+	border: 1px solid #e2e8f0; border-radius: 10px;
+	box-shadow: 0 10px 25px -5px rgb(15 23 42 / 0.15);
+	font-size: 0.9rem;
+}
+v-toaster > div[data-kind="success"] { border-left: 4px solid #16a34a; }
+v-toaster > div[data-kind="warning"] { border-left: 4px solid #d97706; }
+v-toaster > div[data-kind="error"]   { border-left: 4px solid #dc2626; }
+v-toaster > div[data-kind="info"]    { border-left: 4px solid #4f46e5; }
+`}
+	js={`
+const t = document.getElementById("toasts");
+document.getElementById("info").addEventListener("click", () => t.show({ kind: "info",    title: "Heads up", body: "New release available." }));
+document.getElementById("ok"  ).addEventListener("click", () => t.show({ kind: "success", title: "Saved",    body: "Project saved to drafts." }));
+document.getElementById("warn").addEventListener("click", () => t.show({ kind: "warning", title: "Slow",     body: "Server is responding slowly." }));
+document.getElementById("err" ).addEventListener("click", () => t.show({ kind: "error",   title: "Failed",   body: "Could not reach server." }));
+`}
+/>
+
 A toast is a transient, non-interactive notification — "Saved",
 "Couldn't connect, retrying…", "5 new notes". `<v-toast>` displays
 one; `<v-toaster>` is the host element that stacks them and

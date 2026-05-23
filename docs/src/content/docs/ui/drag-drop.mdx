@@ -1,0 +1,177 @@
+---
+title: drag-drop
+description: Typed HTML5 drag-and-drop between containers. Selection-aware multi-drag pairs with data-select to move groups of items in one gesture.
+sidebar:
+  order: 16
+---
+
+import LiveExample from "../../../components/LiveExample.astro";
+
+<LiveExample title="Kanban — drag tasks between columns" height="340px"
+	behaviors={["drag-drop", "select", "keyboard-nav"]}
+	html={`
+<div class="board">
+	<section data-dropzone data-accepts="task">
+		<h3>Todo</h3>
+		<ul data-select="multiple" data-keyboard-nav>
+			<li data-draggable="task" data-value="t-1">📝 Write release notes</li>
+			<li data-draggable="task" data-value="t-2">🐞 Triage bug reports</li>
+			<li data-draggable="task" data-value="t-3">🎨 Polish landing page</li>
+		</ul>
+	</section>
+	<section data-dropzone data-accepts="task">
+		<h3>Done</h3>
+		<ul data-select="multiple" data-keyboard-nav>
+			<li data-draggable="task" data-value="t-4">🚢 Cut v0.7</li>
+		</ul>
+	</section>
+</div>
+<p id="out" class="out">Drop tasks to move them.</p>
+`}
+	css={`
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; }
+.board { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+section { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.6rem 0.75rem 0.8rem; min-height: 8rem; }
+section[data-state="over"] { border-color: #4f46e5; background: #eef2ff; }
+h3 { margin: 0 0 0.4rem; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; }
+ul { list-style: none; margin: 0; padding: 0; min-height: 2.5rem; }
+li { padding: 0.5rem 0.65rem; margin-bottom: 0.35rem; background: #fafbff; border: 1px solid #e2e8f0; border-radius: 8px; cursor: grab; user-select: none; }
+li[aria-selected="true"] { border-color: #4f46e5; background: #eef2ff; }
+li[data-state="dragging"] { opacity: 0.4; }
+.out { font: 12px ui-monospace, Menlo, monospace; color: #4338ca; margin: 0.75rem 0 0; }
+`}
+	js={`
+for (const zone of document.querySelectorAll("[data-dropzone]")) {
+	zone.addEventListener("drop", (e) => {
+		const { items } = e.detail;
+		const list = zone.querySelector("ul");
+		for (const id of items) {
+			const node = document.querySelector('[data-value="' + id + '"]');
+			if (node) list.append(node);
+		}
+		document.getElementById("out").textContent =
+			"Moved " + items.length + " task" + (items.length > 1 ? "s" : "") + " to " + zone.querySelector("h3").textContent;
+	});
+}
+`}
+/>
+
+`@vyn/ui/drag-drop` wires native HTML5 drag-and-drop with typed
+payloads and selection-aware multi-drag. Unlike
+[`sortable`](/vyn/ui/sortable/) (which reorders within one list),
+`drag-drop` is for moving items between lists, into trash zones, or
+onto canvas surfaces.
+
+A draggable declares a **type** and a **value** (its id). A zone
+declares which types it `accepts`. On drop, the zone fires a `drop`
+event whose detail carries the type and the list of dragged item ids.
+
+```html
+<ul data-select="multiple" data-keyboard-nav>
+	<li data-draggable="todo" data-value="t-1">Buy milk</li>
+	<li data-draggable="todo" data-value="t-2">Walk dog</li>
+	<li data-draggable="todo" data-value="t-3">Write doc</li>
+</ul>
+
+<ul data-dropzone data-accepts="todo" data-list-id="done">…</ul>
+
+<div data-dropzone data-accepts="todo" class="trash">
+	🗑 Drop here to delete
+</div>
+```
+
+```ts
+import "@vyn/ui/drag-drop";
+import "@vyn/ui/select";
+
+for (const zone of document.querySelectorAll("[data-dropzone]")) {
+	zone.addEventListener("drop", (e) => {
+		const { type, items } = (e as CustomEvent<{
+			type:  string;
+			items: string[];
+			data:  string;
+		}>).detail;
+
+		if ((zone as HTMLElement).classList.contains("trash")) {
+			rpc.todos.removeMany.mutate({ ids: items });
+		} else {
+			rpc.todos.moveMany.mutate({
+				ids:    items,
+				listId: (zone as HTMLElement).dataset.listId,
+			});
+		}
+	});
+}
+```
+
+## Attributes (on draggable items)
+
+| Attribute | Type | What it does |
+|---|---|---|
+| `data-draggable` | string | Required. The type tag (`"todo"`, `"file"`, …). Zones match against this |
+| `data-value` | string | The item's id; emitted in the drop event. Preferred — also doubles as the selection value when inside [`data-select`](/vyn/ui/select/) |
+| `data-payload` | string | Legacy alias for `data-value`. Used only when `data-value` is absent |
+
+The behavior sets `draggable="true"` for you.
+
+## Attributes (on drop zones)
+
+| Attribute | Type | What it does |
+|---|---|---|
+| `data-dropzone` | boolean | Marks the element as a drop target |
+| `data-accepts` | space-separated types | Which `data-draggable` types this zone accepts. Empty = accept all |
+
+## Events (on the zone)
+
+| Event | Detail | When |
+|---|---|---|
+| `drop`     | `{ type, items: string[], data: string }` | Item(s) dropped on an accepting zone. `items` is always populated — single-drag yields a 1-element array. `data` is the raw `application/x-vyn-data` payload |
+| `rejected` | `{ type, data }` | Drop attempted but the zone does not accept this type |
+
+The DOM is **not** mutated by the behavior. Re-render from your data
+after `rpc.*.mutate` returns (or apply your invalidation strategy).
+
+## Selection-aware multi-drag
+
+If a draggable is inside an ancestor `[data-select="multiple"]` and its
+own `data-value` is part of the container's current selection, dragging
+any one item drags **every selected peer** in the same gesture.
+
+- Payload becomes a JSON array (e.g. `["t-1","t-2","t-3"]`) on the
+  `application/x-vyn-data` mime type
+- A flag mime `application/x-vyn-multi: "1"` marks the multi case so
+  the zone knows to JSON-parse rather than read a single id
+- Every selected peer receives `data-state="dragging"` for CSS dimming
+- The `drop` detail's `items` is always an array — your handler doesn't
+  branch on single vs. multi
+
+If the item is **not** in the current selection (or the container is
+single-select), only the dragged item travels. This matches the
+expectation that clicking-and-dragging an unselected item is a fresh,
+independent gesture.
+
+```css
+[data-draggable][data-state="dragging"] {
+	opacity: 0.5;
+}
+```
+
+## MIME types
+
+The behavior uses three custom MIME types on `DataTransfer`:
+
+| MIME | Carries |
+|---|---|
+| `application/x-vyn-type`  | The `data-draggable` type string |
+| `application/x-vyn-data`  | Single id, or JSON array of ids (multi) |
+| `application/x-vyn-multi` | `"1"` when the payload is a JSON array |
+
+A `text/plain` fallback (comma-joined ids) is also set so a drop into a
+text editor produces something readable.
+
+## See also
+
+- [`@vyn/ui/select`](/vyn/ui/select/) — required upstream behavior for
+  multi-drag; provides the selection state the dragger reads
+- [`@vyn/ui/sortable`](/vyn/ui/sortable/) — within-list reordering
+- [`@vyn/ui/keyboard-nav`](/vyn/ui/keyboard-nav/) — arrow-key list navigation

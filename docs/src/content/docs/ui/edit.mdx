@@ -1,11 +1,53 @@
 ---
 title: edit
-description: Inline-editable cells via data-editable. Enter to edit, Esc to cancel, Enter/Tab to commit. Renders the right input type per data-type.
+description: Inline-editable cells via data-edit. Enter to edit, Esc to cancel, Enter/Tab to commit. Fires a change event with old/new value.
 sidebar:
   order: 14
 ---
 
-`@vyn/ui/edit` turns any element with `data-editable` into an
+import LiveExample from "../../../components/LiveExample.astro";
+
+<LiveExample title="Inline cell editing" height="280px"
+	behaviors={["edit"]}
+	html={`
+<p class="hint">Double-click a cell, or focus it and press Enter / F2.</p>
+<table>
+	<tbody>
+		<tr>
+			<td>Jane Doe</td>
+			<td data-edit>jane@example.com</td>
+		</tr>
+		<tr>
+			<td>Ada Lovelace</td>
+			<td data-edit>ada@example.com</td>
+		</tr>
+		<tr>
+			<td>Grace Hopper</td>
+			<td data-edit>grace@example.com</td>
+		</tr>
+	</tbody>
+</table>
+<p id="out" class="out">No edits yet.</p>
+`}
+	css={`
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; }
+.hint { margin: 0 0 0.5rem; color: #64748b; font-size: 0.8rem; }
+table { border-collapse: collapse; background: white; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; box-shadow: 0 1px 2px rgb(15 23 42 / 0.04); }
+td { padding: 0.55rem 0.85rem; border-bottom: 1px solid #f1f5f9; }
+tr:last-child td { border-bottom: 0; }
+td[data-edit] { cursor: text; }
+td[data-edit]:focus { outline: 2px solid #4f46e5; outline-offset: -2px; }
+.out { font: 12px ui-monospace, Menlo, monospace; color: #4338ca; margin: 0.75rem 0 0; }
+`}
+	js={`
+document.querySelector("tbody").addEventListener("change", (e) => {
+	const { previous, value } = e.detail;
+	document.getElementById("out").textContent = previous + " → " + value;
+});
+`}
+/>
+
+`@vyn/ui/edit` turns any element with `data-edit` into an
 inline-editable cell. Focus the element, press Enter (or F2, or
 double-click), an input appears with the current text. Esc cancels;
 Enter or Tab commits and fires `change`.

@@ -5,6 +5,31 @@ sidebar:
   order: 9
 ---
 
+import LiveExample from "../../../components/LiveExample.astro";
+
+<LiveExample title="Description shown only when invalid" height="260px"
+	behaviors={["aria-describedby"]}
+	html={`
+<label class="field">
+	<span>Email</span>
+	<input id="em" type="email" required placeholder="you@example.com"
+		data-describedby="em-help"
+		data-describedby-invalid-only="true">
+</label>
+<p id="em-help" class="help">Enter a valid email — we'll send confirmation here.</p>
+`}
+	css={`
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; }
+.field { display: block; max-width: 22rem; margin-bottom: 0.4rem; }
+.field span { display: block; font-weight: 600; font-size: 0.78rem; margin-bottom: 0.3rem; color: #334155; }
+input { width: 100%; padding: 0.5rem 0.65rem; font: inherit; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 8px; background: white; }
+input:focus { outline: 0; border-color: #4f46e5; box-shadow: 0 0 0 3px rgb(79 70 229 / 0.18); }
+input:invalid:not(:placeholder-shown) { border-color: #dc2626; }
+.help { margin: 0; padding: 0.4rem 0.6rem; font-size: 0.85rem; color: #dc2626; background: #fef2f2; border-radius: 6px; }
+.help[data-state="hidden"] { display: none; }
+`}
+/>
+
 `@vyn/ui/aria-describedby` wires an `aria-describedby` relationship
 between two elements when one declares `data-describes="target-id"`.
 Use it for form-field help text, error messages, contextual hints

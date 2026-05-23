@@ -5,6 +5,24 @@ sidebar:
   order: 4
 ---
 
+import LiveExample from "../../../components/LiveExample.astro";
+
+<LiveExample title="JS-positioned floating badge" height="220px"
+	behaviors={["anchor"]}
+	html={`
+<div class="row">
+	<button id="ref-button">Reference target</button>
+	<div data-anchor="ref-button" data-placement="bottom-end" data-offset="6" class="badge">Anchored here ↑</div>
+</div>
+`}
+	css={`
+body { margin: 0; padding: 2.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; }
+.row { display: inline-block; }
+button { padding: 0.5rem 0.9rem; border-radius: 8px; border: 1px solid #cbd5e1; background: white; cursor: pointer; font: inherit; box-shadow: 0 1px 2px rgb(15 23 42 / 0.05); }
+.badge { padding: 0.35rem 0.6rem; background: #0f172a; color: white; border-radius: 6px; font-size: 0.78rem; box-shadow: 0 4px 12px rgb(15 23 42 / 0.18); }
+`}
+/>
+
 For most anchored positioning, **use CSS Anchor Positioning** — it
 ships in current browsers and runs entirely in CSS, with no JS to
 keep position synced.

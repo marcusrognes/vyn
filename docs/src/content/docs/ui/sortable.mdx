@@ -1,0 +1,187 @@
+---
+title: sortable
+description: Drag to reorder a list. Pointer + keyboard accessible. Emits reorder events with the before/after index.
+sidebar:
+  order: 15
+---
+
+import LiveExample from "../../../components/LiveExample.astro";
+
+<LiveExample title="Drag-to-reorder list" height="320px"
+	behaviors={["sortable"]}
+	html={`
+<p class="hint">Drag rows to reorder.</p>
+<ul data-sortable id="tasks">
+	<li data-id="t-1">📝 Write release notes</li>
+	<li data-id="t-2">🐞 Triage bug reports</li>
+	<li data-id="t-3">🚢 Cut v0.7 release</li>
+	<li data-id="t-4">📣 Post changelog</li>
+</ul>
+<p id="out" class="out">Order will appear here.</p>
+`}
+	css={`
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; }
+.hint { margin: 0 0 0.5rem; color: #64748b; font-size: 0.8rem; }
+ul { list-style: none; margin: 0; padding: 4px; max-width: 22rem; background: white; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: 0 1px 2px rgb(15 23 42 / 0.04); }
+li { padding: 0.55rem 0.75rem; border-radius: 6px; cursor: grab; user-select: none; }
+li:hover { background: #f1f5f9; }
+li[data-state="dragging"] { opacity: 0.4; background: #eef2ff; }
+.out { font: 12px ui-monospace, Menlo, monospace; color: #4338ca; margin: 0.75rem 0 0; }
+`}
+	js={`
+document.getElementById("tasks").addEventListener("reorder", (e) => {
+	document.getElementById("out").textContent = e.detail.order.map(o => o.id).join(" → ");
+});
+`}
+/>
+
+`@vyn/ui/sortable` turns a list into a reorderable one. Items can
+be dragged with the mouse, picked up with the keyboard, and dropped
+into a new position. Emits a `reorder` event with the moved item and
+its new index; the consumer updates the data.
+
+Add a matching `data-sortable-group="<name>"` to multiple containers
+and items move between them — same positional drop, same `reorder`
+event per container, plus a `move` event on the destination when an
+item crosses lists. No need to bolt [`drag-drop`](/vyn/ui/drag-drop/)
+on top; reach for that when you also need typed drops, multi-drag, or
+trash-style targets.
+
+<LiveExample title="Kanban — reorder within + move between columns" height="420px"
+	behaviors={["sortable"]}
+	html={`
+<div class="board">
+	<section class="col">
+		<h3>Backlog</h3>
+		<ul class="list" data-sortable data-sortable-group="board">
+			<li data-id="t-1">📝 Write release notes</li>
+			<li data-id="t-2">🐞 Triage bug reports</li>
+			<li data-id="t-3">🎨 Polish landing page</li>
+		</ul>
+	</section>
+	<section class="col">
+		<h3>In progress</h3>
+		<ul class="list" data-sortable data-sortable-group="board">
+			<li data-id="t-4">🚢 Cut v0.7</li>
+		</ul>
+	</section>
+	<section class="col">
+		<h3>Done</h3>
+		<ul class="list" data-sortable data-sortable-group="board">
+			<li data-id="t-5">✅ Set up CI</li>
+		</ul>
+	</section>
+</div>
+<p id="out" class="out">Drag within a column to reorder, or across columns to move.</p>
+`}
+	css={`
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; }
+.board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; }
+.col { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.55rem 0.7rem 0.75rem; min-height: 8rem; }
+.col[data-state="over"] { border-color: #4f46e5; background: #eef2ff; }
+h3 { margin: 0 0 0.4rem; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; }
+.list { list-style: none; margin: 0; padding: 0; min-height: 3rem; }
+.list li {
+	padding: 0.5rem 0.65rem; margin-bottom: 0.35rem;
+	background: #fafbff; color: #0f172a;
+	border: 1px solid #e2e8f0; border-radius: 8px;
+	cursor: grab; user-select: none;
+	box-shadow: 0 1px 1px rgb(15 23 42 / 0.04);
+}
+.list li:active { cursor: grabbing; }
+.list li[data-state="dragging"] { opacity: 0.35; background: #eef2ff; }
+.out { font: 12px ui-monospace, Menlo, monospace; color: #4338ca; margin: 0.85rem 0 0; }
+`}
+	js={`
+const out = document.getElementById("out");
+
+for (const list of document.querySelectorAll("[data-sortable]")) {
+	list.addEventListener("move", (e) => {
+		const { id, to } = e.detail;
+		out.textContent = "Moved " + id + " → " + to.closest(".col").querySelector("h3").textContent;
+	});
+	list.addEventListener("reorder", (e) => {
+		const col = list.closest(".col").querySelector("h3").textContent;
+		out.textContent = col + ": " + e.detail.order.map((o) => o.id).join(" → ");
+	});
+}
+`}
+/>
+
+```html
+<ul data-sortable>
+	<li data-id="task-1">Buy milk</li>
+	<li data-id="task-2">Walk dog</li>
+	<li data-id="task-3">Write doc</li>
+</ul>
+```
+
+```ts
+import "@vyn/ui/sortable";
+
+document.querySelector("ul")!.addEventListener("reorder", (e) => {
+	const { order } = (e as CustomEvent<{
+		order: { index: number; id: string }[];
+	}>).detail;
+	// persist the new order
+});
+```
+
+## Attributes (on the container)
+
+| Attribute | Type | Default | What it does |
+|---|---|---|---|
+| `data-sortable`       | boolean | required | Activates the behavior |
+| `data-sortable-group` | string  | unset    | Containers sharing the same group accept items dragged from each other |
+
+## Attributes (on items)
+
+| Attribute | What it does |
+|---|---|
+| `data-id` | Stable id surfaced in the `reorder` and `move` events. Falls back to `id` if absent |
+
+## Events
+
+| Event | Fires on | Detail | When |
+|---|---|---|---|
+| `reorder` | the container | `{ order: { index, id }[] }` | After drop or keyboard commit, with the container's new order |
+| `move`    | the destination | `{ id, from, to }` (both `HTMLElement`) | After a cross-container drop completes. Fires **after** the two `reorder` events for source and destination |
+
+A within-container reorder fires `reorder` once. A cross-container
+drag fires `reorder` on both the source and the destination, then
+`move` on the destination.
+
+## Keyboard
+
+When an item (or its handle) has focus:
+
+| Key | Effect |
+|---|---|
+| `Space`, `Enter` | Pick up / drop the item |
+| `ArrowDown`, `ArrowUp` (after pickup) | Move down/up one position |
+| `Home`, `End` (after pickup) | Move to first / last |
+| `Esc` (after pickup) | Cancel; restore original position |
+
+While picked up, the item visually lifts (via `data-state="picked"`)
+and a live region announces "Item picked up. Press up and down to
+move, Enter to drop, Escape to cancel."
+
+## ARIA and `data-state`
+
+| Attribute | When |
+|---|---|
+| `aria-grabbed="true"` | On the picked-up item |
+| `data-state="picked"` | Same; for CSS targeting |
+| `data-state="dragging"` | On the item being dragged with a pointer |
+
+## Touch and pointer
+
+The behavior uses Pointer Events, so touch, stylus, and mouse all
+work. On touch, a 300ms long-press picks up the item (avoiding
+conflict with scroll); set `data-handle` to a dedicated handle to
+remove the delay.
+
+## See also
+
+- [`@vyn/ui/drag-drop`](/vyn/ui/drag-drop/) — cross-container drag-and-drop
+- [`@vyn/ui/keyboard-nav`](/vyn/ui/keyboard-nav/) — for keyboard-only navigation between items when not reordering

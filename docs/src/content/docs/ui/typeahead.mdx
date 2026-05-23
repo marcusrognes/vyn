@@ -5,6 +5,33 @@ sidebar:
   order: 6
 ---
 
+import LiveExample from "../../../components/LiveExample.astro";
+
+<LiveExample title="Type letters to jump to item" height="300px"
+	behaviors={["typeahead", "keyboard-nav"]}
+	html={`
+<p class="hint">Click a fruit, then press <kbd>B</kbd> or <kbd>C</kbd> to jump.</p>
+<ul data-typeahead data-keyboard-nav>
+	<li>Apple</li>
+	<li>Apricot</li>
+	<li>Banana</li>
+	<li>Blueberry</li>
+	<li>Cherry</li>
+	<li>Coconut</li>
+	<li>Date</li>
+	<li>Elderberry</li>
+</ul>
+`}
+	css={`
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; }
+.hint { margin: 0 0 0.5rem; color: #64748b; font-size: 0.8rem; }
+kbd { font: 0.9em ui-monospace, Menlo, monospace; background: #f1f5f9; border: 1px solid #cbd5e1; padding: 0 0.3em; border-radius: 4px; }
+ul { list-style: none; margin: 0; padding: 4px; max-width: 18rem; background: white; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: 0 1px 2px rgb(15 23 42 / 0.04); }
+li { padding: 0.4rem 0.7rem; border-radius: 6px; cursor: pointer; }
+li:focus, li:focus-visible { outline: none; background: #eef2ff; color: #4338ca; font-weight: 600; }
+`}
+/>
+
 `@vyn/ui/typeahead` listens for letter and digit keypresses on a
 container and jumps focus to the next matching item. The match is
 against the item's text content (or `data-label`) and resets after

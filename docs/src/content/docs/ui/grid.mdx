@@ -3,6 +3,34 @@ title: <v-grid>
 description: A keyboard-navigable data grid built from divs with the ARIA grid pattern. Two-dimensional arrow-key navigation, sortable columns, optional inline editing.
 ---
 
+import LiveExample from "../../../components/LiveExample.astro";
+
+<LiveExample title="Focusable 4×3 grid (arrow keys)" height="260px"
+	behaviors={["v-grid"]}
+	html={`
+<p class="hint">Click a cell, then move with ↑ ↓ ← →. Home/End jump.</p>
+<v-grid columns="4">
+	<div>1</div><div>2</div><div>3</div><div>4</div>
+	<div>5</div><div>6</div><div>7</div><div>8</div>
+	<div>9</div><div>10</div><div>11</div><div>12</div>
+</v-grid>
+<p id="out" class="out">Focused: —</p>
+`}
+	css={`
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; }
+.hint { margin: 0 0 0.5rem; color: #64748b; font-size: 0.8rem; }
+v-grid { gap: 4px; padding: 4px; background: white; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: 0 1px 2px rgb(15 23 42 / 0.04); max-width: 18rem; }
+v-grid > div { padding: 0.7rem 0; text-align: center; background: #fafbff; border-radius: 6px; cursor: pointer; user-select: none; font-weight: 500; }
+v-grid > div:focus, v-grid > div:focus-visible { outline: none; background: #4f46e5; color: white; }
+.out { font: 12px ui-monospace, Menlo, monospace; color: #4338ca; margin: 0.75rem 0 0; }
+`}
+	js={`
+document.querySelector("v-grid").addEventListener("cellfocus", (e) => {
+	document.getElementById("out").textContent = "Focused: cell #" + (e.detail.index + 1);
+});
+`}
+/>
+
 A two-dimensional data grid. Unlike [`<v-table>`](/vyn/ui/table/) which
 wraps the native `<table>` element and is the right choice for
 read-mostly tabular data, `<v-grid>` is the right choice when you
