@@ -1,5 +1,5 @@
-import type { BaseCtx } from "@vyn/server";
-import type { SessionStore } from "@vyn/auth";
+import type { BaseCtx } from "@vynjs/server";
+import type { SessionStore } from "@vynjs/auth";
 import type { Note } from "./features/notes/note.ts";
 
 export type User = { _id: string; email: string; passwordHash: string; createdAt: number };

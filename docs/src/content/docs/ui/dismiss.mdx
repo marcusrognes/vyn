@@ -56,7 +56,7 @@ already handles Esc and outside-click dismissal for elements with
 the `popover` attribute. **Use it first** — the browser ships the
 right behavior, and you don't need this module.
 
-`@vyn/ui/dismiss` exists for the cases the native API doesn't cover:
+`@vynjs/ui/dismiss` exists for the cases the native API doesn't cover:
 
 - Non-popover elements (drawers, custom overlays) that still need
   Esc / outside-click / focus-out dismissal
@@ -71,7 +71,7 @@ right behavior, and you don't need this module.
 ```
 
 ```ts
-import "@vyn/ui/dismiss";
+import "@vynjs/ui/dismiss";
 
 document.getElementById("drawer")!.addEventListener("dismiss", (e) => {
 	if (hasUnsavedChanges) {
@@ -126,5 +126,5 @@ internally. Reach for `dismiss` directly when:
 ## See also
 
 - Native [Popover API](https://developer.mozilla.org/en-US/docs/Web/API/Popover_API) — handles Esc + outside-click for `popover` elements automatically
-- [`@vyn/ui/popover`](/vyn/ui/popover/) — composes `dismiss` with anchor positioning
-- [`@vyn/ui/focus-trap`](/vyn/ui/focus-trap/) — for modal-style focus containment
+- [`@vynjs/ui/popover`](/vyn/ui/popover/) — composes `dismiss` with anchor positioning
+- [`@vynjs/ui/focus-trap`](/vyn/ui/focus-trap/) — for modal-style focus containment

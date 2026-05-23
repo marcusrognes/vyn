@@ -26,8 +26,8 @@ generation and password hashing are identical.
 
 ```ts
 // features/notes/note.ts
-import { v } from "@vyn/core";
-import { uuid } from "@vyn/core/util";
+import { v } from "@vynjs/core";
+import { uuid } from "@vynjs/core/util";
 
 // Embedding vectors are stored alongside notes. SuperJSON lets us
 // hand them off as a Float32Array on the wire without coercing.
@@ -62,7 +62,7 @@ a `Float32Array`, `note.properties.get(key)` works.
 
 ```ts
 // features/notes/notes.actions.ts
-import { createQuery, createMutation, createSubscription, v, RpcError } from "@vyn/core";
+import { createQuery, createMutation, createSubscription, v, RpcError } from "@vynjs/core";
 import type { Ctx } from "../../ctx.ts";
 import { NoteSchema, type Note } from "./note.ts";
 import { requireSession } from "../auth/guards.ts";
@@ -185,7 +185,7 @@ Things to notice:
 
 ```ts
 // public/routes/index.js
-import { createApp } from "@vyn/client";
+import { createApp } from "@vynjs/client";
 import { transformer } from "../../transform.ts";
 import type { AppRouter } from "../../_vyn.gen.ts";
 

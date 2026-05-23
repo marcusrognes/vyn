@@ -44,7 +44,7 @@ document.getElementById("plans").addEventListener("submit", (e) => {
 `}
 />
 
-`@vyn/ui/form-associated` lets a non-input element submit its value
+`@vynjs/ui/form-associated` lets a non-input element submit its value
 with a surrounding `<form>`. Apply `data-form-name="..."` and the
 behavior wires up a hidden internal input that mirrors the element's
 `data-value`, syncs validity, and participates in `FormData`,
@@ -63,9 +63,9 @@ behavior wires up a hidden internal input that mirrors the element's
 ```
 
 ```ts
-import "@vyn/ui/select";
-import "@vyn/ui/keyboard-nav";
-import "@vyn/ui/form-associated";
+import "@vynjs/ui/select";
+import "@vynjs/ui/keyboard-nav";
+import "@vynjs/ui/form-associated";
 
 document.querySelector("form")!.addEventListener("submit", (e) => {
 	e.preventDefault();
@@ -85,7 +85,7 @@ document.querySelector("form")!.addEventListener("submit", (e) => {
 
 The behavior reads `data-value` on the element as the source of
 truth. It works with anything that writes `data-value` —
-[`@vyn/ui/select`](/vyn/ui/select/), custom widgets, manual assignment.
+[`@vynjs/ui/select`](/vyn/ui/select/), custom widgets, manual assignment.
 
 ## What it does
 
@@ -133,5 +133,5 @@ your own message — pair with
 
 ## See also
 
-- [`@vyn/ui/select`](/vyn/ui/select/) — the primary writer of `data-value`
-- [`@vyn/ui/aria-describedby`](/vyn/ui/aria-describedby/) — for inline error messages
+- [`@vynjs/ui/select`](/vyn/ui/select/) — the primary writer of `data-value`
+- [`@vynjs/ui/aria-describedby`](/vyn/ui/aria-describedby/) — for inline error messages

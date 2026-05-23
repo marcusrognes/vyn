@@ -1,4 +1,4 @@
-import { v } from "@vyn/core";
+import { v } from "@vynjs/core";
 
 export const TodoSchema = v.object({
 	_id:       v.string().uuid().default(() => crypto.randomUUID()),

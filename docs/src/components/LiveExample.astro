@@ -6,9 +6,9 @@
 // the preview and per-language source panes (HTML / CSS / JS). Each
 // source tab is highlighted by Shiki via Astro's <Code>.
 //
-// Pass `behaviors={["select", "keyboard-nav"]}` to load real @vyn/ui
+// Pass `behaviors={["select", "keyboard-nav"]}` to load real @vynjs/ui
 // modules into the iframe (bundled to IIFE server-side via esbuild).
-// The JS source tab shows clean `import "@vyn/ui/x"` lines plus any
+// The JS source tab shows clean `import "@vynjs/ui/x"` lines plus any
 // extra `js` you provide.
 //
 // Usage in MDX:
@@ -53,7 +53,7 @@ const runtimeBundleJs = bundles.length
 	: "";
 
 // Source displayed to users: clean import lines + their own JS.
-const importLines = behaviors.map((b) => `import "@vyn/ui/${b}";`).join("\n");
+const importLines = behaviors.map((b) => `import "@vynjs/ui/${b}";`).join("\n");
 const sourceJs    = [importLines, jsTrim].filter(Boolean).join("\n\n");
 
 // Executed JS: strip `import "..."` lines (they exist only in source tab).

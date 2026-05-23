@@ -1,5 +1,5 @@
 {
-	"name": "@vyn/example-notes-auth",
+	"name": "@vynjs/example-notes-auth",
 	"private": true,
 	"version": "0.0.0",
 	"type": "module",
@@ -8,9 +8,9 @@
 		"start": "node --experimental-strip-types server.ts"
 	},
 	"dependencies": {
-		"@vyn/core":   "*",
-		"@vyn/server": "*",
-		"@vyn/client": "*",
-		"@vyn/auth":   "*"
+		"@vynjs/core":   "*",
+		"@vynjs/server": "*",
+		"@vynjs/client": "*",
+		"@vynjs/auth":   "*"
 	}
 }

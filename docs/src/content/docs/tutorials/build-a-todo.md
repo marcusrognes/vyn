@@ -23,7 +23,7 @@ The whole app is fewer than 200 lines of code.
 ## Prerequisites
 
 - Deno 2+ installed. See [Getting started](/vyn/getting-started/).
-- A working directory: `mkdir todo && cd todo && deno run -A jsr:@vyn/cli init`.
+- A working directory: `mkdir todo && cd todo && deno run -A jsr:@vynjs/cli init`.
 
 We'll use a small in-memory store so the tutorial stays focused on
 Vyn's shape. Swapping to SQLite (or any other store) is a one-file
@@ -33,7 +33,7 @@ change once you finish; see the [Next steps](#next-steps) section.
 **Server vs browser code.** Everything is TypeScript. Files under
 `features/` and `server.ts` run directly under Deno — no transpile
 step. Files under `public/**/*.ts` are bundled on demand by
-`@vyn/server` when the browser requests their `.js` sibling —
+`@vynjs/server` when the browser requests their `.js` sibling —
 `<script src="/routes/index.js">` resolves to a bundle of
 `public/routes/index.ts`. Production `vyn build` writes the same
 bundles to `public/dist/` with content hashes and a manifest. The
@@ -98,8 +98,8 @@ the API, the client cache, and any generated form.
 
 ```ts
 // features/todos/todo.ts
-import { v } from "@vyn/core";
-import { uuid } from "@vyn/core/util";
+import { v } from "@vynjs/core";
+import { uuid } from "@vynjs/core/util";
 
 export const TodoSchema = v.object({
 	_id:       v.string().uuid().default(() => uuid()),
@@ -129,7 +129,7 @@ same directory, imported with a sibling path:
 
 ```ts
 // features/todos/todos.actions.ts
-import { createQuery, createMutation, createSubscription, v } from "@vyn/core";
+import { createQuery, createMutation, createSubscription, v } from "@vynjs/core";
 import { TodoSchema } from "./todo.ts";
 
 export const list = createQuery({
@@ -218,7 +218,7 @@ the in-memory store:
 
 ```ts
 // server.ts
-import { serve } from "@vyn/server";
+import { serve } from "@vynjs/server";
 import "./_vyn.gen.ts";   // codegen barrel discovers every *.actions.ts
 
 import type { Todo } from "./features/todos/todo.ts";
@@ -305,7 +305,7 @@ delegates clicks for toggle/remove.
 
 ```ts
 // public/routes/index.ts
-import { createApp, $, html, render } from "@vyn/client";
+import { createApp, $, html, render } from "@vynjs/client";
 import type { AppRouter } from "../../_vyn.gen.ts";
 import type { Todo } from "../../features/todos/todo.ts";
 
@@ -420,7 +420,7 @@ actions and one subscription. From here:
 - **Forms from models.** Generate the add form from `Todo`'s schema
   instead of writing the HTML by hand. See [Models — constraints are
   data](/vyn/guide/models/#constraints-are-data).
-- **Agent feature.** Use `@vyn/agent` to run an in-process LLM that can
+- **Agent feature.** Use `@vynjs/agent` to run an in-process LLM that can
   use the same tools, scoped to a single user. See [Agents](/vyn/guide/agents/)
   (coming).
 

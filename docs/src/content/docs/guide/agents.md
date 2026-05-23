@@ -22,7 +22,7 @@ a complex agent does. This page walks through how they compose.
 
 Every one of those is already in the registry. Tag with `tool: {}`
 and the MCP server exposes them as JSON-schema'd tools any LLM
-client can call. The in-process agent runner (`@vyn/agent`) reads
+client can call. The in-process agent runner (`@vynjs/agent`) reads
 the same registry — no separate registration step.
 
 ## A complete agent
@@ -33,8 +33,8 @@ notification when it finishes long work:
 
 ```ts
 // features/agent/agent.actions.ts
-import { createMutation, createNotification, v } from "@vyn/core";
-import { createAgent } from "@vyn/agent";
+import { createMutation, createNotification, v } from "@vynjs/core";
+import { createAgent } from "@vynjs/agent";
 import { search, fetchPage } from "../research/research.actions.ts";
 
 const Tick = v.union([
@@ -212,10 +212,10 @@ notification first, suppressing the email if they did).
 
 ## The in-process agent
 
-`@vyn/agent` is the runner that ties an LLM to the action registry.
+`@vynjs/agent` is the runner that ties an LLM to the action registry.
 
 ```ts
-import { createAgent } from "@vyn/agent";
+import { createAgent } from "@vynjs/agent";
 
 const agent = createAgent({
 	model:   "claude-opus-4-7",

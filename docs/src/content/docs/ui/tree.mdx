@@ -7,7 +7,7 @@ sidebar:
 
 import LiveExample from "../../../components/LiveExample.astro";
 
-`@vyn/ui/tree` turns a nested `<ul>` into a fully-keyboarded tree view.
+`@vynjs/ui/tree` turns a nested `<ul>` into a fully-keyboarded tree view.
 Every `<li>` becomes a `treeitem`; any `<li>` whose direct child is a
 `<ul>` becomes an expandable folder. The behavior wires roles,
 `aria-expanded`, roving tabindex, and the arrow-key conventions you
@@ -108,7 +108,7 @@ files.addEventListener("activate", (e) => {
 />
 
 ```ts
-import "@vyn/ui/tree";
+import "@vynjs/ui/tree";
 ```
 
 ## Keyboard
@@ -149,6 +149,6 @@ they're observable and overridable:
   This keeps the DOM stable (no items removed/inserted) so other
   behaviors layered on top (selection, sortable, etc.) keep their
   state.
-- Combine with [`@vyn/ui/select`](/vyn/ui/select/) on the tree root
-  for single-leaf-selection, or with [`@vyn/ui/scroll-into-view`](/vyn/ui/scroll-into-view/)
+- Combine with [`@vynjs/ui/select`](/vyn/ui/select/) on the tree root
+  for single-leaf-selection, or with [`@vynjs/ui/scroll-into-view`](/vyn/ui/scroll-into-view/)
   to keep the focused item visible in a tall sidebar.

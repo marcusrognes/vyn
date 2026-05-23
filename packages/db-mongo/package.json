@@ -1,5 +1,5 @@
 {
-	"name": "@vyn/db-mongo",
+	"name": "@vynjs/db-mongo",
 	"version": "0.1.0",
 	"description": "Vyn MongoDB adapter \u2014 thin wrapper over the official mongodb driver.",
 	"type": "module",

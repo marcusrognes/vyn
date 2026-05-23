@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vyn:test";
 
 // Contracts from /guide/notifications/#in-app-inbox
-// @vyn/notify-inbox lives in a separate package once implementation
+// @vynjs/notify-inbox lives in a separate package once implementation
 // lands; these tests describe the contract its adapter + actions
-// must satisfy. Imported here from @vyn/core as stubs.
+// must satisfy. Imported here from @vynjs/core as stubs.
 
-describe("@vyn/notify-inbox", () => {
+describe("@vynjs/notify-inbox", () => {
 	describe("inboxAdapter", () => {
 		it("implements NotificationAdapter — { send(payload, ctx): Promise<void> }", async () => {
 			const { inboxAdapter } = await import("../src/index.ts");

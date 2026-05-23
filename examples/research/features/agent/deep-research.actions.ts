@@ -1,4 +1,4 @@
-import { createJob, createMutation, createNotification, createSubscription, v } from "@vyn/core";
+import { createJob, createMutation, createNotification, createSubscription, v } from "@vynjs/core";
 import type { Ctx, ResearchRun } from "../../ctx.ts";
 
 // The in-app channel ships its rows through this subscription so the

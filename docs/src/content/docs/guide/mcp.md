@@ -20,7 +20,7 @@ deploy.
 
 ```ts
 // server.ts
-import { serve } from "@vyn/server";
+import { serve } from "@vynjs/server";
 import "./_vyn.gen.ts";
 
 serve({

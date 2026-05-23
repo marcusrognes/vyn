@@ -8,7 +8,7 @@
 // the hashed dist/ file with an immutable cache-control header.
 //
 // Uses `npm:esbuild` + `jsr:@luca/esbuild-deno-loader` so bare specifiers
-// declared in the consuming deno.json import map (e.g. "@vyn/client") resolve
+// declared in the consuming deno.json import map (e.g. "@vynjs/client") resolve
 // in browser bundles. esbuild's metafile drives the transitive-input cache.
 
 import { readFile, stat } from "node:fs/promises";

@@ -1,5 +1,5 @@
 {
-	"name": "@vyn/auth",
+	"name": "@vynjs/auth",
 	"version": "0.1.0",
 	"description": "Vyn auth helpers \u2014 scrypt password hashing, randomToken, session store.",
 	"type": "module",

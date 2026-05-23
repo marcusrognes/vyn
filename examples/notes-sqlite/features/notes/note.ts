@@ -1,4 +1,4 @@
-import { v } from "@vyn/core";
+import { v } from "@vynjs/core";
 
 export const NoteSchema = v.object({
 	_id:       v.string().uuid().default(() => crypto.randomUUID()),

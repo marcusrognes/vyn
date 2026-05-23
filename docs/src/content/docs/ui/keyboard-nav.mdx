@@ -28,13 +28,13 @@ li:focus-visible, li:focus { outline: none; background: #eef2ff; color: #4338ca;
 `}
 />
 
-`@vyn/ui/keyboard-nav` is a single module that scans the document for
+`@vynjs/ui/keyboard-nav` is a single module that scans the document for
 `[data-keyboard-nav]` elements and wires keyboard navigation onto
 their direct children. No custom element, no wrapping JSX, no
 `createApp`. Apply a few attributes, import the module, the
 behavior turns on.
 
-This is the pattern most `@vyn/ui` widgets compose internally. You
+This is the pattern most `@vynjs/ui` widgets compose internally. You
 can use it directly when none of the prebuilt widgets fit.
 
 ```html
@@ -46,7 +46,7 @@ can use it directly when none of the prebuilt widgets fit.
 ```
 
 ```ts
-import "@vyn/ui/keyboard-nav";
+import "@vynjs/ui/keyboard-nav";
 ```
 
 That's it. Arrow keys now move focus between the `<li>` children;
@@ -130,7 +130,7 @@ cleanly.
 ## Composing with other behaviors
 
 `keyboard-nav` provides focus management and arrow keys. To add
-selection, pair with [`@vyn/ui/select`](/vyn/ui/select/):
+selection, pair with [`@vynjs/ui/select`](/vyn/ui/select/):
 
 ```html
 <ul data-keyboard-nav data-select="single" data-value="editor">
@@ -141,8 +141,8 @@ selection, pair with [`@vyn/ui/select`](/vyn/ui/select/):
 ```
 
 ```ts
-import "@vyn/ui/keyboard-nav";
-import "@vyn/ui/select";
+import "@vynjs/ui/keyboard-nav";
+import "@vynjs/ui/select";
 
 ul.addEventListener("change", (e) => {
 	const { value } = (e as CustomEvent<{ value: string }>).detail;
@@ -150,7 +150,7 @@ ul.addEventListener("change", (e) => {
 });
 ```
 
-For floating menus, also pair with [`@vyn/ui/popover`](/vyn/ui/popover/):
+For floating menus, also pair with [`@vynjs/ui/popover`](/vyn/ui/popover/):
 
 ```html
 <button data-popover-trigger="role-menu">Role ▾</button>
@@ -186,6 +186,6 @@ requirements diverge.
 
 ## See also
 
-- [`@vyn/ui/select`](/vyn/ui/select/) — selection state wired via `data-select`
-- [`@vyn/ui/popover`](/vyn/ui/popover/) — anchored positioning via `data-popover`
+- [`@vynjs/ui/select`](/vyn/ui/select/) — selection state wired via `data-select`
+- [`@vynjs/ui/popover`](/vyn/ui/popover/) — anchored positioning via `data-popover`
 - [Components guide](/vyn/guide/components/) — write your own custom elements on top

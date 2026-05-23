@@ -51,7 +51,7 @@ notebook/                              project root
 
 ```ts
 // env.ts
-import { v } from "@vyn/core";
+import { v } from "@vynjs/core";
 
 export const env = v.object({
 	MONGO_URL:        v.string().url().default("mongodb://localhost:27017"),
@@ -79,7 +79,7 @@ shared module so client and server agree:
 ```ts
 // transform.ts
 import superjson from "superjson";
-import type { Transformer } from "@vyn/server";
+import type { Transformer } from "@vynjs/server";
 
 export const transformer: Transformer = {
 	serialize:   (value) => superjson.serialize(value),
@@ -143,7 +143,7 @@ MongoDB auto-evict expired sessions. The text index on
 
 ```ts
 // ctx.ts
-import type { BaseCtx } from "@vyn/server";
+import type { BaseCtx } from "@vynjs/server";
 import type { AppDb } from "./db.ts";
 
 export type StaticCtx  = { db: AppDb };
@@ -158,7 +158,7 @@ We'll wire up auth in the next page; the dynamic ctx carries just
 
 ```ts
 // server.ts
-import { serve } from "@vyn/server";
+import { serve } from "@vynjs/server";
 import { env } from "./env.ts";
 import { openDb } from "./db.ts";
 import { transformer } from "./transform.ts";

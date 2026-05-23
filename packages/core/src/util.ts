@@ -1,4 +1,4 @@
-// Small utilities re-exported under @vyn/core/util for the helpers
+// Small utilities re-exported under @vynjs/core/util for the helpers
 // tutorials reach for.
 
 /** Generate a v4 UUID. Uses the platform's `crypto.randomUUID()` in both Node and the browser. */

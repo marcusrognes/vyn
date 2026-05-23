@@ -1,4 +1,4 @@
-// @vyn/db-mongo — thin convenience wrapper over the official `mongodb`
+// @vynjs/db-mongo — thin convenience wrapper over the official `mongodb`
 // driver. Apps install `mongodb` themselves (peer dep) so we don't pin
 // a version.
 

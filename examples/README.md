@@ -9,7 +9,7 @@ fixing the framework where the tutorial uncovered a gap.
 | App | Demonstrates |
 |---|---|
 | **[todo](./todo)**            | Five-primitive realtime app. `createQuery`/`createMutation`/`createSubscription`, in-memory store, WebSocket events, MCP tool exposure. ~120 lines total. |
-| **[notes-auth](./notes-auth)** | Per-user data scoping. `@vyn/auth` scrypt password hashing + memory session store, `requireSession` guard, `setCookie` via ctx, subscription filters by `ctx.userId`. |
+| **[notes-auth](./notes-auth)** | Per-user data scoping. `@vynjs/auth` scrypt password hashing + memory session store, `requireSession` guard, `setCookie` via ctx, subscription filters by `ctx.userId`. |
 | **[research](./research)**    | Streaming agent + jobs + notifications + SuperJSON. `opts.tick` fires through Server-Sent Events, typed against the action's `progress` schema; `createJob` runs deferred research; `createNotification` fires on completion. |
 
 ## Run an example

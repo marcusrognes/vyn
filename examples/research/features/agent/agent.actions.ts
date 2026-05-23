@@ -2,7 +2,7 @@
 // via the streaming SDK; otherwise falls back to a deterministic
 // mock so the example runs out of the box.
 
-import { createMutation, v } from "@vyn/core";
+import { createMutation, v } from "@vynjs/core";
 import type { Ctx } from "../../ctx.ts";
 
 const Tick = v.union(

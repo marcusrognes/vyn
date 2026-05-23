@@ -1,4 +1,4 @@
-// @vyn/core public API.
+// @vynjs/core public API.
 
 export { v, ValidationError, type Schema, type ObjectSchema, type StringSchema, type NumberSchema, type ArraySchema, type Constraint, type VInfer } from "./v.ts";
 export { RpcError, categoryToStatus, isPermanent, type ErrorCategory } from "./errors.ts";

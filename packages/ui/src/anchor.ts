@@ -14,9 +14,10 @@ function wire(el: HTMLElement) {
 
 	const anchor = document.getElementById(anchorId);
 	if (!anchor) return;
+	const anchorEl: HTMLElement = anchor;
 
 	function reposition() {
-		const a = anchor.getBoundingClientRect();
+		const a = anchorEl.getBoundingClientRect();
 		const e = el.getBoundingClientRect();
 		let top = 0, left = 0;
 		switch (placement) {

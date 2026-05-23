@@ -35,7 +35,7 @@ document.getElementById("tasks").addEventListener("reorder", (e) => {
 `}
 />
 
-`@vyn/ui/sortable` turns a list into a reorderable one. Items can
+`@vynjs/ui/sortable` turns a list into a reorderable one. Items can
 be dragged with the mouse, picked up with the keyboard, and dropped
 into a new position. Emits a `reorder` event with the moved item and
 its new index; the consumer updates the data.
@@ -117,7 +117,7 @@ for (const list of document.querySelectorAll("[data-sortable]")) {
 ```
 
 ```ts
-import "@vyn/ui/sortable";
+import "@vynjs/ui/sortable";
 
 document.querySelector("ul")!.addEventListener("reorder", (e) => {
 	const { order } = (e as CustomEvent<{
@@ -183,5 +183,5 @@ remove the delay.
 
 ## See also
 
-- [`@vyn/ui/drag-drop`](/vyn/ui/drag-drop/) — cross-container drag-and-drop
-- [`@vyn/ui/keyboard-nav`](/vyn/ui/keyboard-nav/) — for keyboard-only navigation between items when not reordering
+- [`@vynjs/ui/drag-drop`](/vyn/ui/drag-drop/) — cross-container drag-and-drop
+- [`@vynjs/ui/keyboard-nav`](/vyn/ui/keyboard-nav/) — for keyboard-only navigation between items when not reordering

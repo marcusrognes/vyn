@@ -53,7 +53,7 @@ document.querySelector("thead").addEventListener("sort", (e) => {
 `}
 />
 
-`@vyn/ui/sort` turns elements with `data-sort-key="..."` into
+`@vynjs/ui/sort` turns elements with `data-sort-key="..."` into
 keyboard-accessible sort buttons. Apply `data-sort` to the container
 (typically the `<thead>`); apply `data-sort-key` to each sortable
 header. The container scopes the "one column at a time" rule and is
@@ -286,7 +286,7 @@ result back.
 ```
 
 ```ts
-import "@vyn/ui/sort";
+import "@vynjs/ui/sort";
 
 document.querySelector("thead")!.addEventListener("sort", (e) => {
 	const { key, direction } = (e as CustomEvent<{

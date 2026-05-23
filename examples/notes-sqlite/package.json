@@ -1,5 +1,5 @@
 {
-	"name": "@vyn/example-notes-sqlite",
+	"name": "@vynjs/example-notes-sqlite",
 	"private": true,
 	"version": "0.0.0",
 	"type": "module",
@@ -8,10 +8,10 @@
 		"start": "node --experimental-strip-types server.ts"
 	},
 	"dependencies": {
-		"@vyn/core":      "*",
-		"@vyn/server":    "*",
-		"@vyn/client":    "*",
-		"@vyn/auth":      "*",
-		"@vyn/db-sqlite": "*"
+		"@vynjs/core":      "*",
+		"@vynjs/server":    "*",
+		"@vynjs/client":    "*",
+		"@vynjs/auth":      "*",
+		"@vynjs/db-sqlite": "*"
 	}
 }

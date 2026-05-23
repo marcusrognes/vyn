@@ -11,7 +11,7 @@ import { makeTryBundle, loadManifest } from "./bundle.ts";
 import { identityTransformer, type Transformer } from "./transformer.ts";
 import { EventBus, type BaseCtx, type CookieOpts } from "./ctx.ts";
 import { parseCookies, serializeCookie } from "./cookies.ts";
-import { installNotify, shutdownNotify, installBackgroundCtx, startCronJobs, stopCronJobs, type NotificationAdapter, type PreferencesResolver } from "@vyn/core";
+import { installNotify, shutdownNotify, installBackgroundCtx, startCronJobs, stopCronJobs, type NotificationAdapter, type PreferencesResolver } from "@vynjs/core";
 
 declare const Deno: {
 	serve: (opts: { port: number; hostname: string; onListen?: (...a: unknown[]) => void }, handler: (req: Request) => Response | Promise<Response>) => { shutdown: () => Promise<void> };
@@ -138,7 +138,7 @@ export async function serve<S extends object = {}, D extends object = {}>(opts: 
 		}
 	});
 
-	const { registry } = await import("@vyn/core");
+	const { registry } = await import("@vynjs/core");
 	const counts = registry.list().reduce((acc, a) => { acc[a.kind] = (acc[a.kind] ?? 0) + 1; return acc; }, {} as Record<string, number>);
 	const url = `http://${opts.host ?? "localhost"}:${opts.port}`;
 	console.log(`[vyn] listening on ${url} — ${registry.list().length} actions registered (${Object.entries(counts).map(([k, v]) => `${v} ${k}`).join(", ")})`);
@@ -164,7 +164,7 @@ let clientBundle: string | undefined;
 let uiBundle:     string | undefined;
 async function serveClientBundle(): Promise<Response> {
 	if (!clientBundle) {
-		const url  = await import.meta.resolve("@vyn/client/browser.js");
+		const url  = await import.meta.resolve("@vynjs/client/browser.js");
 		clientBundle = await readFile(new URL(url), "utf-8");
 	}
 	return new Response(clientBundle, {
@@ -175,10 +175,10 @@ async function serveClientBundle(): Promise<Response> {
 async function serveUiBundle(): Promise<Response> {
 	if (!uiBundle) {
 		try {
-			const url = await import.meta.resolve("@vyn/ui/browser.js");
+			const url = await import.meta.resolve("@vynjs/ui/browser.js");
 			uiBundle = await readFile(new URL(url), "utf-8");
 		} catch {
-			return new Response("@vyn/ui is not installed", { status: 404 });
+			return new Response("@vynjs/ui is not installed", { status: 404 });
 		}
 	}
 	return new Response(uiBundle, {

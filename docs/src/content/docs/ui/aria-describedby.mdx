@@ -30,7 +30,7 @@ input:invalid:not(:placeholder-shown) { border-color: #dc2626; }
 `}
 />
 
-`@vyn/ui/aria-describedby` wires an `aria-describedby` relationship
+`@vynjs/ui/aria-describedby` wires an `aria-describedby` relationship
 between two elements when one declares `data-describes="target-id"`.
 Use it for form-field help text, error messages, contextual hints
 that should be announced by a screen reader along with the
@@ -45,7 +45,7 @@ associated control.
 ```
 
 ```ts
-import "@vyn/ui/aria-describedby";
+import "@vynjs/ui/aria-describedby";
 ```
 
 The paragraph gets an auto-generated id; the input gets
@@ -91,5 +91,5 @@ is invalid, so screen readers announce it only when relevant.
 
 ## See also
 
-- [`@vyn/ui/tooltip`](/vyn/ui/tooltip/) — wraps this with hover/focus floating UI
-- [`@vyn/ui/live`](/vyn/ui/live/) — for one-off announcements not tied to a specific element
+- [`@vynjs/ui/tooltip`](/vyn/ui/tooltip/) — wraps this with hover/focus floating UI
+- [`@vynjs/ui/live`](/vyn/ui/live/) — for one-off announcements not tied to a specific element

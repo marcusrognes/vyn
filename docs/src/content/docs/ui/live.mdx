@@ -23,14 +23,14 @@ button { padding: 0.5rem 0.9rem; margin-right: 0.4rem; border-radius: 8px; borde
 `}
 />
 
-`@vyn/ui/live` exposes a single function: `liveRegion(message, level?)`.
+`@vynjs/ui/live` exposes a single function: `liveRegion(message, level?)`.
 It announces `message` to screen readers via a shared off-screen
 region with the right `aria-live` politeness. Use it for status
 updates that don't have a visible UI element — saved confirmations,
 soft errors, "5 new notes," anything you want spoken aloud.
 
 ```ts
-import { liveRegion } from "@vyn/ui/live";
+import { liveRegion } from "@vynjs/ui/live";
 
 await rpc.notes.save.mutate({ ... });
 liveRegion("Note saved");
@@ -81,4 +81,4 @@ function liveRegion(
 ## See also
 
 - [`<v-toaster>`](/vyn/ui/toast/) — visual toasts that compose this
-- [`@vyn/ui/aria-describedby`](/vyn/ui/aria-describedby/) — for per-element descriptions
+- [`@vynjs/ui/aria-describedby`](/vyn/ui/aria-describedby/) — for per-element descriptions

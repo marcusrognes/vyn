@@ -1,5 +1,5 @@
 {
-	"name": "@vyn/server",
+	"name": "@vynjs/server",
 	"version": "0.1.0",
 	"description": "Vyn server \u2014 serve(), RPC dispatcher, MCP, WebSocket, transformers.",
 	"type": "module",
@@ -23,7 +23,7 @@
 		"test:watch": "vitest"
 	},
 	"dependencies": {
-		"@vyn/core": "*",
+		"@vynjs/core": "*",
 		"esbuild": "^0.24.0",
 		"ws": "^8.18.0"
 	},

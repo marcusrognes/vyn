@@ -1,4 +1,4 @@
-import { RpcError } from "@vyn/core";
+import { RpcError } from "@vynjs/core";
 import type { Ctx } from "../../ctx.ts";
 
 export function requireSession(opts: { ctx: Ctx }): { userId: string } {

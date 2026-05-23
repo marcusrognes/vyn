@@ -15,7 +15,7 @@ export function on<K extends keyof HTMLElementEventMap>(
 	type: K,
 	selector: string,
 	handler: (event: HTMLElementEventMap[K], target: HTMLElement) => void,
-) {
+): () => void {
 	const listener = (event: Event) => {
 		const target = (event.target as HTMLElement).closest<HTMLElement>(selector);
 		if (target && root.contains(target)) handler(event as HTMLElementEventMap[K], target);

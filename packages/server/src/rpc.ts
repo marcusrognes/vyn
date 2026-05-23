@@ -3,7 +3,7 @@
 // Streaming queries/mutations (opts.tick) use Server-Sent Events.
 // Subscriptions use WebSocket.
 
-import { registry, RpcError, categoryToStatus, type Action } from "@vyn/core";
+import { registry, RpcError, categoryToStatus, type Action } from "@vynjs/core";
 import { type Transformer } from "./transformer.ts";
 import type { BaseCtx } from "./ctx.ts";
 

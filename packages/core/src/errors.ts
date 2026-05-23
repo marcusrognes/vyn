@@ -21,7 +21,7 @@ export class RpcError extends Error {
 		this.name     = "RpcError";
 	}
 
-	toJSON() {
+	toJSON(): { category: ErrorCategory; message: string; details?: unknown } {
 		return {
 			category: this.category,
 			message:  this.message,

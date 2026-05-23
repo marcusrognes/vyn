@@ -1,4 +1,4 @@
-import { createQuery, createMutation, createSubscription, v, RpcError } from "@vyn/core";
+import { createQuery, createMutation, createSubscription, v, RpcError } from "@vynjs/core";
 import { NoteSchema, type Note } from "./note.ts";
 import { requireSession } from "../auth/guards.ts";
 import type { Ctx } from "../../ctx.ts";

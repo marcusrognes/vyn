@@ -1,5 +1,5 @@
 {
-	"name": "@vyn/client",
+	"name": "@vynjs/client",
 	"version": "0.1.0",
 	"description": "Vyn client \u2014 createApp, cache, html/render, signals, components.",
 	"type": "module",

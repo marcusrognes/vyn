@@ -3,7 +3,7 @@
 // with frames `{ id, kind: 'value' | 'error' | 'end', payload? }` until
 // the client closes or unsubscribes.
 
-import { registry, RpcError, type Action } from "@vyn/core";
+import { registry, RpcError, type Action } from "@vynjs/core";
 import { type Transformer } from "./transformer.ts";
 import type { BaseCtx } from "./ctx.ts";
 

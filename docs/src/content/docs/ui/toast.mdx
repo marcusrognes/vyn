@@ -44,7 +44,7 @@ announces them to screen readers via an `aria-live` region.
 ```
 
 ```ts
-import "@vyn/ui/toast";
+import "@vynjs/ui/toast";
 
 const toaster = document.querySelector<HTMLElement & {
 	show(opts: ToastOpts): string;
@@ -157,11 +157,11 @@ toaster.dismiss(id);
 
 ## Convenience helpers
 
-`@vyn/ui/toast` also exports a module-scope helper that finds the
+`@vynjs/ui/toast` also exports a module-scope helper that finds the
 nearest `<v-toaster>` in the document:
 
 ```ts
-import { toast } from "@vyn/ui/toast";
+import { toast } from "@vynjs/ui/toast";
 
 toast.success("Saved");
 toast.error("Could not save", { duration: 0 });
@@ -171,6 +171,6 @@ toast.info("3 new messages");
 
 ## See also
 
-- [`@vyn/ui/focus-trap`](/vyn/ui/focus-trap/) + native `<dialog>` — for interactive modal dialogs
-- [`@vyn/ui/live`](/vyn/ui/live/) — for one-off `aria-live` announcements without the toast UI
+- [`@vynjs/ui/focus-trap`](/vyn/ui/focus-trap/) + native `<dialog>` — for interactive modal dialogs
+- [`@vynjs/ui/live`](/vyn/ui/live/) — for one-off `aria-live` announcements without the toast UI
 - [Components guide](/vyn/guide/components/) — for writing your own

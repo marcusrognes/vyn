@@ -30,7 +30,7 @@ features/
 
 ```ts
 // features/greet.actions.ts
-import { createQuery, v } from "@vyn/core";
+import { createQuery, v } from "@vynjs/core";
 
 export const greet = createQuery({
 	description: "Say hello to someone.",
@@ -42,7 +42,7 @@ export const greet = createQuery({
 
 ```ts
 // features/notes/notes.actions.ts
-import { createQuery, createMutation, createSubscription, v } from "@vyn/core";
+import { createQuery, createMutation, createSubscription, v } from "@vynjs/core";
 import { NoteSchema } from "../models/note.ts";
 import type { Note } from "../models/note.ts";
 
@@ -147,7 +147,7 @@ on file changes during dev and as part of `vyn build`.
 ## The three primitives
 
 ```ts
-import { createQuery, createMutation, createSubscription, v } from "@vyn/core";
+import { createQuery, createMutation, createSubscription, v } from "@vynjs/core";
 
 export const list = createQuery({
 	description: "...",
@@ -542,13 +542,13 @@ covers the full surface.
 
 ### In-process agent
 
-`@vyn/agent` runs an LLM loop server-side with the registry as its
+`@vynjs/agent` runs an LLM loop server-side with the registry as its
 toolbelt. Use it from a route handler, a job worker, or another action
 to build agentic features into your app without leaving the Vyn surface.
 
 ```ts
-import { createAgent } from "@vyn/agent";
-import { registry } from "@vyn/core";
+import { createAgent } from "@vynjs/agent";
+import { registry } from "@vynjs/core";
 
 const agent = createAgent({
 	model: "claude-opus-4-7",
@@ -581,7 +581,7 @@ mutations identically.
 The registry is exported. Build your own surface in app code:
 
 ```ts
-import { registry } from "@vyn/core";
+import { registry } from "@vynjs/core";
 
 for (const action of registry.list()) {
 	console.log(action.kind, action.name, action.input.schema);
@@ -599,7 +599,7 @@ The registry is the in-process record of every action declared by the
 app. It rebuilds on hot reload. It's a plain object; you can read it.
 
 ```ts
-import { registry } from "@vyn/core";
+import { registry } from "@vynjs/core";
 
 registry.list();                  // → Action[]
 registry.get("notes.create");     // → Action | undefined

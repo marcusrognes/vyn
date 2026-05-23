@@ -1,5 +1,5 @@
 import superjson from "superjson";
-import type { Transformer } from "@vyn/server";
+import type { Transformer } from "@vynjs/server";
 
 export const transformer: Transformer = {
 	serialize:   (v) => superjson.serialize(v),

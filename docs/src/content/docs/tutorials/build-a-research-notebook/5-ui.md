@@ -72,7 +72,7 @@ it once you add a toggle.
 
 ```ts
 // public/routes/index.js
-import { createApp, $, html, render } from "@vyn/client";
+import { createApp, $, html, render } from "@vynjs/client";
 import { transformer } from "../../transform.ts";
 import type { AppRouter } from "../../_vyn.gen.ts";
 import type { Note } from "../../features/notes/note.ts";
@@ -182,7 +182,7 @@ redirects to the run viewer, which we build next.
 
 ```ts
 // public/routes/research/[runId].js
-import { createApp, $, html, render, useParams } from "@vyn/client";
+import { createApp, $, html, render, useParams } from "@vynjs/client";
 import { transformer } from "../../../transform.ts";
 import type { AppRouter } from "../../../_vyn.gen.ts";
 

@@ -1,4 +1,4 @@
-import { serve } from "@vyn/server";
+import { serve } from "@vynjs/server";
 import "./_vyn.gen.ts";
 import type { Todo } from "./features/todos/todo.ts";
 

@@ -41,8 +41,8 @@ consuming `opts.events`. Apps never call the transport directly.
 
 ```ts
 // server.ts
-import { serve } from "@vyn/server";
-import { redisTransport } from "@vyn/transport-redis";
+import { serve } from "@vynjs/server";
+import { redisTransport } from "@vynjs/transport-redis";
 
 serve({
 	port: Number(env.PORT),
@@ -62,7 +62,7 @@ pay for what you import.
 ### `inMemoryTransport()` (default)
 
 ```ts
-import { inMemoryTransport } from "@vyn/core";
+import { inMemoryTransport } from "@vynjs/core";
 
 serve({ transport: inMemoryTransport() });  // explicit; same as omitting
 ```
@@ -84,18 +84,18 @@ relevant name; publishes broadcast.
 
 | Package | Backend | Notes |
 |---|---|---|
-| `@vyn/transport-redis` | Redis pub/sub | Lowest latency, no durability |
-| `@vyn/transport-nats`  | NATS          | Lower-latency than Redis, optional auth |
-| `@vyn/transport-postgres` | Postgres LISTEN/NOTIFY | Reuses your existing DB connection |
+| `@vynjs/transport-redis` | Redis pub/sub | Lowest latency, no durability |
+| `@vynjs/transport-nats`  | NATS          | Lower-latency than Redis, optional auth |
+| `@vynjs/transport-postgres` | Postgres LISTEN/NOTIFY | Reuses your existing DB connection |
 
 ```ts
-import { redisTransport } from "@vyn/transport-redis";
+import { redisTransport } from "@vynjs/transport-redis";
 serve({ transport: redisTransport({ url: env.REDIS_URL, prefix: "myapp" }) });
 
-import { natsTransport } from "@vyn/transport-nats";
+import { natsTransport } from "@vynjs/transport-nats";
 serve({ transport: natsTransport({ servers: env.NATS_URL.split(",") }) });
 
-import { postgresTransport } from "@vyn/transport-postgres";
+import { postgresTransport } from "@vynjs/transport-postgres";
 serve({ transport: postgresTransport({ url: env.DATABASE_URL }) });
 ```
 
@@ -114,7 +114,7 @@ logical replication slot) produces events, and the transport maps
 them to subscription names.
 
 ```ts
-import { mongoOplogTransport } from "@vyn/transport-mongo";
+import { mongoOplogTransport } from "@vynjs/transport-mongo";
 import { onCreated, onUpdated, onDeleted } from "./features/notes/notes.actions.ts";
 
 serve({
@@ -140,8 +140,8 @@ channel — mutations still call `.emit()` and it works as expected.
 
 | Package | Source |
 |---|---|
-| `@vyn/transport-mongo` | MongoDB change streams (replica set required) |
-| `@vyn/transport-postgres-cdc` | Postgres logical replication |
+| `@vynjs/transport-mongo` | MongoDB change streams (replica set required) |
+| `@vynjs/transport-postgres-cdc` | Postgres logical replication |
 
 When to use: apps where most realtime events ARE data changes. The
 mutation side simplifies; the DB becomes the source of truth for "did
@@ -153,7 +153,7 @@ Same `publish` / `subscribe`, but the transport persists events. Late
 subscribers can replay from an offset; downtime doesn't drop events.
 
 ```ts
-import { kafkaTransport } from "@vyn/transport-kafka";
+import { kafkaTransport } from "@vynjs/transport-kafka";
 
 serve({
 	transport: kafkaTransport({
@@ -176,9 +176,9 @@ for await (const event of opts.events) {
 
 | Package | Backend | Replay model |
 |---|---|---|
-| `@vyn/transport-kafka` | Kafka | Offset-based, durable |
-| `@vyn/transport-redis-streams` | Redis Streams | Consumer-group ack, capped retention |
-| `@vyn/transport-nats-jetstream` | NATS JetStream | Stream-based, configurable retention |
+| `@vynjs/transport-kafka` | Kafka | Offset-based, durable |
+| `@vynjs/transport-redis-streams` | Redis Streams | Consumer-group ack, capped retention |
+| `@vynjs/transport-nats-jetstream` | NATS JetStream | Stream-based, configurable retention |
 
 When to use: apps that cannot lose events on restart or network blip,
 or that want "show me what happened in the last hour" on reconnect.
@@ -194,7 +194,7 @@ modifying the underlying implementation.
 Records every publish and subscribe to a sink. Lightweight observability.
 
 ```ts
-import { logged } from "@vyn/core";
+import { logged } from "@vynjs/core";
 
 serve({
 	transport: logged(redisTransport({ url }), {
@@ -210,7 +210,7 @@ Drops publishes (or deliveries) not matching a predicate. Per-tenant
 routing, debug toggles, feature flags.
 
 ```ts
-import { filtered } from "@vyn/core";
+import { filtered } from "@vynjs/core";
 
 serve({
 	transport: filtered(redisTransport({ url }), {
@@ -226,7 +226,7 @@ Retries publishes with backoff. The transport's failure semantics
 become eventual-success for transient errors.
 
 ```ts
-import { withRetry } from "@vyn/core";
+import { withRetry } from "@vynjs/core";
 
 serve({
 	transport: withRetry(redisTransport({ url }), {
@@ -242,7 +242,7 @@ Fan-out to multiple backends. Useful for "Redis for fast fan-out, also
 log to Kafka for audit/replay."
 
 ```ts
-import { multi } from "@vyn/core";
+import { multi } from "@vynjs/core";
 
 serve({
 	transport: multi(
@@ -280,7 +280,7 @@ constraints on serialization, ordering, or durability — the transport
 is the source of truth for those properties.
 
 ```ts
-import type { Transport } from "@vyn/core";
+import type { Transport } from "@vynjs/core";
 
 export function memcachedTransport(opts: { servers: string[] }): Transport {
 	// hypothetical example — memcached lacks pub/sub natively, so this

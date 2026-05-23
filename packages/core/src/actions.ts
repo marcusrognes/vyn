@@ -33,7 +33,7 @@ type BaseDef<I, O, C> = {
 
 function validateRequirements(def: { description?: string; output?: unknown; tool?: ToolSpec }, kind: string) {
 	if (def.tool && !def.description) {
-		throw new Error(`@vyn/core: ${kind} with tool requires a description`);
+		throw new Error(`@vynjs/core: ${kind} with tool requires a description`);
 	}
 	// Output is optional even for tool-tagged actions — void-returning
 	// tools (deletes, side-effect commands) are legitimate. MCP exposes
@@ -126,7 +126,7 @@ export function createMutation<I = unknown, O = unknown, C = unknown>(
 	def: BaseDef<I, O, C> & { invalidates?: never },
 ): MutationAction<I, O, C> {
 	if ((def as any).invalidates !== undefined) {
-		throw new Error("@vyn/core: createMutation no longer accepts `invalidates`. Cache invalidation lives on the client.");
+		throw new Error("@vynjs/core: createMutation no longer accepts `invalidates`. Cache invalidation lives on the client.");
 	}
 	validateRequirements(def, "createMutation");
 	const input  = defaultInput<I>(def.input);
@@ -164,10 +164,10 @@ export function createSubscription<I = unknown, O = unknown, C = unknown>(
 	def: SubscriptionDef<I, O, C>,
 ): SubscriptionAction<I, O, C> {
 	if ((def as any).match !== undefined) {
-		throw new Error("@vyn/core: createSubscription no longer accepts `match`. Filter inside `run` instead.");
+		throw new Error("@vynjs/core: createSubscription no longer accepts `match`. Filter inside `run` instead.");
 	}
 	if ((def.run as any).constructor.name !== "AsyncGeneratorFunction") {
-		throw new Error("@vyn/core: createSubscription run must be an async generator");
+		throw new Error("@vynjs/core: createSubscription run must be an async generator");
 	}
 	const input = defaultInput<I>(def.input);
 	const name  = def.name ?? anonymousName("subscription");
@@ -518,7 +518,7 @@ async function runJob<I, C>(action: JobAction<I, C>, rec: JobRecord) {
 			input:  rec.input as I,
 			ctx:    backgroundCtx as C,
 			job:    { id: rec.id, attempt: rec.attempt - 1, scheduledAt: rec.scheduledAt },
-			tick:   (payload) => rec.ticks.push(payload),
+			tick:   (payload: unknown) => rec.ticks.push(payload),
 		} as any);
 		rec.state       = "completed";
 		rec.result      = result;
@@ -692,7 +692,22 @@ type InboxOpts = {
 	subscription?: { emit: (value: unknown) => void };
 };
 
-export function inboxAdapter(opts: InboxOpts) {
+export type InboxAdapter = {
+	send(
+		payload: { payload?: unknown; notification?: string; groupedWith?: string[] },
+		ctx?:    { userId?: string },
+	): Promise<{
+		_id:          string;
+		userId:       string;
+		notification: string;
+		payload:      unknown;
+		createdAt:    Date;
+		readAt:       Date | null;
+		groupedWith?: string[];
+	}>;
+};
+
+export function inboxAdapter(opts: InboxOpts): InboxAdapter {
 	return {
 		async send(payload: { payload?: unknown; notification?: string; groupedWith?: string[] }, ctx: { userId?: string } = {}) {
 			const row = {

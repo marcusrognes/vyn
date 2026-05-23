@@ -17,7 +17,7 @@ of failure."
 ## The shape
 
 ```ts
-import { RpcError } from "@vyn/core";
+import { RpcError } from "@vynjs/core";
 
 throw new RpcError("forbidden", "not your note");
 throw new RpcError("conflict", "email already in use", { field: "email" });
@@ -80,7 +80,7 @@ try {
 }
 ```
 
-`RpcError` is exported from `@vyn/client` too, with the same shape.
+`RpcError` is exported from `@vynjs/client` too, with the same shape.
 The wire format preserves the category, the message, and the details
 verbatim.
 

@@ -33,7 +33,7 @@ a toast.
 
 ```ts
 // features/threads/threads.actions.ts
-import { createQuery, createMutation, createSubscription, v, RpcError } from "@vyn/core";
+import { createQuery, createMutation, createSubscription, v, RpcError } from "@vynjs/core";
 import { requireSession } from "../auth/guards.ts";
 import { MessageSchema, type Message } from "./message.ts";
 
@@ -244,8 +244,8 @@ calls to every active subscription instance locally. Across instances
 observability), swap the transport:
 
 ```ts
-import { serve } from "@vyn/server";
-import { redisTransport } from "@vyn/transport-redis";
+import { serve } from "@vynjs/server";
+import { redisTransport } from "@vynjs/transport-redis";
 
 serve({
 	port: 8000,

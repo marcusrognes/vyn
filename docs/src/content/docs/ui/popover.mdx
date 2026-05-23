@@ -54,7 +54,7 @@ focus restoration with zero JavaScript.
 That's the whole popover. No imports, no JS, no widget. The browser
 handles the rest.
 
-The `@vyn/ui/popover` module exists for two reasons the native API
+The `@vynjs/ui/popover` module exists for two reasons the native API
 doesn't cover:
 
 1. **Anchored positioning** — the native API renders in the top layer
@@ -72,13 +72,13 @@ doesn't cover:
 | Need | Use |
 |---|---|
 | A simple floating panel with default dismiss | Native `popover` attribute + `popovertarget` |
-| Anchored to a trigger (positioning) | `@vyn/ui/popover` + [`@vyn/ui/anchor`](/vyn/ui/anchor/) |
-| Composed with `keyboard-nav` / `select` / `typeahead` | `@vyn/ui/popover` |
+| Anchored to a trigger (positioning) | `@vynjs/ui/popover` + [`@vynjs/ui/anchor`](/vyn/ui/anchor/) |
+| Composed with `keyboard-nav` / `select` / `typeahead` | `@vynjs/ui/popover` |
 | Modal blocking | Not a popover — use `<dialog>.showModal()` instead |
 
 ## The behavior
 
-When you do reach for `@vyn/ui/popover`, the shape is:
+When you do reach for `@vynjs/ui/popover`, the shape is:
 
 ```html
 <button id="filters-trigger" data-popover-trigger="filters">Filters</button>
@@ -91,7 +91,7 @@ When you do reach for `@vyn/ui/popover`, the shape is:
 ```
 
 ```ts
-import "@vyn/ui/popover";
+import "@vynjs/ui/popover";
 ```
 
 The behavior internally uses the native `popover` attribute where
@@ -139,6 +139,6 @@ itself as needed.
 ## See also
 
 - Native [Popover API](https://developer.mozilla.org/en-US/docs/Web/API/Popover_API) — use this first
-- [`@vyn/ui/anchor`](/vyn/ui/anchor/) — positioning primitive composed automatically when `data-anchor` is set
-- [`@vyn/ui/dismiss`](/vyn/ui/dismiss/) — for popovers that need custom dismiss semantics
+- [`@vynjs/ui/anchor`](/vyn/ui/anchor/) — positioning primitive composed automatically when `data-anchor` is set
+- [`@vynjs/ui/dismiss`](/vyn/ui/dismiss/) — for popovers that need custom dismiss semantics
 - [Native platform](/vyn/guide/native-platform/) — what the browser already ships

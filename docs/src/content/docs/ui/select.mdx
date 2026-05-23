@@ -7,9 +7,9 @@ sidebar:
 
 import LiveExample from "../../../components/LiveExample.astro";
 
-`@vyn/ui/select` is a small behavior module that adds selection
+`@vynjs/ui/select` is a small behavior module that adds selection
 state to any container of items. Pair it with
-[`@vyn/ui/keyboard-nav`](/vyn/ui/keyboard-nav/) for keyboard
+[`@vynjs/ui/keyboard-nav`](/vyn/ui/keyboard-nav/) for keyboard
 operation; alone it handles mouse + programmatic selection and the
 `aria-selected` state.
 
@@ -148,7 +148,7 @@ item.dispatchEvent(new CustomEvent("activate", { bubbles: true }));
 </ul>
 ```
 
-Three lines of script: `import "@vyn/ui/keyboard-nav"; import "@vyn/ui/select"`,
+Three lines of script: `import "@vynjs/ui/keyboard-nav"; import "@vynjs/ui/select"`,
 plus your `change` handler. That's the whole listbox.
 
 ### Radio group
@@ -201,12 +201,12 @@ ul.addEventListener("change", async (e) => {
 
 ~110 lines. The behavior is mostly attribute parsing + click handler
 + event dispatch + modifier math for range selection. The keyboard
-work is offloaded to [`@vyn/ui/keyboard-nav`](/vyn/ui/keyboard-nav/),
+work is offloaded to [`@vynjs/ui/keyboard-nav`](/vyn/ui/keyboard-nav/),
 which you import alongside.
 
 ## See also
 
-- [`@vyn/ui/keyboard-nav`](/vyn/ui/keyboard-nav/) — arrow keys and focus management; usually paired
-- [`@vyn/ui/drag-drop`](/vyn/ui/drag-drop/) — reads this behavior's selection state to drag multiple items at once
-- [`@vyn/ui/form-associated`](/vyn/ui/form-associated/) — to make a `data-select` container submit a value with a `<form>`
+- [`@vynjs/ui/keyboard-nav`](/vyn/ui/keyboard-nav/) — arrow keys and focus management; usually paired
+- [`@vynjs/ui/drag-drop`](/vyn/ui/drag-drop/) — reads this behavior's selection state to drag multiple items at once
+- [`@vynjs/ui/form-associated`](/vyn/ui/form-associated/) — to make a `data-select` container submit a value with a `<form>`
 - [`<v-combobox>`](/vyn/ui/combobox/) — input + listbox widget when the `aria-activedescendant` pattern is needed

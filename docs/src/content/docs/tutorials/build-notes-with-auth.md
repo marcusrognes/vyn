@@ -78,7 +78,7 @@ missing or malformed:
 
 ```ts
 // env.ts
-import { v } from "@vyn/core";
+import { v } from "@vynjs/core";
 
 export const env = v.object({
 	DATABASE_URL:   v.string().default("./notes.db"),
@@ -152,7 +152,7 @@ type as the full picture without re-stating the shape per file.
 
 ```ts
 // ctx.ts
-import type { BaseCtx } from "@vyn/server";
+import type { BaseCtx } from "@vynjs/server";
 import type { Database } from "./db.ts";
 import type { Session } from "./features/auth/session.ts";
 
@@ -236,7 +236,7 @@ authenticated actions:
 
 ```ts
 // features/auth/require.ts
-import { RpcError } from "@vyn/core";
+import { RpcError } from "@vynjs/core";
 import type { Ctx } from "../../ctx.ts";
 
 export function requireSession(opts: { ctx: Ctx }) {
@@ -255,8 +255,8 @@ clear and short.
 
 ```ts
 // features/auth/user.ts
-import { v } from "@vyn/core";
-import { uuid } from "@vyn/core/util";
+import { v } from "@vynjs/core";
+import { uuid } from "@vynjs/core/util";
 
 export const UserSchema = v.object({
 	_id:          v.string().uuid().default(() => uuid()),
@@ -273,7 +273,7 @@ export type UserPublic = v.Infer<typeof UserPublicSchema>;
 
 ```ts
 // features/auth/auth.actions.ts
-import { createMutation, createQuery, v, RpcError } from "@vyn/core";
+import { createMutation, createQuery, v, RpcError } from "@vynjs/core";
 import { scryptSync, randomBytes, timingSafeEqual } from "node:crypto";
 import type { Ctx } from "../../ctx.ts";
 import { UserSchema, UserPublicSchema, type UserPublic } from "./user.ts";
@@ -379,8 +379,8 @@ Things worth noticing:
 
 ```ts
 // features/notes/note.ts
-import { v } from "@vyn/core";
-import { uuid } from "@vyn/core/util";
+import { v } from "@vynjs/core";
+import { uuid } from "@vynjs/core/util";
 
 export const NoteSchema = v.object({
 	_id:       v.string().uuid().default(() => uuid()),
@@ -396,7 +396,7 @@ export type Note = v.Infer<typeof NoteSchema>;
 
 ```ts
 // features/notes/notes.actions.ts
-import { createQuery, createMutation, createSubscription, v, RpcError } from "@vyn/core";
+import { createQuery, createMutation, createSubscription, v, RpcError } from "@vynjs/core";
 import type { Ctx } from "../../ctx.ts";
 import { NoteSchema, type Note } from "./note.ts";
 import { requireSession } from "../auth/require.ts";
@@ -519,7 +519,7 @@ Notice:
 
 ```ts
 // server.ts
-import { serve } from "@vyn/server";
+import { serve } from "@vynjs/server";
 import { env } from "./env.ts";
 import { openDb } from "./db.ts";
 import { readSession } from "./features/auth/session.ts";
@@ -567,7 +567,7 @@ size.
 
 ```ts
 // public/routes/index.js
-import { createApp, $, html, render } from "@vyn/client";
+import { createApp, $, html, render } from "@vynjs/client";
 import type { AppRouter } from "../../_vyn.gen.ts";
 import type { Note } from "../../features/notes/note.ts";
 
@@ -634,7 +634,7 @@ which mutation they call, so we extract the form helper:
 ```ts
 // public/routes/_auth-form.js (route-local helper, prefixed with _ so
 // the framework doesn't treat it as a route)
-import { $, html, render } from "@vyn/client";
+import { $, html, render } from "@vynjs/client";
 
 export function mountAuthForm(
 	root: HTMLElement,
@@ -669,7 +669,7 @@ export function mountAuthForm(
 
 ```ts
 // public/routes/login.js
-import { createApp, $ } from "@vyn/client";
+import { createApp, $ } from "@vynjs/client";
 import type { AppRouter } from "../../_vyn.gen.ts";
 import { mountAuthForm } from "./_auth-form.js";
 
@@ -688,7 +688,7 @@ mountAuthForm($("#root"), "Sign in", async creds => {
 
 ```ts
 // public/routes/signup.js
-import { createApp, $ } from "@vyn/client";
+import { createApp, $ } from "@vynjs/client";
 import type { AppRouter } from "../../_vyn.gen.ts";
 import { mountAuthForm } from "./_auth-form.js";
 
@@ -709,7 +709,7 @@ mountAuthForm($("#root"), "Sign up", async creds => {
 
 ```ts
 // public/routes/notes/[noteId].js
-import { createApp, $, useParams } from "@vyn/client";
+import { createApp, $, useParams } from "@vynjs/client";
 import type { AppRouter } from "../../../_vyn.gen.ts";
 
 const { rpc } = createApp<AppRouter>();

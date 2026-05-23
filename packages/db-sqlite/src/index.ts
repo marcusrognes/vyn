@@ -1,4 +1,4 @@
-// @vyn/db-sqlite — thin convenience wrapper over node:sqlite (Node 22+
+// @vynjs/db-sqlite — thin convenience wrapper over node:sqlite (Node 22+
 // experimental) or better-sqlite3 if installed. Provides a unified
 // open() that gives you the raw DatabaseSync handle plus typed
 // collection helpers.

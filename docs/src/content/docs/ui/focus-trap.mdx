@@ -57,7 +57,7 @@ needed.
 document.getElementById("confirm")!.showModal();
 ```
 
-`@vyn/ui/focus-trap` exists for the **non-modal** cases:
+`@vynjs/ui/focus-trap` exists for the **non-modal** cases:
 
 - A side drawer that should trap focus while open but **not** block
   the rest of the page from rendering.
@@ -78,7 +78,7 @@ constrained inside.
 ```
 
 ```ts
-import "@vyn/ui/focus-trap";
+import "@vynjs/ui/focus-trap";
 
 drawer.hidden = false;
 ```
@@ -102,7 +102,7 @@ Hide the element again to release the trap.
 ## Programmatic control
 
 ```ts
-import { trapFocus } from "@vyn/client";
+import { trapFocus } from "@vynjs/client";
 
 const release = trapFocus(el, { initial: el.querySelector("input") });
 // later
@@ -126,5 +126,5 @@ release();
 
 - Native [`<dialog>.showModal()`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLDialogElement/showModal) — use this for modals
 - Native [`inert` attribute](https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/inert) — for marking rest-of-page non-interactive
-- [`@vyn/ui/dismiss`](/vyn/ui/dismiss/) — for Esc / outside / focus-out dismissal
+- [`@vynjs/ui/dismiss`](/vyn/ui/dismiss/) — for Esc / outside / focus-out dismissal
 - [Native platform](/vyn/guide/native-platform/) — what the browser already ships

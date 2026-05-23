@@ -18,7 +18,7 @@ re-implement them.
 This page lists the platform features Vyn assumes are available in
 every supported browser. When one of these covers your case, **use
 the native feature** and skip the corresponding behavior or widget
-entirely. The behaviors and widgets in `@vyn/ui` are the polyfill
+entirely. The behaviors and widgets in `@vynjs/ui` are the polyfill
 layer and the composition layer — they're not always the answer.
 
 Supported browsers for this list: recent Chrome, Edge, Firefox, and
@@ -118,7 +118,7 @@ menu.addEventListener("keydown", (e) => {
 `}
 />
 
-[`@vyn/ui/anchor`](/vyn/ui/anchor/) leads with this CSS-first approach
+[`@vynjs/ui/anchor`](/vyn/ui/anchor/) leads with this CSS-first approach
 and falls back to JS positioning where needed.
 
 ### Popover API
@@ -133,7 +133,7 @@ rendering, Esc dismissal, outside-click dismissal, focus restoration.
 </div>
 ```
 
-No JS. No `<v-popover>`. No `@vyn/ui/popover` for the common case.
+No JS. No `<v-popover>`. No `@vynjs/ui/popover` for the common case.
 
 <LiveExample title="Native popover API" height="280px"
 	html={`
@@ -211,7 +211,7 @@ apply();
 `}
 />
 
-Use [`@vyn/ui/popover`](/vyn/ui/popover/) when you need anchored
+Use [`@vynjs/ui/popover`](/vyn/ui/popover/) when you need anchored
 positioning (the native API doesn't ship anchor positioning
 universally yet) or to control state programmatically with the
 `data-popover` attribute pattern.
@@ -274,7 +274,7 @@ dialog p { margin: 0 0 1rem; color: #475569; }
 />
 
 
-[`@vyn/ui/focus-trap`](/vyn/ui/focus-trap/) is for the rare non-dialog
+[`@vynjs/ui/focus-trap`](/vyn/ui/focus-trap/) is for the rare non-dialog
 case where you need to constrain Tab focus inside a region that
 isn't a modal — for example, a drawer that should trap focus but
 not block the rest of the page.
@@ -307,7 +307,7 @@ error messages and screen-reader support.
 <input type="number" min="0" max="100" step="5">
 ```
 
-Pair with [`@vyn/ui/aria-describedby`](/vyn/ui/aria-describedby/) for
+Pair with [`@vynjs/ui/aria-describedby`](/vyn/ui/aria-describedby/) for
 inline error text that screen readers announce alongside the input.
 
 ### Input type hints
@@ -494,7 +494,7 @@ Set this on items inside a scroll container to control where
 }
 ```
 
-Pair with [`@vyn/ui/scroll-into-view`](/vyn/ui/scroll-into-view/);
+Pair with [`@vynjs/ui/scroll-into-view`](/vyn/ui/scroll-into-view/);
 together they keep the focused item visible without overlap.
 
 ## Selection
@@ -564,7 +564,7 @@ input:focus, select:focus { outline: 0; border-color: #4f46e5; box-shadow: 0 0 0
 ## Clipboard
 
 `navigator.clipboard.writeText(string)` is universal. The
-[`@vyn/ui/copy`](/vyn/ui/copy/) behavior wraps it with feedback and
+[`@vynjs/ui/copy`](/vyn/ui/copy/) behavior wraps it with feedback and
 announcement, but for one-off cases the native call is enough.
 
 ## CSS
@@ -789,7 +789,7 @@ request's `Cookie` header and writes to response cookies via the
 needs to inspect or update its own cookies (e.g., for client-side
 session refresh hints).
 
-## What `@vyn/ui` exists for
+## What `@vynjs/ui` exists for
 
 Given everything above, what does Vyn actually contribute? Two
 things:

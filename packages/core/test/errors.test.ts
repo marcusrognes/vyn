@@ -45,7 +45,7 @@ describe("RpcError", () => {
 
 	describe("RPC surface mapping (HTTP status)", () => {
 		// Mapping documented in /guide/errors/#categories
-		// The mapping function lives in @vyn/server; we re-export here for testing.
+		// The mapping function lives in @vynjs/server; we re-export here for testing.
 		it.each([
 			["unauthorized", 401],
 			["forbidden",    403],

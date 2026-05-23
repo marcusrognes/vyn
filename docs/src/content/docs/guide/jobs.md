@@ -22,7 +22,7 @@ a caller, they retry on failure, and they're pulled from a
 
 ```ts
 // features/notes/cleanup.actions.ts
-import { createJob, v } from "@vyn/core";
+import { createJob, v } from "@vynjs/core";
 import { requireSession } from "../auth/guards.ts";
 
 export const cleanup = createJob({
@@ -110,8 +110,8 @@ The **job store** is where queued jobs live. Configure it once on
 `serve()`; everything else stays the same.
 
 ```ts
-import { serve } from "@vyn/server";
-import { redisJobStore } from "@vyn/jobs-redis";
+import { serve } from "@vynjs/server";
+import { redisJobStore } from "@vynjs/jobs-redis";
 
 serve({
 	port: env.PORT,
@@ -126,10 +126,10 @@ serve({
 
 | Package | Backend | Notes |
 |---|---|---|
-| `@vyn/core` (default)         | In-memory | Fast; lost on restart; fine for dev and tests |
-| `@vyn/jobs-redis`             | Redis sorted sets + BRPOP | Low-latency, no durability past Redis config |
-| `@vyn/jobs-postgres`          | Postgres with `SKIP LOCKED` | Durable; reuses your existing DB |
-| `@vyn/jobs-mongo`             | MongoDB | Agenda.js-shaped semantics; durable; cron + scheduling |
+| `@vynjs/core` (default)         | In-memory | Fast; lost on restart; fine for dev and tests |
+| `@vynjs/jobs-redis`             | Redis sorted sets + BRPOP | Low-latency, no durability past Redis config |
+| `@vynjs/jobs-postgres`          | Postgres with `SKIP LOCKED` | Durable; reuses your existing DB |
+| `@vynjs/jobs-mongo`             | MongoDB | Agenda.js-shaped semantics; durable; cron + scheduling |
 
 All four implement the same interface:
 
@@ -150,7 +150,7 @@ export interface JobStore {
 ```
 
 Implementing a custom store is straightforward — see
-[`@vyn/jobs-redis`](https://github.com/vyn-dev/vyn/tree/main/packages/jobs-redis)
+[`@vynjs/jobs-redis`](https://github.com/vyn-dev/vyn/tree/main/packages/jobs-redis)
 for a reference implementation.
 
 ## Workers

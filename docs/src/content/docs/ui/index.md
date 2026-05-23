@@ -7,13 +7,13 @@ sidebar:
 
 :::tip
 **Live interactive examples land with the package.** This doc currently
-shows code; once `@vyn/ui` ships, each behavior and widget page gains a
+shows code; once `@vynjs/ui` ships, each behavior and widget page gains a
 `<LiveExample>` block that renders the actual element inline — read the
 HTML, see the keyboard work in real time, watch the events fire, copy
 the source. Until then, examples are reference-only.
 :::
 
-`@vyn/ui` is an optional package that makes accessible UI primitives —
+`@vynjs/ui` is an optional package that makes accessible UI primitives —
 keyboard navigation, selection, positioning, focus trapping — work
 across any HTML you write. The package is **opt-in**: nothing in the
 framework depends on it, and apps that don't import it don't pay for
@@ -43,8 +43,8 @@ module once; the behavior turns on everywhere.
 ```
 
 ```ts
-import "@vyn/ui/keyboard-nav";
-import "@vyn/ui/select";
+import "@vynjs/ui/keyboard-nav";
+import "@vynjs/ui/select";
 
 document.querySelector("ul")!.addEventListener("change", (e) => {
 	const { value } = (e as CustomEvent<{ value: string }>).detail;
@@ -60,24 +60,24 @@ framework runtime to think about.
 
 | Module | Behavior | Composes via |
 |---|---|---|
-| [`@vyn/ui/keyboard-nav`](/vyn/ui/keyboard-nav/)        | Arrow keys, Home/End, roving tabindex                          | `data-keyboard-nav` |
-| [`@vyn/ui/typeahead`](/vyn/ui/typeahead/)              | Letter-key buffer + jump                                       | `data-typeahead` |
-| [`@vyn/ui/select`](/vyn/ui/select/)                    | Single/multi selection state via `data-value`; `aria-selected` | `data-select` |
-| [`@vyn/ui/popover`](/vyn/ui/popover/)                  | Anchored positioning + open/close                              | `data-popover` |
-| [`@vyn/ui/anchor`](/vyn/ui/anchor/)                    | Position one element relative to another (flip, offset)        | `data-anchor` |
-| [`@vyn/ui/dismiss`](/vyn/ui/dismiss/)                  | Esc + outside click + focus-out → `dismiss` event              | `data-dismiss` |
-| [`@vyn/ui/focus-trap`](/vyn/ui/focus-trap/)            | Contain Tab focus inside an element                            | `data-focus-trap` |
-| [`@vyn/ui/aria-describedby`](/vyn/ui/aria-describedby/) | Wire `aria-describedby` between two elements                  | `data-describes` |
-| [`@vyn/ui/tooltip`](/vyn/ui/tooltip/)                  | Hover/focus + describedby; composes anchor + dismiss + describedby | `data-tooltip` |
-| [`@vyn/ui/form-associated`](/vyn/ui/form-associated/)  | Custom value-holders participate in `<form>` submission         | `data-form-name` |
-| [`@vyn/ui/live`](/vyn/ui/live/)                        | `aria-live` region for ad-hoc announcements                    | `liveRegion(message)` helper |
-| [`@vyn/ui/sort`](/vyn/ui/sort/)                        | Column-header sort buttons with `aria-sort`                    | `data-sort-key` |
-| [`@vyn/ui/edit`](/vyn/ui/edit/)                        | Inline-editable cells (Enter to edit, Esc to cancel, Enter/Tab to commit) | `data-editable` |
-| [`@vyn/ui/sortable`](/vyn/ui/sortable/)                | Drag to reorder a list; emits `reorder`                         | `data-sortable` |
-| [`@vyn/ui/drag-drop`](/vyn/ui/drag-drop/)              | Cross-container drag-and-drop with keyboard fallback           | `data-drag` / `data-drop` |
-| [`@vyn/ui/auto-resize`](/vyn/ui/auto-resize/)          | `<textarea>` grows with content                                | `data-auto-resize` |
-| [`@vyn/ui/copy`](/vyn/ui/copy/)                        | Button copies a target's text to clipboard with feedback        | `data-copy` |
-| [`@vyn/ui/scroll-into-view`](/vyn/ui/scroll-into-view/) | Scroll element into view on focus or attribute change          | `data-scroll-into-view` |
+| [`@vynjs/ui/keyboard-nav`](/vyn/ui/keyboard-nav/)        | Arrow keys, Home/End, roving tabindex                          | `data-keyboard-nav` |
+| [`@vynjs/ui/typeahead`](/vyn/ui/typeahead/)              | Letter-key buffer + jump                                       | `data-typeahead` |
+| [`@vynjs/ui/select`](/vyn/ui/select/)                    | Single/multi selection state via `data-value`; `aria-selected` | `data-select` |
+| [`@vynjs/ui/popover`](/vyn/ui/popover/)                  | Anchored positioning + open/close                              | `data-popover` |
+| [`@vynjs/ui/anchor`](/vyn/ui/anchor/)                    | Position one element relative to another (flip, offset)        | `data-anchor` |
+| [`@vynjs/ui/dismiss`](/vyn/ui/dismiss/)                  | Esc + outside click + focus-out → `dismiss` event              | `data-dismiss` |
+| [`@vynjs/ui/focus-trap`](/vyn/ui/focus-trap/)            | Contain Tab focus inside an element                            | `data-focus-trap` |
+| [`@vynjs/ui/aria-describedby`](/vyn/ui/aria-describedby/) | Wire `aria-describedby` between two elements                  | `data-describes` |
+| [`@vynjs/ui/tooltip`](/vyn/ui/tooltip/)                  | Hover/focus + describedby; composes anchor + dismiss + describedby | `data-tooltip` |
+| [`@vynjs/ui/form-associated`](/vyn/ui/form-associated/)  | Custom value-holders participate in `<form>` submission         | `data-form-name` |
+| [`@vynjs/ui/live`](/vyn/ui/live/)                        | `aria-live` region for ad-hoc announcements                    | `liveRegion(message)` helper |
+| [`@vynjs/ui/sort`](/vyn/ui/sort/)                        | Column-header sort buttons with `aria-sort`                    | `data-sort-key` |
+| [`@vynjs/ui/edit`](/vyn/ui/edit/)                        | Inline-editable cells (Enter to edit, Esc to cancel, Enter/Tab to commit) | `data-editable` |
+| [`@vynjs/ui/sortable`](/vyn/ui/sortable/)                | Drag to reorder a list; emits `reorder`                         | `data-sortable` |
+| [`@vynjs/ui/drag-drop`](/vyn/ui/drag-drop/)              | Cross-container drag-and-drop with keyboard fallback           | `data-drag` / `data-drop` |
+| [`@vynjs/ui/auto-resize`](/vyn/ui/auto-resize/)          | `<textarea>` grows with content                                | `data-auto-resize` |
+| [`@vynjs/ui/copy`](/vyn/ui/copy/)                        | Button copies a target's text to clipboard with feedback        | `data-copy` |
+| [`@vynjs/ui/scroll-into-view`](/vyn/ui/scroll-into-view/) | Scroll element into view on focus or attribute change          | `data-scroll-into-view` |
 
 Each behavior is ~50-150 LOC. The whole set fits in one mental model:
 a few hundred lines that turn HTML into accessible UI.
@@ -100,10 +100,10 @@ Most UI patterns are a stack of behaviors on the same element:
 ```
 
 ```ts
-import "@vyn/ui/popover";
-import "@vyn/ui/dismiss";
-import "@vyn/ui/keyboard-nav";
-import "@vyn/ui/typeahead";
+import "@vynjs/ui/popover";
+import "@vynjs/ui/dismiss";
+import "@vynjs/ui/keyboard-nav";
+import "@vynjs/ui/typeahead";
 
 document.querySelector("ul")!.addEventListener("activate", (e) => {
 	const { key } = (e as CustomEvent<{ key: string }>).detail;
@@ -120,7 +120,7 @@ positioning. No custom element registration, no JSX, no compile step.
 For four specific cases, a custom element earns its keep — the
 state, virtual focus, queue, or data-driven rendering is too tangled
 to express purely through data-attributes. These ship as
-`@vyn/ui/<widget>` subpaths.
+`@vynjs/ui/<widget>` subpaths.
 
 | Widget | What it adds | Why a custom element |
 |---|---|---|
@@ -137,7 +137,7 @@ write the markup yourself for everything else.
 
 ## Styling
 
-`@vyn/ui` ships zero opinions about visual design. Behaviors set
+`@vynjs/ui` ships zero opinions about visual design. Behaviors set
 ARIA and `data-state="..."` attributes; widgets expose CSS custom
 properties for the parts that need to coordinate (focus rings,
 overlays, transitions). Everything else is your stylesheet.
@@ -180,8 +180,8 @@ section.
 
 ## Composing your own
 
-If a behavior is missing, write it. The same helpers `@vyn/ui` uses
-internally are exported from `@vyn/client`:
+If a behavior is missing, write it. The same helpers `@vynjs/ui` uses
+internally are exported from `@vynjs/client`:
 
 | Helper | What it does |
 |---|---|

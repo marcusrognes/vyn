@@ -25,11 +25,11 @@ same WebSocket plumbing every time — also for you.
 
 | Layer | What it does |
 |---|---|
-| `@vyn/core` | Validators, procedure + router builders, RPC errors |
-| `@vyn/server` | HTTP serve, RPC dispatch, WebSocket subscriptions, file-based routing |
-| `@vyn/client` | Custom elements, signals, typed RPC proxy, cache, devtools |
-| `@vyn/auth` | Password hashing, cookie-bound sessions, pluggable store |
-| `@vyn/cli` | Codegen for router barrel and route params |
+| `@vynjs/core` | Validators, procedure + router builders, RPC errors |
+| `@vynjs/server` | HTTP serve, RPC dispatch, WebSocket subscriptions, file-based routing |
+| `@vynjs/client` | Custom elements, signals, typed RPC proxy, cache, devtools |
+| `@vynjs/auth` | Password hashing, cookie-bound sessions, pluggable store |
+| `@vynjs/cli` | Codegen for router barrel and route params |
 
 That's it. There is no ORM, no UI library, no styling story. Bring your own.
 

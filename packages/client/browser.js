@@ -1,5 +1,5 @@
-// Browser bundle of @vyn/client — single ESM file, no build step.
-// Served by @vyn/server at /_vyn/client.js so app routes can
+// Browser bundle of @vynjs/client — single ESM file, no build step.
+// Served by @vynjs/server at /_vyn/client.js so app routes can
 // import { createApp, html, render, ... } from "/_vyn/client.js"
 // without a bundler.
 

@@ -56,7 +56,7 @@ for (const zone of document.querySelectorAll("[data-dropzone]")) {
 `}
 />
 
-`@vyn/ui/drag-drop` wires native HTML5 drag-and-drop with typed
+`@vynjs/ui/drag-drop` wires native HTML5 drag-and-drop with typed
 payloads and selection-aware multi-drag. Unlike
 [`sortable`](/vyn/ui/sortable/) (which reorders within one list),
 `drag-drop` is for moving items between lists, into trash zones, or
@@ -81,8 +81,8 @@ event whose detail carries the type and the list of dragged item ids.
 ```
 
 ```ts
-import "@vyn/ui/drag-drop";
-import "@vyn/ui/select";
+import "@vynjs/ui/drag-drop";
+import "@vynjs/ui/select";
 
 for (const zone of document.querySelectorAll("[data-dropzone]")) {
 	zone.addEventListener("drop", (e) => {
@@ -171,7 +171,7 @@ text editor produces something readable.
 
 ## See also
 
-- [`@vyn/ui/select`](/vyn/ui/select/) — required upstream behavior for
+- [`@vynjs/ui/select`](/vyn/ui/select/) — required upstream behavior for
   multi-drag; provides the selection state the dragger reads
-- [`@vyn/ui/sortable`](/vyn/ui/sortable/) — within-list reordering
-- [`@vyn/ui/keyboard-nav`](/vyn/ui/keyboard-nav/) — arrow-key list navigation
+- [`@vynjs/ui/sortable`](/vyn/ui/sortable/) — within-list reordering
+- [`@vynjs/ui/keyboard-nav`](/vyn/ui/keyboard-nav/) — arrow-key list navigation

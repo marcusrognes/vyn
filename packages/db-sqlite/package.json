@@ -1,5 +1,5 @@
 {
-	"name": "@vyn/db-sqlite",
+	"name": "@vynjs/db-sqlite",
 	"version": "0.1.0",
 	"description": "Vyn SQLite adapter \u2014 thin wrapper over node:sqlite.",
 	"type": "module",

@@ -24,7 +24,7 @@ type the clean name:
 
 ```ts
 // features/notes/note.ts
-import { v } from "@vyn/core";
+import { v } from "@vynjs/core";
 
 export const NoteSchema = v.object({
 	id: v.number(),
@@ -237,8 +237,8 @@ runs once per parse so each instance gets its own fresh value (timestamps,
 UUIDs, defaults derived from other input).
 
 ```ts
-import { v } from "@vyn/core";
-import { uuid } from "@vyn/core/util";
+import { v } from "@vynjs/core";
+import { uuid } from "@vynjs/core/util";
 
 export const NoteSchema = v.object({
 	_id:       v.string().default(() => uuid()),

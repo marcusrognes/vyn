@@ -49,7 +49,7 @@ attach listeners, manage state — whatever the component needs.
 
 ```ts
 // features/notes/note-card.component.ts
-import { component, html, render } from "@vyn/client";
+import { component, html, render } from "@vynjs/client";
 import type { Note } from "./note.ts";
 
 type Props = { note: Note };
@@ -92,7 +92,7 @@ What's happening:
 Mount the tag in any HTML, then drive it imperatively from the parent:
 
 ```ts
-import { html, render } from "@vyn/client";
+import { html, render } from "@vynjs/client";
 import type { Note } from "../../features/notes/note.ts";
 
 function paint(notes: Note[]) {
@@ -161,7 +161,7 @@ For components that genuinely need reactive re-renders (a counter, a
 form input mirroring a signal), use the framework's signals primitive:
 
 ```ts
-import { component, signal, html, render } from "@vyn/client";
+import { component, signal, html, render } from "@vynjs/client";
 
 export default component<{}>((el) => {
 	const open = signal(false);

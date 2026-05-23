@@ -424,7 +424,7 @@ function object<S extends Record<string, Schema<unknown>>>(fields: S): ObjectSch
 		omit(keys) {
 			const set    = new Set(keys);
 			const picked = Object.fromEntries(Object.entries(fields).filter(([k]) => !set.has(k as any)));
-			return object(picked as any);
+			return object(picked as any) as any;
 		},
 
 		partial() {

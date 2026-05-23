@@ -1,5 +1,5 @@
 {
-	"name": "@vyn/example-todo",
+	"name": "@vynjs/example-todo",
 	"private": true,
 	"version": "0.0.0",
 	"type": "module",
@@ -8,8 +8,8 @@
 		"start": "node --experimental-strip-types server.ts"
 	},
 	"dependencies": {
-		"@vyn/core":   "*",
-		"@vyn/server": "*",
-		"@vyn/client": "*"
+		"@vynjs/core":   "*",
+		"@vynjs/server": "*",
+		"@vynjs/client": "*"
 	}
 }

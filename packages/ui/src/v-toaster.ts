@@ -80,7 +80,7 @@ function escape(s: string): string {
 	return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-// Imperative helper. Imports as `import { toast } from "@vyn/ui/v-toaster"`.
+// Imperative helper. Imports as `import { toast } from "@vynjs/ui/v-toaster"`.
 // Lazily creates a singleton <v-toaster> on first call if one isn't mounted.
 export function toast(opts: Omit<Toast, "id">): number {
 	let t = document.querySelector("v-toaster") as VToasterElement | null;

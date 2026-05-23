@@ -46,7 +46,7 @@ The fallback list lets the engine flip to the other side of the
 anchor when there's no room. Pair with the native popover attribute
 and you have a complete anchored popover with no JavaScript.
 
-`@vyn/ui/anchor` is for cases the CSS API doesn't cover:
+`@vynjs/ui/anchor` is for cases the CSS API doesn't cover:
 
 1. **Browsers without anchor positioning** — the behavior provides a
    JS fallback that mirrors the same flip/shift semantics.
@@ -63,7 +63,7 @@ and you have a complete anchored popover with no JavaScript.
 ```
 
 ```ts
-import "@vyn/ui/anchor";
+import "@vynjs/ui/anchor";
 ```
 
 The behavior detects support for CSS Anchor Positioning at runtime
@@ -75,8 +75,8 @@ otherwise.
 | Need | Use |
 |---|---|
 | Simple anchored floating element | CSS `anchor-name` + `position-anchor` |
-| Combine with `data-popover`, `data-dismiss`, etc. | `@vyn/ui/anchor` (uses CSS under the hood when available) |
-| Manual positioning via `position(target, anchor)` | The exported `position()` helper from `@vyn/client` |
+| Combine with `data-popover`, `data-dismiss`, etc. | `@vynjs/ui/anchor` (uses CSS under the hood when available) |
+| Manual positioning via `position(target, anchor)` | The exported `position()` helper from `@vynjs/client` |
 
 ## Attributes
 
@@ -100,7 +100,7 @@ for cases where there's no stable id.
 ## Programmatic control
 
 ```ts
-import { position } from "@vyn/client";
+import { position } from "@vynjs/client";
 
 const cleanup = position(floatingEl, anchorEl, {
 	placement: "right-start",
@@ -126,6 +126,6 @@ after flip. Use the state attribute for direction-aware styling:
 ## See also
 
 - Native [CSS Anchor Positioning](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_anchor_positioning) — use this first
-- [`@vyn/ui/popover`](/vyn/ui/popover/) — anchor + open/close + dismiss
-- [`@vyn/ui/tooltip`](/vyn/ui/tooltip/) — anchor + dismiss + describedby + hover/focus
+- [`@vynjs/ui/popover`](/vyn/ui/popover/) — anchor + open/close + dismiss
+- [`@vynjs/ui/tooltip`](/vyn/ui/tooltip/) — anchor + dismiss + describedby + hover/focus
 - [Native platform](/vyn/guide/native-platform/) — what the browser ships

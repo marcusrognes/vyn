@@ -26,7 +26,7 @@ types for everything that follows the call:
 
 ```ts
 // features/auth/guards.ts
-import { RpcError } from "@vyn/core";
+import { RpcError } from "@vynjs/core";
 import type { Ctx } from "../../ctx.ts";
 import type { Session } from "./session.ts";
 
@@ -48,7 +48,7 @@ Use it like this:
 
 ```ts
 // features/notes/notes.actions.ts
-import { createQuery, v } from "@vyn/core";
+import { createQuery, v } from "@vynjs/core";
 import { requireSession } from "../auth/guards.ts";
 import { NoteSchema } from "./note.ts";
 
@@ -226,7 +226,7 @@ Because guards are plain functions, test them directly:
 
 ```ts
 import { requireSession } from "./guards.ts";
-import { RpcError } from "@vyn/core";
+import { RpcError } from "@vynjs/core";
 
 test("requireSession throws when session is null", () => {
 	expect(() => requireSession({ ctx: { session: null } })).toThrow(RpcError);

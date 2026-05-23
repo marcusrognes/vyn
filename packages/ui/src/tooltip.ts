@@ -9,8 +9,9 @@ function wire(tip: HTMLElement) {
 	tip.dataset.ttWired = "true";
 	const targetId = tip.dataset.tooltipFor!;
 	const delay    = Number(tip.dataset.tooltipDelay ?? 400);
-	const target   = document.getElementById(targetId);
-	if (!target) return;
+	const targetMaybe = document.getElementById(targetId);
+	if (!targetMaybe) return;
+	const target: HTMLElement = targetMaybe;
 
 	tip.setAttribute("role", "tooltip");
 	tip.dataset.state = "hidden";

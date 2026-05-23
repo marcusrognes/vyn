@@ -12,7 +12,7 @@ Node 22+.
 ## The five primitives
 
 ```ts
-import { createQuery, createMutation, createSubscription, createJob, createNotification, v } from "@vyn/core";
+import { createQuery, createMutation, createSubscription, createJob, createNotification, v } from "@vynjs/core";
 
 export const list = createQuery({
 	name:   "todos.list",
@@ -63,15 +63,15 @@ export const reminder = createNotification({
 vyn/
 ├── docs/                          Astro Starlight (52 pages)
 ├── packages/
-│   ├── core/                      @vyn/core           — primitives, registry, validators, cron
-│   ├── server/                    @vyn/server         — serve(), RPC dispatcher, MCP, transformers
-│   ├── client/                    @vyn/client         — createApp, cache, html/render, signals
-│   ├── auth/                      @vyn/auth           — scrypt + sessions
-│   ├── cli/                       @vyn/cli            — vyn init / dev / build / check / gen / mcp / worker
-│   ├── ui/                        @vyn/ui             — 18 behaviors + 4 widgets
-│   ├── db-sqlite/                 @vyn/db-sqlite      — wraps node:sqlite
-│   ├── db-mongo/                  @vyn/db-mongo       — wraps the mongodb driver
-│   └── notify-inbox/              @vyn/notify-inbox   — in-app channel adapter + actions
+│   ├── core/                      @vynjs/core           — primitives, registry, validators, cron
+│   ├── server/                    @vynjs/server         — serve(), RPC dispatcher, MCP, transformers
+│   ├── client/                    @vynjs/client         — createApp, cache, html/render, signals
+│   ├── auth/                      @vynjs/auth           — scrypt + sessions
+│   ├── cli/                       @vynjs/cli            — vyn init / dev / build / check / gen / mcp / worker
+│   ├── ui/                        @vynjs/ui             — 18 behaviors + 4 widgets
+│   ├── db-sqlite/                 @vynjs/db-sqlite      — wraps node:sqlite
+│   ├── db-mongo/                  @vynjs/db-mongo       — wraps the mongodb driver
+│   └── notify-inbox/              @vynjs/notify-inbox   — in-app channel adapter + actions
 ├── examples/
 │   ├── todo/                      5-primitive realtime app + MCP
 │   ├── notes-auth/                Per-user data, sessions, in-memory store
@@ -97,7 +97,7 @@ open http://localhost:8000
 |---|---|---|
 | `examples/todo`         | five primitives + RPC + realtime + MCP                       | `cd examples/todo && PORT=8000 npm run dev` |
 | `examples/notes-auth`   | sessions, per-user data, requireSession guard                | `PORT=8001 npm run dev` |
-| `examples/notes-sqlite` | same + SQLite persistence via `@vyn/db-sqlite`               | `PORT=8002 npm run dev` |
+| `examples/notes-sqlite` | same + SQLite persistence via `@vynjs/db-sqlite`               | `PORT=8002 npm run dev` |
 | `examples/research`     | streaming agent (`opts.tick`), jobs, notifications, inbox    | `PORT=8003 npm run dev` |
 
 The research example talks to Claude when `ANTHROPIC_API_KEY` is

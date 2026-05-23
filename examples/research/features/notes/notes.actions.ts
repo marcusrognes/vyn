@@ -1,4 +1,4 @@
-import { createQuery, createMutation, v, RpcError } from "@vyn/core";
+import { createQuery, createMutation, v, RpcError } from "@vynjs/core";
 import type { Ctx, Note } from "../../ctx.ts";
 
 const NoteShape = v.object({

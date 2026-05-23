@@ -1,6 +1,6 @@
-// Server-side bundler for @vyn/ui behaviors.
+// Server-side bundler for @vynjs/ui behaviors.
 //
-// LiveExample uses this to embed real @vyn/ui code inside a sandboxed
+// LiveExample uses this to embed real @vynjs/ui code inside a sandboxed
 // iframe: the TypeScript source is bundled to a minified IIFE that runs
 // the moment the iframe parses it. Results are cached for the life of
 // the build / dev server.
@@ -18,7 +18,7 @@ const cache = new Map<string, { mtime: number; text: string }>();
 export async function bundleUi(name: string): Promise<string> {
 	const entry = join(UI_SRC, `${name}.ts`);
 	if (!existsSync(entry)) {
-		throw new Error(`@vyn/ui module not found: ${name} (expected ${entry})`);
+		throw new Error(`@vynjs/ui module not found: ${name} (expected ${entry})`);
 	}
 	const mtime = statSync(entry).mtimeMs;
 	const hit = cache.get(name);

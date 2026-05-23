@@ -1,5 +1,5 @@
-import { createMutation, createQuery, v, RpcError } from "@vyn/core";
-import { hashPassword, verifyPassword, randomToken } from "@vyn/auth";
+import { createMutation, createQuery, v, RpcError } from "@vynjs/core";
+import { hashPassword, verifyPassword, randomToken } from "@vynjs/auth";
 import type { Ctx, User } from "../../ctx.ts";
 
 const Credentials = v.object({

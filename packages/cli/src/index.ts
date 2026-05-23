@@ -52,15 +52,15 @@ async function init() {
 				check: "deno check server.ts",
 			},
 			imports: {
-				"@vyn/core":   "jsr:@vyn/core",
-				"@vyn/server": "jsr:@vyn/server",
-				"@vyn/client": "jsr:@vyn/client",
+				"@vynjs/core":   "jsr:@vynjs/core",
+				"@vynjs/server": "jsr:@vynjs/server",
+				"@vynjs/client": "jsr:@vynjs/client",
 			},
 			nodeModulesDir: "auto",
 			compilerOptions: { lib: ["deno.window", "dom", "dom.iterable", "esnext"], strict: true },
 			unstable: ["node-globals", "bare-node-builtins"],
 		}, null, 2)],
-		["server.ts", `import { serve } from "@vyn/server";
+		["server.ts", `import { serve } from "@vynjs/server";
 import "./_vyn.gen.ts";
 
 serve({ port: Number(Deno.env.get("PORT") ?? 8000) });
@@ -193,7 +193,7 @@ async function mcp() {
 	Deno.env.set("PORT", "0");
 	await import(`${cwd}/server.ts`);
 
-	const { registry } = await import("@vyn/core");
+	const { registry } = await import("@vynjs/core");
 	const decoder = new TextDecoder();
 	const buf = new Uint8Array(1024 * 64);
 	let pending = "";
@@ -220,7 +220,7 @@ async function mcp() {
 async function handleStdioFrame(req: any, registry: any) {
 	const id = req?.id;
 	if (req?.method === "initialize") {
-		return { jsonrpc: "2.0", id, result: { protocolVersion: "2024-11-05", capabilities: { tools: {} }, serverInfo: { name: "@vyn/cli mcp", version: "0.0.0" } } };
+		return { jsonrpc: "2.0", id, result: { protocolVersion: "2024-11-05", capabilities: { tools: {} }, serverInfo: { name: "@vynjs/cli mcp", version: "0.0.0" } } };
 	}
 	if (req?.method === "tools/list") {
 		const tools = registry.list().filter((a: any) => a.tool && !a.tool.hidden).map((a: any) => ({

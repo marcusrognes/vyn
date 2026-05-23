@@ -30,8 +30,19 @@ type Listener = (action: Action) => void;
 const actions = new Map<string, Action>();
 const listeners = new Set<Listener>();
 
-export const registry = {
-	register(action: Action) {
+export type Registry = {
+	register(action: Action): Action;
+	list(): Action[];
+	get(name: string): Action | undefined;
+	byKind(kind: ActionKind): Action[];
+	byTool(filter?: { category?: string }): Action[];
+	schema(): Record<string, { input?: unknown; output?: unknown }>;
+	onRegister(fn: Listener): () => boolean;
+	clear(): void;
+};
+
+export const registry: Registry = {
+	register(action: Action): Action {
 		if (actions.has(action.name)) {
 			throw new Error(`duplicate action name: ${action.name}`);
 		}
@@ -71,13 +82,12 @@ export const registry = {
 		return out;
 	},
 
-	onRegister(fn: Listener) {
+	onRegister(fn: Listener): () => boolean {
 		listeners.add(fn);
 		return () => listeners.delete(fn);
 	},
 
-	// For tests
-	clear() {
+	clear(): void {
 		actions.clear();
 	},
 };

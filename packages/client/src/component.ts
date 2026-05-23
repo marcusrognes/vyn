@@ -13,7 +13,7 @@ export type ComponentSetup<P> = (opts: {
 	on:     <K extends keyof HTMLElementEventMap>(type: K, handler: (e: HTMLElementEventMap[K]) => void) => void;
 }) => (() => void) | void;
 
-export function component<P = Record<string, unknown>>(name: string, setup: ComponentSetup<P>) {
+export function component<P extends object = Record<string, unknown>>(name: string, setup: ComponentSetup<P>): void {
 	if (customElements.get(name)) return;
 	class Vc extends HTMLElement {
 		private dispose?: () => void;
@@ -28,7 +28,7 @@ export function component<P = Record<string, unknown>>(name: string, setup: Comp
 					}
 					return (this as any)[key];
 				},
-			});
+			}) as P;
 			const cleanup = setup({
 				el: this,
 				props,

@@ -37,7 +37,7 @@ to keep in sync with a path.
 
 ```ts
 // features/notes/notes.actions.ts
-import { createQuery, createMutation, createSubscription, v } from "@vyn/core";
+import { createQuery, createMutation, createSubscription, v } from "@vynjs/core";
 import { NoteSchema } from "../models/note.ts";
 
 export const list = createQuery({
@@ -70,7 +70,7 @@ export const create = createMutation({
 
 ```ts
 // server.ts
-import { serve } from "@vyn/server";
+import { serve } from "@vynjs/server";
 import "./_vyn.gen.ts";   // codegen barrel — discovers every *.actions.ts
 
 serve({ port: 8000 });

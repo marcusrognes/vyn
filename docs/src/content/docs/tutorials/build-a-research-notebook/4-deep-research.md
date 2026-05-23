@@ -21,9 +21,9 @@ it's done.
 
 ```ts
 // features/research/deepResearch.actions.ts
-import { createJob, v } from "@vyn/core";
-import { createAgent } from "@vyn/agent";
-import { uuid } from "@vyn/core/util";
+import { createJob, v } from "@vynjs/core";
+import { createAgent } from "@vynjs/agent";
+import { uuid } from "@vynjs/core/util";
 import type { Ctx } from "../../ctx.ts";
 import { searchNotes } from "../notes/notes.actions.ts";
 import { searchWeb, fetchPage } from "./research.actions.ts";
@@ -127,7 +127,7 @@ The mutation that schedules deep research is small:
 
 ```ts
 // features/research/research.actions.ts (additions)
-import { createMutation, v } from "@vyn/core";
+import { createMutation, v } from "@vynjs/core";
 import { deepResearch } from "./deepResearch.actions.ts";
 import type { Ctx } from "../../ctx.ts";
 import { requireSession } from "../auth/guards.ts";
@@ -162,7 +162,7 @@ for await (const event of rpc.jobs.watch.iterate({ jobId })) {
 ```
 
 The job tailing uses the framework's built-in `jobs.watch`
-subscription — `@vyn/core` exposes it because every job needs the
+subscription — `@vynjs/core` exposes it because every job needs the
 same shape; we don't have to write a separate subscription per job.
 
 ## The notification
@@ -173,7 +173,7 @@ tab.
 
 ```ts
 // features/research/researchReady.actions.ts
-import { createNotification, v } from "@vyn/core";
+import { createNotification, v } from "@vynjs/core";
 import type { Ctx } from "../../ctx.ts";
 
 export const researchReady = createNotification({
@@ -273,7 +273,7 @@ with custom needs can paste a raw cron.
 
 A user reading the page when a run finishes:
 
-1. Sees the in-app notification land (subscription via @vyn/notify
+1. Sees the in-app notification land (subscription via @vynjs/notify
    adapter)
 2. Probably doesn't need the email — the user has already seen the
    result
@@ -293,7 +293,7 @@ A user who hates push notifications:
 
 ```ts
 // features/auth/preferences.actions.ts
-import { createMutation, v } from "@vyn/core";
+import { createMutation, v } from "@vynjs/core";
 import type { Ctx } from "../../ctx.ts";
 import { requireSession } from "./guards.ts";
 

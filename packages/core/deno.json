@@ -1,0 +1,13 @@
+{
+	"name": "@vynjs/core",
+	"version": "0.1.0",
+	"description": "Small full-stack TypeScript framework — primitives, registry, validators, cron.",
+	"exports": {
+		".":     "./src/index.ts",
+		"./util": "./src/util.ts"
+	},
+	"publish": {
+		"include": ["src/**/*.ts", "README.md", "LICENSE", "deno.json"],
+		"exclude": ["src/**/*.test.ts", "test/**"]
+	}
+}

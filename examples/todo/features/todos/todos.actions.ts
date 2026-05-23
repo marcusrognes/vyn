@@ -1,4 +1,4 @@
-import { createQuery, createMutation, createSubscription, v, RpcError } from "@vyn/core";
+import { createQuery, createMutation, createSubscription, v, RpcError } from "@vynjs/core";
 import { TodoSchema, type Todo } from "./todo.ts";
 import type { Ctx } from "../../ctx.ts";
 

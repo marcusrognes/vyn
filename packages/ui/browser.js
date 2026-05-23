@@ -1,6 +1,6 @@
-// @vyn/ui browser bundle — single ESM file. Hand-rolled mirror of
-// the @vyn/ui source so apps can `import "/_vyn/ui.js"` without a
-// bundler. Served by @vyn/server when present.
+// @vynjs/ui browser bundle — single ESM file. Hand-rolled mirror of
+// the @vynjs/ui source so apps can `import "/_vyn/ui.js"` without a
+// bundler. Served by @vynjs/server when present.
 //
 // Side-effects: scans the DOM via MutationObserver and registers
 // behaviors + custom elements. Idempotent — multiple imports are

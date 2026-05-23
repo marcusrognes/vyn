@@ -24,7 +24,7 @@ invokes tools when the model asks for them, and pipes events out.
 
 ```ts
 // features/notes/notes.actions.ts (additions)
-import { createQuery, v } from "@vyn/core";
+import { createQuery, v } from "@vynjs/core";
 import type { Ctx } from "../../ctx.ts";
 import { NoteSchema } from "./note.ts";
 import { requireSession } from "../auth/guards.ts";
@@ -51,7 +51,7 @@ export const searchNotes = createQuery({
 
 ```ts
 // features/research/research.actions.ts
-import { createQuery, v } from "@vyn/core";
+import { createQuery, v } from "@vynjs/core";
 import type { Ctx } from "../../ctx.ts";
 import { requireSession } from "../auth/guards.ts";
 
@@ -112,8 +112,8 @@ tools without the user being signed in.
 
 ```ts
 // features/agent/agent.actions.ts
-import { createMutation, v, RpcError } from "@vyn/core";
-import { createAgent } from "@vyn/agent";
+import { createMutation, v, RpcError } from "@vynjs/core";
+import { createAgent } from "@vynjs/agent";
 import type { Ctx } from "../../ctx.ts";
 import { requireSession } from "../auth/guards.ts";
 import { searchNotes } from "../notes/notes.actions.ts";
@@ -165,7 +165,7 @@ export const ask = createMutation({
 
 What this does:
 
-1. **`createAgent` from `@vyn/agent`** — wires the LLM SDK to the
+1. **`createAgent` from `@vynjs/agent`** — wires the LLM SDK to the
    registry. Tools come from typed action references; the runner
    builds the JSON-Schema tool list from each action's `input` /
    `output`.
@@ -181,7 +181,7 @@ What this does:
    tool_result events (or returned explicitly by the model).
 
 `createAgent` is small (~200 LOC). It's not magic — read the source
-of `@vyn/agent` to see exactly how the loop is wired.
+of `@vynjs/agent` to see exactly how the loop is wired.
 
 ## Calling from the client
 

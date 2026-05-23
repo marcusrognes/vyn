@@ -1,10 +1,10 @@
-// @vyn/ui — behaviors + widgets. Each module side-effect-registers
+// @vynjs/ui — behaviors + widgets. Each module side-effect-registers
 // on import (behaviors scan the DOM via MutationObserver; widgets
 // register as custom elements).
 //
-//   import "@vyn/ui";                  // everything
-//   import "@vyn/ui/keyboard-nav";     // a single behavior
-//   import "@vyn/ui/v-toaster";        // a single widget
+//   import "@vynjs/ui";                  // everything
+//   import "@vynjs/ui/keyboard-nav";     // a single behavior
+//   import "@vynjs/ui/v-toaster";        // a single widget
 
 import "./keyboard-nav.ts";
 import "./typeahead.ts";

@@ -7,7 +7,7 @@
 // speak the basic MCP shape; richer features (resources, prompts,
 // streaming) are deferred.
 
-import { registry, type Action } from "@vyn/core";
+import { registry, type Action } from "@vynjs/core";
 import type { BaseCtx } from "./ctx.ts";
 
 export type McpRequest = {
@@ -141,7 +141,7 @@ export async function handleMcp(req: Request, makeCtx: () => Promise<object>): P
 			return jsonRpc(id, undefined, {
 				protocolVersion: "2024-11-05",
 				capabilities:    { tools: {}, resources: {}, prompts: {} },
-				serverInfo:      { name: "@vyn/server", version: "0.0.0" },
+				serverInfo:      { name: "@vynjs/server", version: "0.0.0" },
 			});
 		}
 

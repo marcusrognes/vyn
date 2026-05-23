@@ -1,5 +1,5 @@
-// Browser-side route logic. Bundled on demand by @vyn/server.
-import { createApp } from "@vyn/client";
+// Browser-side route logic. Bundled on demand by @vynjs/server.
+import { createApp } from "@vynjs/client";
 import type { AppRouter } from "../../_vyn.gen.ts";
 import type { Todo } from "../../features/todos/todo.ts";
 

@@ -20,7 +20,7 @@ Declare every environment variable you need as a schema. Parse
 
 ```ts
 // env.ts
-import { v } from "@vyn/core";
+import { v } from "@vynjs/core";
 
 export const env = v.object({
 	DATABASE_URL: v.string().url(),
@@ -128,7 +128,7 @@ accepting connections. Put long-lived shared resources here:
 
 ```ts
 // server.ts
-import { serve } from "@vyn/server";
+import { serve } from "@vynjs/server";
 import { env } from "./env.ts";
 import { openDb } from "./db.ts";
 import { createLogger } from "./log.ts";
@@ -207,7 +207,7 @@ extras. The full ctx is the intersection of all three layers.
 
 ```ts
 // ctx.ts
-import type { BaseCtx } from "@vyn/server";
+import type { BaseCtx } from "@vynjs/server";
 import type { Database } from "./db.ts";
 import type { Logger } from "./log.ts";
 import type { Session } from "./features/auth/session.ts";
@@ -272,7 +272,7 @@ to every action's input, output, and emitted subscription value.
 
 ```ts
 // server.ts
-import { serve } from "@vyn/server";
+import { serve } from "@vynjs/server";
 import superjson from "superjson";
 
 serve({
@@ -283,7 +283,7 @@ serve({
 
 ```ts
 // public/routes/index.ts
-import { createApp } from "@vyn/client";
+import { createApp } from "@vynjs/client";
 import superjson from "superjson";
 import type { AppRouter } from "../../_vyn.gen.ts";
 

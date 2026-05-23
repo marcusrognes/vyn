@@ -1,19 +1,27 @@
 {
+	"workspace": [
+		"./packages/core",
+		"./packages/ui",
+		"./packages/client",
+		"./packages/auth"
+	],
 	"tasks": {
-		"test":       "deno test -A --no-check --unstable-node-globals --unstable-bare-node-builtins packages/",
-		"test:core":  "deno test -A --no-check --unstable-node-globals --unstable-bare-node-builtins packages/core/test/",
-		"test:watch": "deno test -A --no-check --unstable-node-globals --unstable-bare-node-builtins --watch packages/",
-		"check":      "deno check packages/core/src/ packages/server/src/ packages/client/src/",
-		"fmt":        "deno fmt packages/",
-		"lint":       "deno lint packages/"
+		"test":         "deno test -A --no-check --unstable-node-globals --unstable-bare-node-builtins packages/",
+		"test:core":    "deno test -A --no-check --unstable-node-globals --unstable-bare-node-builtins packages/core/test/",
+		"test:watch":   "deno test -A --no-check --unstable-node-globals --unstable-bare-node-builtins --watch packages/",
+		"check":        "deno check packages/core/src/ packages/server/src/ packages/client/src/",
+		"fmt":          "deno fmt packages/",
+		"lint":         "deno lint packages/",
+		"publish:dry":  "deno publish --dry-run",
+		"publish:jsr":  "deno publish"
 	},
 	"imports": {
-		"vyn:test":       "./test/_bdd.ts",
-		"@vyn/core":      "./packages/core/src/index.ts",
-		"@vyn/core/util": "./packages/core/src/util.ts",
-		"@vyn/server":    "./packages/server/src/index.ts",
-		"@vyn/client":    "./packages/client/src/index.ts",
-		"@vyn/auth":      "./packages/auth/src/index.ts"
+		"vyn:test":         "./test/_bdd.ts",
+		"@vynjs/core":      "./packages/core/src/index.ts",
+		"@vynjs/core/util": "./packages/core/src/util.ts",
+		"@vynjs/server":    "./packages/server/src/index.ts",
+		"@vynjs/client":    "./packages/client/src/index.ts",
+		"@vynjs/auth":      "./packages/auth/src/index.ts"
 	},
 	"nodeModulesDir": "auto",
 	"compilerOptions": {

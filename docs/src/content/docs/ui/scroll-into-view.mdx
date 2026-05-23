@@ -24,7 +24,7 @@ li:focus, li:focus-visible { outline: none; background: #eef2ff; color: #4338ca;
 `}
 />
 
-`@vyn/ui/scroll-into-view` keeps the active descendant of a
+`@vynjs/ui/scroll-into-view` keeps the active descendant of a
 container visible without you scripting `scrollIntoView()` calls.
 Apply `data-scroll-into-view` on the **container**; whichever child
 receives focus (or matches the watched attribute) gets scrolled
@@ -40,8 +40,8 @@ into view inside the nearest scroll parent.
 ```
 
 ```ts
-import "@vyn/ui/scroll-into-view";
-import "@vyn/ui/keyboard-nav";
+import "@vynjs/ui/scroll-into-view";
+import "@vynjs/ui/keyboard-nav";
 ```
 
 Arrow-keying through the list moves focus to each item; the
@@ -120,5 +120,5 @@ into view on its own focus."
 
 ## See also
 
-- [`@vyn/ui/keyboard-nav`](/vyn/ui/keyboard-nav/) — usually paired
+- [`@vynjs/ui/keyboard-nav`](/vyn/ui/keyboard-nav/) — usually paired
 - Native [`scrollIntoView`](https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView) — what this wraps
