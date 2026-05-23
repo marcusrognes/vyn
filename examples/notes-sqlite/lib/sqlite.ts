@@ -1,7 +1,7 @@
-// @vynjs/db-sqlite — thin convenience wrapper over node:sqlite (Node 22+
-// experimental) or better-sqlite3 if installed. Provides a unified
-// open() that gives you the raw DatabaseSync handle plus typed
-// collection helpers.
+// SQLite helper — copied into this app from the docs recipe.
+// Vyn is bring-your-own-db; this is one shape. Wraps node:sqlite
+// (Deno 2 exposes it natively) with a `{ _id, data }` JSON table
+// convention plus typed Collection helpers.
 
 import { DatabaseSync, type StatementSync } from "node:sqlite";
 
