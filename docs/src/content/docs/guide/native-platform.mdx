@@ -1,0 +1,817 @@
+---
+title: Native platform
+description: Vyn's first move is always to lean on what the browser ships. This page lists the native HTML, CSS, and JS features Vyn assumes; if one of these covers your case, skip the behavior or widget.
+sidebar:
+  order: 9
+---
+
+import LiveExample from "../../../components/LiveExample.astro";
+
+Every section below has a live demo — flip to **HTML / CSS / JS** on
+any panel to copy the markup verbatim and try it in your own page.
+
+Vyn aims to be small. One way it stays small is by leaning on the
+platform: most things a UI needs are now built into HTML, CSS, or
+JavaScript, and the framework's job is to glue between them — not to
+re-implement them.
+
+This page lists the platform features Vyn assumes are available in
+every supported browser. When one of these covers your case, **use
+the native feature** and skip the corresponding behavior or widget
+entirely. The behaviors and widgets in `@vyn/ui` are the polyfill
+layer and the composition layer — they're not always the answer.
+
+Supported browsers for this list: recent Chrome, Edge, Firefox, and
+Safari. Each section calls out when a feature requires a current
+version (vs older releases) — features that ship in only one engine
+are not on this list.
+
+## Floating UI
+
+### CSS Anchor Positioning
+
+Position a floating element relative to another in pure CSS — no JS
+positioning loop, no listener on scroll/resize.
+
+```css
+.trigger { anchor-name: --my-trigger; }
+.popover {
+	position-anchor: --my-trigger;
+	top: anchor(bottom);
+	left: anchor(start);
+	position: fixed;
+	position-try-fallbacks: flip-block, flip-inline;
+}
+```
+
+The fallback list lets the engine flip to the opposite side when
+there's no room. Pair with the native popover attribute and you
+have a complete anchored popover with no JavaScript.
+
+<LiveExample title="CSS-anchored popover" height="260px"
+	html={`
+<button class="trigger" popovertarget="menu">Actions ▾</button>
+<p id="out" class="out">Pick an action…</p>
+<menu id="menu" class="menu" popover role="menu">
+	<li role="none"><button role="menuitem" data-action="Edit">Edit</button></li>
+	<li role="none"><button role="menuitem" data-action="Duplicate">Duplicate</button></li>
+	<li role="none"><button role="menuitem" data-action="Archive">Archive</button></li>
+	<li role="separator"><hr></li>
+	<li role="none"><button role="menuitem" class="danger" data-action="Delete">Delete</button></li>
+</menu>
+`}
+	css={`
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui, -apple-system, sans-serif; background: #fafbff; color: #0f172a; }
+.trigger {
+	anchor-name: --t;
+	font: inherit; padding: 0.5rem 0.9rem; border-radius: 8px;
+	border: 1px solid #cbd5e1; background: white; cursor: pointer;
+	box-shadow: 0 1px 2px rgb(15 23 42 / 0.05);
+}
+.trigger:hover { background: #f1f5f9; }
+.out { color: #64748b; margin: 1rem 0 0; }
+.menu {
+	position-anchor: --t;
+	top: anchor(bottom); left: anchor(start);
+	margin: 6px 0 0; padding: 4px; min-width: 180px;
+	border: 1px solid #e2e8f0; border-radius: 10px;
+	background: white; list-style: none;
+	box-shadow: 0 10px 25px -5px rgb(15 23 42 / 0.15), 0 8px 10px -6px rgb(15 23 42 / 0.05);
+	position-try-fallbacks: flip-block, flip-inline;
+}
+.menu li button {
+	width: 100%; text-align: left;
+	border: 0; background: transparent;
+	padding: 0.45rem 0.65rem; border-radius: 6px;
+	font: inherit; cursor: pointer;
+}
+.menu li button:hover,
+.menu li button:focus-visible { background: #f1f5f9; outline: none; }
+.menu .danger { color: #dc2626; }
+.menu .danger:hover,
+.menu .danger:focus-visible { background: #fef2f2; }
+.menu hr { border: 0; border-top: 1px solid #e2e8f0; margin: 4px 0; }
+`}
+	js={`
+const menu = document.getElementById("menu");
+const out  = document.getElementById("out");
+const items = [...menu.querySelectorAll("button[role=menuitem]")];
+
+menu.addEventListener("toggle", (e) => {
+	if (e.newState === "open") items[0]?.focus();
+});
+
+for (const item of items) {
+	item.addEventListener("click", () => {
+		out.textContent = "You chose: " + item.dataset.action;
+		menu.hidePopover();
+	});
+}
+
+menu.addEventListener("keydown", (e) => {
+	const i = items.indexOf(document.activeElement);
+	if (e.key === "ArrowDown") { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+	if (e.key === "ArrowUp")   { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+	if (e.key === "Home")      { e.preventDefault(); items[0].focus(); }
+	if (e.key === "End")       { e.preventDefault(); items.at(-1).focus(); }
+});
+`}
+/>
+
+[`@vyn/ui/anchor`](/vyn/ui/anchor/) leads with this CSS-first approach
+and falls back to JS positioning where needed.
+
+### Popover API
+
+`popover` attribute + `popovertarget` button. Browser handles top-layer
+rendering, Esc dismissal, outside-click dismissal, focus restoration.
+
+```html
+<button popovertarget="filters">Filters</button>
+<div id="filters" popover>
+	<form>…</form>
+</div>
+```
+
+No JS. No `<v-popover>`. No `@vyn/ui/popover` for the common case.
+
+<LiveExample title="Native popover API" height="280px"
+	html={`
+<button class="trigger" popovertarget="filters">
+	<span>Filters</span>
+	<span class="badge" id="badge">2</span>
+</button>
+
+<ul id="list" class="list">
+	<li data-tag="unread">Unread invoices</li>
+	<li data-tag="starred">Starred clients</li>
+	<li data-tag="archived">Archived 2024 ledger</li>
+</ul>
+
+<div id="filters" popover>
+	<div class="head">Show items tagged…</div>
+	<label><input type="checkbox" value="unread" checked> Unread</label>
+	<label><input type="checkbox" value="starred" checked> Starred</label>
+	<label><input type="checkbox" value="archived"> Archived</label>
+	<small>Esc or click outside to dismiss.</small>
+</div>
+`}
+	css={`
+:root { accent-color: #4f46e5; }
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; }
+.trigger {
+	display: inline-flex; align-items: center; gap: 0.5rem;
+	font: inherit; padding: 0.45rem 0.75rem 0.45rem 0.85rem;
+	border-radius: 8px; cursor: pointer;
+	border: 1px solid #cbd5e1; background: white;
+	box-shadow: 0 1px 2px rgb(15 23 42 / 0.05);
+}
+.trigger:hover { background: #f1f5f9; }
+.badge {
+	display: inline-flex; align-items: center; justify-content: center;
+	min-width: 20px; height: 20px; padding: 0 6px;
+	font-size: 12px; font-weight: 600;
+	border-radius: 10px;
+	background: #4f46e5; color: white;
+}
+.list { list-style: none; padding: 0; margin: 1rem 0 0; }
+.list li {
+	padding: 0.5rem 0.75rem;
+	border: 1px solid #e2e8f0; border-radius: 8px;
+	background: white; margin-bottom: 0.3rem;
+}
+.list li.hidden { display: none; }
+[popover] {
+	margin: 6px 0 0; padding: 0.75rem 0.9rem; min-width: 220px;
+	border: 1px solid #e2e8f0; border-radius: 10px;
+	background: white;
+	box-shadow: 0 10px 25px -5px rgb(15 23 42 / 0.15);
+}
+[popover] .head { font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 0.4rem; }
+[popover] label { display: flex; align-items: center; gap: 0.55rem; padding: 0.3rem 0.1rem; cursor: pointer; }
+[popover] small { display: block; margin-top: 0.4rem; color: #94a3b8; font-size: 0.75rem; }
+`}
+	js={`
+const popover = document.getElementById("filters");
+const badge   = document.getElementById("badge");
+const list    = document.getElementById("list");
+const boxes   = popover.querySelectorAll('input[type=checkbox]');
+
+function apply() {
+	const active = new Set([...boxes].filter(b => b.checked).map(b => b.value));
+	for (const li of list.querySelectorAll("li")) {
+		li.classList.toggle("hidden", !active.has(li.dataset.tag));
+	}
+	badge.textContent = String(active.size);
+	badge.style.display = active.size ? "inline-flex" : "none";
+}
+
+for (const b of boxes) b.addEventListener("change", apply);
+apply();
+`}
+/>
+
+Use [`@vyn/ui/popover`](/vyn/ui/popover/) when you need anchored
+positioning (the native API doesn't ship anchor positioning
+universally yet) or to control state programmatically with the
+`data-popover` attribute pattern.
+
+### Modal dialogs
+
+Native `<dialog>` + `.showModal()` traps focus inside, makes the rest
+of the page `inert`, handles backdrop click, supports Esc dismissal
+out of the box. Submit a form with `method="dialog"` to close with a
+return value.
+
+```html
+<dialog id="confirm">
+	<form method="dialog">
+		<button value="cancel">Cancel</button>
+		<button value="confirm">Delete</button>
+	</form>
+</dialog>
+
+<button onclick="document.getElementById('confirm').showModal()">
+	Delete…
+</button>
+```
+
+The dialog handles focus trap. The form `method="dialog"` handles
+close + return value. The browser handles all of it.
+
+<LiveExample title="Modal dialog with form method=dialog" height="260px"
+	html={`
+<button id="open" class="danger">Delete project…</button>
+<p id="out" class="out">Nothing deleted yet.</p>
+
+<dialog id="confirm">
+	<h2>Delete this project?</h2>
+	<p>All boards, tasks, and members will be removed. This action cannot be undone.</p>
+	<form method="dialog" class="actions">
+		<button value="cancel">Cancel</button>
+		<button value="confirm" class="danger">Delete project</button>
+	</form>
+</dialog>
+`}
+	css={`
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; }
+button { font: inherit; padding: 0.5rem 0.9rem; border-radius: 8px; cursor: pointer; border: 1px solid #cbd5e1; background: white; box-shadow: 0 1px 2px rgb(15 23 42 / 0.05); }
+button:hover { background: #f1f5f9; }
+button.danger { background: #dc2626; color: white; border-color: #dc2626; }
+button.danger:hover { background: #b91c1c; border-color: #b91c1c; }
+.out { color: #64748b; margin: 1rem 0 0; }
+dialog {
+	margin: auto; padding: 1.25rem 1.4rem; max-width: 24rem;
+	border: 0; border-radius: 12px;
+	background: white; color: inherit;
+	box-shadow: 0 25px 50px -12px rgb(15 23 42 / 0.25);
+}
+dialog::backdrop { background: rgb(15 23 42 / 0.4); backdrop-filter: blur(2px); }
+dialog h2 { margin: 0 0 0.35rem; font-size: 1.05rem; }
+dialog p { margin: 0 0 1rem; color: #475569; }
+.actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+`}
+	js={`
+const dlg  = document.getElementById("confirm");
+const out  = document.getElementById("out");
+document.getElementById("open").addEventListener("click", () => dlg.showModal());
+dlg.addEventListener("close", () => {
+	out.textContent = dlg.returnValue === "confirm"
+		? "Project deleted."
+		: "Cancelled.";
+});
+`}
+/>
+
+
+[`@vyn/ui/focus-trap`](/vyn/ui/focus-trap/) is for the rare non-dialog
+case where you need to constrain Tab focus inside a region that
+isn't a modal — for example, a drawer that should trap focus but
+not block the rest of the page.
+
+### `inert` attribute
+
+Mark a subtree as non-interactive — no focus, no clicks, no
+scrolling, removed from accessibility tree. Modal `<dialog>` applies
+this automatically to everything outside; you can apply it manually
+to siblings of a non-modal drawer.
+
+```html
+<aside id="drawer">…</aside>
+<main inert>…</main>
+```
+
+When the drawer closes, remove `inert` from `<main>`. Native behavior;
+no custom widget required.
+
+## Forms
+
+### Validation hints
+
+Use native validation attributes; they ship with browser-localized
+error messages and screen-reader support.
+
+```html
+<input type="email" required>
+<input type="text" pattern="[A-Z]{2}\d{4}">
+<input type="number" min="0" max="100" step="5">
+```
+
+Pair with [`@vyn/ui/aria-describedby`](/vyn/ui/aria-describedby/) for
+inline error text that screen readers announce alongside the input.
+
+### Input type hints
+
+```html
+<input type="email" autocomplete="email" enterkeyhint="send" inputmode="email">
+<input type="tel" autocomplete="tel" inputmode="numeric">
+<input type="search" enterkeyhint="search">
+```
+
+| Attribute | What it does |
+|---|---|
+| `autocomplete` | Hints the autofill category — `email`, `tel`, `current-password`, etc. Crucial for password managers and accessibility. |
+| `enterkeyhint` | Labels the mobile virtual keyboard's Return button — `go`, `done`, `next`, `previous`, `search`, `send`. |
+| `inputmode` | Hints the keyboard layout (`numeric`, `decimal`, `email`, `tel`, etc.) — affects what keys appear on mobile. |
+
+Set these on every form input. Cheap; meaningful.
+
+<LiveExample title="Native validation + autofill hints" height="340px"
+	html={`
+<form id="signup" novalidate>
+	<label class="field">
+		<span>Email address</span>
+		<input type="email" autocomplete="email" inputmode="email" required placeholder="you@example.com">
+	</label>
+	<label class="field">
+		<span>Phone</span>
+		<input type="tel" autocomplete="tel" inputmode="numeric" pattern="[0-9 +\\-]+" required placeholder="+47 401 23 456">
+	</label>
+	<label class="field">
+		<span>Postcode</span>
+		<input type="text" pattern="[A-Z]{2}\\d{4}" required placeholder="AB1234">
+	</label>
+	<button class="primary">Create account</button>
+	<p id="status" class="status"></p>
+</form>
+`}
+	css={`
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; }
+form { max-width: 22rem; }
+.field { display: block; margin-bottom: 0.85rem; }
+.field > span { display: block; font-size: 0.78rem; font-weight: 600; margin-bottom: 0.3rem; color: #334155; letter-spacing: 0.01em; }
+input {
+	width: 100%; padding: 0.5rem 0.65rem;
+	font: inherit; box-sizing: border-box;
+	background: white; color: inherit;
+	border: 1px solid #cbd5e1; border-radius: 8px;
+	box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+	transition: border-color 120ms, box-shadow 120ms;
+}
+input:focus { outline: 0; border-color: #4f46e5; box-shadow: 0 0 0 3px rgb(79 70 229 / 0.18); }
+input:not(:placeholder-shown):invalid { border-color: #dc2626; }
+input:not(:placeholder-shown):invalid:focus { box-shadow: 0 0 0 3px rgb(220 38 38 / 0.18); }
+button.primary {
+	font: inherit; padding: 0.55rem 1.1rem; border-radius: 8px; cursor: pointer;
+	background: #4f46e5; color: white; border: 1px solid #4f46e5;
+	box-shadow: 0 1px 2px rgb(15 23 42 / 0.06);
+}
+button.primary:hover { background: #4338ca; border-color: #4338ca; }
+.status { margin: 0.75rem 0 0; font-size: 0.85rem; min-height: 1.2em; }
+.status.ok  { color: #16a34a; }
+.status.err { color: #dc2626; }
+`}
+	js={`
+const form   = document.getElementById("signup");
+const status = document.getElementById("status");
+
+form.addEventListener("submit", (e) => {
+	e.preventDefault();
+	if (form.checkValidity()) {
+		status.textContent = "✓ Account created.";
+		status.className = "status ok";
+		form.reset();
+	} else {
+		status.textContent = "Please fix the highlighted fields.";
+		status.className = "status err";
+		form.reportValidity();
+	}
+});
+`}
+/>
+
+
+### Native styling
+
+```css
+:root { accent-color: dodgerblue; }
+```
+
+`accent-color` styles native checkboxes, radios, range sliders, and
+progress bars in one declaration. No custom element required for
+basic theming.
+
+### Form-associated custom elements
+
+For custom-element widgets that hold a value
+([`<v-combobox>`](/vyn/ui/combobox/) for example), use the native
+`formAssociated = true` + `ElementInternals` API — not Vyn's
+[`form-associated`](/vyn/ui/form-associated/) behavior. The behavior is
+for plain HTML containers.
+
+```ts
+class MyInput extends HTMLElement {
+	static formAssociated = true;
+	#internals = this.attachInternals();
+	set value(v: string) { this.#internals.setFormValue(v); }
+}
+```
+
+## Disclosure
+
+### `<details>` + `<summary>`
+
+Native disclosure widget with keyboard, ARIA, and animation hooks
+built in. The `name` attribute groups multiple `<details>` into a
+mutually-exclusive accordion.
+
+```html
+<details name="accordion"><summary>One</summary>…</details>
+<details name="accordion"><summary>Two</summary>…</details>
+<details name="accordion"><summary>Three</summary>…</details>
+```
+
+Opening one closes the others. No custom widget.
+
+<LiveExample title="Exclusive accordion via <details name>" height="280px"
+	html={`
+<details name="faq" open>
+	<summary>How does pricing work?</summary>
+	<p>We bill monthly per seat. You can change tier any time and we prorate the difference.</p>
+</details>
+<details name="faq">
+	<summary>Can I export my data?</summary>
+	<p>Yes — Settings → Export gives you a ZIP of Markdown files for every note.</p>
+</details>
+<details name="faq">
+	<summary>Do you support SSO?</summary>
+	<p>SAML and OIDC ship on the Team plan and above.</p>
+</details>
+`}
+	css={`
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; }
+details {
+	background: white;
+	border: 1px solid #e2e8f0; border-radius: 10px;
+	margin-bottom: 0.5rem;
+	box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+	overflow: hidden;
+}
+summary {
+	list-style: none; cursor: pointer;
+	padding: 0.75rem 1rem;
+	font-weight: 600;
+	display: flex; justify-content: space-between; align-items: center;
+}
+summary::-webkit-details-marker { display: none; }
+summary::after {
+	content: ""; width: 0.55rem; height: 0.55rem;
+	border-right: 2px solid #94a3b8; border-bottom: 2px solid #94a3b8;
+	transform: rotate(45deg); transition: transform 180ms;
+	margin-left: 1rem;
+}
+details[open] summary::after { transform: rotate(-135deg); }
+details > p { margin: 0; padding: 0 1rem 0.9rem; color: #475569; }
+`}
+/>
+
+
+For open/close animation, use `@starting-style` and
+`transition-behavior: allow-discrete` — both shipping in current
+browsers. They let `transition` work across `display: none`, which
+the popover attribute toggles. See [Animation](#animation) below.
+
+## Scrolling
+
+### `scroll-margin-top`
+
+Set this on items inside a scroll container to control where
+`scrollIntoView()` lands relative to a sticky header.
+
+```css
+[data-keyboard-nav] > * {
+	scroll-margin-top: 3rem;   /* leave room for the sticky header */
+}
+```
+
+Pair with [`@vyn/ui/scroll-into-view`](/vyn/ui/scroll-into-view/);
+together they keep the focused item visible without overlap.
+
+## Selection
+
+### `<select>` + `<datalist>`
+
+For simple, non-styled selections, use the native primitives. They
+ship with full keyboard, mobile-friendly UI, autofill, and form
+association.
+
+```html
+<select name="role">
+	<option value="admin">Admin</option>
+	<option value="editor">Editor</option>
+</select>
+
+<input list="cities" name="city">
+<datalist id="cities">
+	<option value="London">
+	<option value="Paris">
+	<option value="Tokyo">
+</datalist>
+```
+
+Reach for [`<v-combobox>`](/vyn/ui/combobox/) only when the visual
+design requires custom styling or async data loading that
+`<datalist>` can't provide.
+
+<LiveExample title="<select> and <datalist>" height="240px"
+	html={`
+<label class="field">
+	<span>Role</span>
+	<select name="role">
+		<option value="admin">Admin</option>
+		<option value="editor" selected>Editor</option>
+		<option value="viewer">Viewer</option>
+	</select>
+</label>
+<label class="field">
+	<span>City</span>
+	<input list="cities" name="city" placeholder="Start typing — try Lo…">
+	<datalist id="cities">
+		<option value="London">
+		<option value="Paris">
+		<option value="Tokyo">
+		<option value="Lagos">
+		<option value="Lisbon">
+	</datalist>
+</label>
+`}
+	css={`
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; }
+.field { display: block; margin-bottom: 0.85rem; max-width: 18rem; }
+.field > span { display: block; font-size: 0.78rem; font-weight: 600; margin-bottom: 0.3rem; color: #334155; }
+input, select {
+	width: 100%; padding: 0.5rem 0.65rem;
+	font: inherit; box-sizing: border-box;
+	border: 1px solid #cbd5e1; border-radius: 8px;
+	background: white; color: inherit;
+	box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+input:focus, select:focus { outline: 0; border-color: #4f46e5; box-shadow: 0 0 0 3px rgb(79 70 229 / 0.18); }
+`}
+/>
+
+
+## Clipboard
+
+`navigator.clipboard.writeText(string)` is universal. The
+[`@vyn/ui/copy`](/vyn/ui/copy/) behavior wraps it with feedback and
+announcement, but for one-off cases the native call is enough.
+
+## CSS
+
+### `:has()` selector
+
+Style based on what an element contains. Eliminates JS for many
+state-dependent cases.
+
+```css
+/* Hide the tooltip if the target has any descendant focused */
+[data-tooltip-for]:has(:focus-within) + [data-tooltip] {
+	display: none;
+}
+
+/* Style a form row when its input is invalid */
+.field:has(:invalid) {
+	border-color: red;
+}
+```
+
+Pair with the `data-state` attributes Vyn behaviors set for full
+state-driven styling without JavaScript.
+
+<LiveExample title=":has() — style a form row by validity" height="260px"
+	html={`
+<div class="row">
+	<label>Email</label>
+	<input type="email" required placeholder="you@example.com">
+	<span class="status" aria-hidden="true"></span>
+</div>
+<div class="row">
+	<label>Postcode</label>
+	<input type="text" pattern="[A-Z]{2}\\d{4}" required placeholder="AB1234">
+	<span class="status" aria-hidden="true"></span>
+</div>
+<small>Each row colors itself via <code>:has()</code> — zero JS.</small>
+`}
+	css={`
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; }
+.row {
+	display: grid; grid-template-columns: 6rem 1fr 1.25rem;
+	align-items: center; gap: 0.7rem;
+	padding: 0.65rem 0.85rem; margin-bottom: 0.5rem;
+	background: white;
+	border: 1px solid #e2e8f0; border-radius: 10px;
+	box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+	transition: border-color 150ms, background 150ms;
+}
+.row label { font-weight: 600; font-size: 0.85rem; color: #334155; }
+.row input {
+	padding: 0.4rem 0.55rem; font: inherit;
+	border: 1px solid #cbd5e1; border-radius: 6px;
+	background: #fafbff;
+}
+.row input:focus { outline: 0; border-color: #4f46e5; box-shadow: 0 0 0 3px rgb(79 70 229 / 0.18); }
+.row:has(input:not(:placeholder-shown):invalid) { border-color: #fca5a5; background: #fff5f5; }
+.row:has(input:not(:placeholder-shown):invalid) .status::before { content: "!"; color: #dc2626; font-weight: 700; }
+.row:has(input:not(:placeholder-shown):valid)   { border-color: #86efac; background: #f5fff7; }
+.row:has(input:not(:placeholder-shown):valid)   .status::before { content: "✓"; color: #16a34a; font-weight: 700; }
+small { display: block; margin-top: 0.5rem; color: #94a3b8; }
+code { font: 0.85em ui-monospace, SFMono-Regular, Menlo, monospace; background: #eef2ff; padding: 0 0.3em; border-radius: 4px; }
+`}
+/>
+
+
+### Container queries
+
+```css
+@container (min-width: 30rem) {
+	.card { grid-template-columns: 1fr 1fr; }
+}
+```
+
+Layout responds to the parent's size, not the viewport's. Use
+inside reusable components so they adapt regardless of where they're
+placed.
+
+## Animation
+
+### `@starting-style` + `transition-behavior: allow-discrete`
+
+Animate elements entering and leaving the DOM (or appearing /
+disappearing via `display: none`, which the popover attribute uses)
+purely in CSS — no JS-driven `data-state="opening"` / `"closing"`
+attributes needed.
+
+```css
+[popover] {
+	opacity: 0;
+	transform: translateY(-4px);
+	transition: opacity 0.15s, transform 0.15s, overlay 0.15s allow-discrete,
+		display 0.15s allow-discrete;
+}
+
+[popover]:popover-open {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+@starting-style {
+	[popover]:popover-open {
+		opacity: 0;
+		transform: translateY(-4px);
+	}
+}
+```
+
+Animation now works across discrete properties (`display`, `overlay`)
+because of `transition-behavior: allow-discrete`. `@starting-style`
+defines what the element looks like just before transitioning to its
+visible state.
+
+<LiveExample title="@starting-style animated popover" height="240px"
+	html={`
+<button class="trigger" popovertarget="p">Open with animation</button>
+<div id="p" popover>
+	<strong>Animated.</strong> Fades and lifts in via <code>@starting-style</code>.
+</div>
+`}
+	css={`
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; }
+.trigger {
+	font: inherit; padding: 0.5rem 0.9rem; border-radius: 8px; cursor: pointer;
+	border: 1px solid #cbd5e1; background: white;
+	box-shadow: 0 1px 2px rgb(15 23 42 / 0.05);
+}
+.trigger:hover { background: #f1f5f9; }
+code { font: 0.9em ui-monospace, SFMono-Regular, Menlo, monospace; background: #eef2ff; padding: 0 0.3em; border-radius: 4px; }
+[popover] {
+	margin: 6px auto 0; max-width: 20rem;
+	padding: 0.85rem 1rem;
+	border: 1px solid #e2e8f0; border-radius: 10px;
+	background: white;
+	box-shadow: 0 10px 25px -5px rgb(15 23 42 / 0.18);
+	opacity: 0; transform: translateY(-8px) scale(0.98);
+	transition:
+		opacity   180ms ease,
+		transform 180ms ease,
+		overlay   180ms allow-discrete,
+		display   180ms allow-discrete;
+}
+[popover]:popover-open { opacity: 1; transform: translateY(0) scale(1); }
+@starting-style {
+	[popover]:popover-open { opacity: 0; transform: translateY(-8px) scale(0.98); }
+}
+`}
+/>
+
+
+Vyn behaviors emit `data-state` attributes for JS-driven animation
+when this isn't enough, but for popovers and dialogs the CSS-only
+approach is shorter and faster.
+
+### View Transitions API
+
+For cross-DOM-update animations — switching routes, re-ordering a
+list, swapping a card with its detail view — use the native View
+Transitions API. The browser captures the current state, applies
+your DOM changes, then animates between the two states via CSS.
+
+```ts
+document.startViewTransition(() => {
+	// any DOM update — Vyn's render(), a route change, anything
+	listEl.append(newCard);
+});
+```
+
+```css
+::view-transition-old(root) { animation: fade-out 0.2s; }
+::view-transition-new(root) { animation: fade-in  0.2s; }
+
+/* Animate a specific element by name */
+.card { view-transition-name: card-detail; }
+::view-transition-old(card-detail),
+::view-transition-new(card-detail) { animation: 0.3s ease; }
+```
+
+Cross-page transitions need an `@view-transition` rule:
+
+```css
+@view-transition { navigation: auto; }
+```
+
+Vyn's router triggers `startViewTransition` automatically on route
+changes when the API is available. Apps don't have to write any
+extra code; just declare the CSS rules.
+
+## Storage and APIs
+
+### Cookie Store API
+
+Read and write cookies programmatically with a Promise-based API
+instead of parsing `document.cookie`.
+
+```ts
+const session = await cookieStore.get("session");
+if (session) {
+	console.log(session.value);
+}
+
+await cookieStore.set({
+	name:     "session",
+	value:    token,
+	domain:   "example.com",
+	path:     "/",
+	expires:  Date.now() + TTL_MS,
+	sameSite: "lax",
+	secure:   true,
+});
+
+cookieStore.addEventListener("change", (e) => {
+	for (const c of e.changed) console.log("set:", c.name);
+	for (const c of e.deleted) console.log("removed:", c.name);
+});
+```
+
+Note that Cookie Store is a **browser** API — server-side code
+(the auth tutorial's `readSession`, `issueSession`) parses the
+request's `Cookie` header and writes to response cookies via the
+`setCookie` helper on `ctx`. Cookie Store helps when the client
+needs to inspect or update its own cookies (e.g., for client-side
+session refresh hints).
+
+## What `@vyn/ui` exists for
+
+Given everything above, what does Vyn actually contribute? Two
+things:
+
+1. **Glue for the cases the platform doesn't cover.** Anchored
+   positioning, type-ahead, roving tabindex, drag-and-drop with
+   keyboard fallback, inline-edit, sort UI, multi-selection state.
+2. **Polyfill + ARIA glue for the cases it does.** Behaviors like
+   `dismiss` and `popover` are thin wrappers that add data-attribute
+   composition and ARIA wiring on top of the native API, so a single
+   pattern works whether you use the native primitive or compose
+   behaviors manually.
+
+If a native feature does what you need, use it. The framework will
+thank you with smaller bundles, fewer bugs, and broader compatibility.

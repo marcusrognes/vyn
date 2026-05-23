@@ -1,47 +1,210 @@
 ---
 // LiveExample — embeds an interactive HTML preview inside a doc page.
-// The HTML mounts in a sandboxed iframe so its scripts don't conflict
-// with Starlight. Source is shown side-by-side with the rendered widget.
+//
+// The rendered widget mounts in a sandboxed iframe so its scripts don't
+// conflict with Starlight. A Starlight-flavored tab strip flips between
+// the preview and per-language source panes (HTML / CSS / JS). Each
+// source tab is highlighted by Shiki via Astro's <Code>.
+//
+// Pass `behaviors={["select", "keyboard-nav"]}` to load real @vyn/ui
+// modules into the iframe (bundled to IIFE server-side via esbuild).
+// The JS source tab shows clean `import "@vyn/ui/x"` lines plus any
+// extra `js` you provide.
 //
 // Usage in MDX:
-//   import LiveExample from "../../components/LiveExample.astro";
-//   <LiveExample title="Single-select listbox" srcdoc={`
-//     <ul role="listbox" data-keyboard-nav data-select>
-//       <li role="option" data-value="a">Alpha</li>
-//       <li role="option" data-value="b">Bravo</li>
-//     </ul>
-//     <script type="module">
-//       import "/_vyn/ui.js";
-//     </script>
-//   `} height="120px" />
+//   <LiveExample title="Multi-select listbox" height="220px"
+//     behaviors={["select", "keyboard-nav"]}
+//     html={`<ul role="listbox" data-keyboard-nav data-select="multiple">...`}
+//     css={`...`}
+//     js={`document.querySelector("ul")?.addEventListener("change", e => {});`}
+//   />
+
+import { Code } from "astro:components";
+import { bundleManyUi } from "../lib/uiBundle.ts";
 
 interface Props {
-	title?:  string;
-	srcdoc:  string;
-	height?: string;
+	title?:     string;
+	html?:      string;
+	css?:       string;
+	js?:        string;
+	behaviors?: readonly string[];
+	height?:    string;
 }
 
-const { title, srcdoc, height = "200px" } = Astro.props;
+const {
+	title,
+	html      = "",
+	css       = "",
+	js        = "",
+	behaviors = [] as readonly string[],
+	height    = "200px",
+} = Astro.props;
+
+const trim = (s: string) => s.replace(/^\n+/, "").replace(/\n+\s*$/, "");
+const htmlTrim = trim(html);
+const cssTrim  = trim(css);
+const jsTrim   = trim(js);
+
+const id = `le-${Math.random().toString(36).slice(2, 10)}`;
+
+const bundles = behaviors.length ? await bundleManyUi(behaviors) : [];
+const runtimeBundleJs = bundles.length
+	? bundles.join("\n") + "\nObject.assign(globalThis, globalThis.__vynUi || {});"
+	: "";
+
+// Source displayed to users: clean import lines + their own JS.
+const importLines = behaviors.map((b) => `import "@vyn/ui/${b}";`).join("\n");
+const sourceJs    = [importLines, jsTrim].filter(Boolean).join("\n\n");
+
+// Executed JS: strip `import "..."` lines (they exist only in source tab).
+const runtimeUserJs = jsTrim
+	? jsTrim
+		.replace(/^\s*import\s+[^;\n]+?["'][^"'\n]+?["'];?\s*$/gm, "")
+		.trim()
+	: "";
+
+const langs = [
+	htmlTrim ? { key: "html", label: "HTML", code: htmlTrim, lang: "html" } : null,
+	cssTrim  ? { key: "css",  label: "CSS",  code: cssTrim,  lang: "css"  } : null,
+	sourceJs ? { key: "js",   label: "JS",   code: sourceJs, lang: "ts"   } : null,
+].filter(Boolean) as { key: "html" | "css" | "js"; label: string; code: string; lang: string }[];
+
+const srcdoc = [
+	cssTrim          ? `<style>\n${cssTrim}\n</style>`                  : "",
+	htmlTrim,
+	runtimeBundleJs  ? `<script>\n${runtimeBundleJs}\n<\/script>`       : "",
+	runtimeUserJs    ? `<script>\n${runtimeUserJs}\n<\/script>`         : "",
+].filter(Boolean).join("\n");
 ---
 
 <figure class="live-example">
 	{title && <figcaption>{title}</figcaption>}
-	<iframe
-		srcdoc={srcdoc}
-		sandbox="allow-scripts"
-		style={`width:100%;height:${height};border:1px solid var(--sl-color-gray-5);border-radius:0.5rem`}
-		loading="lazy"
-	></iframe>
-	<details>
-		<summary>View source</summary>
-		<pre><code>{srcdoc}</code></pre>
-	</details>
+
+	<input type="radio" name={id} id={`${id}-preview`} class="le-tab-input le-tab-preview" checked />
+	{langs.map((l) => (
+		<input type="radio" name={id} id={`${id}-${l.key}`} class={`le-tab-input le-tab-${l.key}`} />
+	))}
+
+	<div class="le-tabs" role="tablist" aria-label="Example view">
+		<label for={`${id}-preview`} role="tab" class="le-tab">Preview</label>
+		{langs.map((l) => (
+			<label for={`${id}-${l.key}`} role="tab" class="le-tab">{l.label}</label>
+		))}
+	</div>
+
+	<div class="le-panel le-panel-preview" role="tabpanel">
+		<iframe
+			srcdoc={srcdoc}
+			sandbox="allow-scripts allow-modals allow-forms"
+			style={`height:${height}`}
+			loading="lazy"
+			title={title ?? "Live example preview"}
+		></iframe>
+	</div>
+
+	{langs.map((l) => (
+		<div class={`le-panel le-panel-${l.key}`} role="tabpanel">
+			<Code code={l.code} lang={l.lang as any} />
+		</div>
+	))}
 </figure>
 
 <style>
-	.live-example { margin: 1.5rem 0; }
-	.live-example figcaption { font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--sl-color-gray-2); }
-	.live-example details { margin-top: 0.5rem; }
-	.live-example summary { cursor: pointer; font-size: 0.875rem; color: var(--sl-color-gray-3); }
-	.live-example pre { font-size: 0.75rem; padding: 0.75rem; background: var(--sl-color-gray-6); border-radius: 0.375rem; overflow-x: auto; }
+	.live-example {
+		margin: 1.5rem 0;
+		border: 1px solid var(--sl-color-hairline);
+		border-radius: 0.5rem;
+		overflow: hidden;
+		background: var(--sl-color-bg);
+		font-family: var(--sl-font);
+	}
+	.live-example figcaption {
+		font-size: 0.8125rem;
+		font-weight: 600;
+		padding: 0.6rem 1rem 0.4rem;
+		color: var(--sl-color-white);
+		letter-spacing: 0.01em;
+		background: var(--sl-color-bg-nav);
+		border-bottom: 1px solid var(--sl-color-hairline);
+	}
+
+	/* Radios drive tab state; visually hidden but reachable via label clicks. */
+	.le-tab-input {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		opacity: 0;
+		pointer-events: none;
+		clip: rect(0 0 0 0);
+		overflow: hidden;
+	}
+
+	.le-tabs {
+		display: flex;
+		align-items: stretch;
+		gap: 0.125rem;
+		padding: 0 0.75rem;
+		border-bottom: 1px solid var(--sl-color-hairline);
+		background: var(--sl-color-bg-sidebar, var(--sl-color-bg-nav));
+		line-height: 1;
+	}
+	.le-tab {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.55rem 0.85rem;
+		margin: 0;
+		font-size: 0.78rem;
+		font-weight: 500;
+		line-height: 1.2;
+		color: var(--sl-color-gray-3);
+		border: 0;
+		border-bottom: 2px solid transparent;
+		margin-bottom: -1px;
+		background: transparent;
+		cursor: pointer;
+		user-select: none;
+		box-sizing: border-box;
+		transition: color 120ms ease, border-color 120ms ease;
+	}
+	.le-tab:hover { color: var(--sl-color-white); }
+
+	.le-tab-preview:checked ~ .le-tabs .le-tab[for$="-preview"],
+	.le-tab-html:checked    ~ .le-tabs .le-tab[for$="-html"],
+	.le-tab-css:checked     ~ .le-tabs .le-tab[for$="-css"],
+	.le-tab-js:checked      ~ .le-tabs .le-tab[for$="-js"] {
+		color: var(--sl-color-white);
+		border-bottom-color: var(--sl-color-accent);
+	}
+
+	/* Panels — show one at a time. iframes stay mounted across switches. */
+	.le-panel { display: none; }
+	.le-tab-preview:checked ~ .le-panel-preview { display: block; }
+	.le-tab-html:checked    ~ .le-panel-html    { display: block; }
+	.le-tab-css:checked     ~ .le-panel-css     { display: block; }
+	.le-tab-js:checked      ~ .le-panel-js      { display: block; }
+
+	.le-panel-preview iframe {
+		width: 100%;
+		border: 0;
+		display: block;
+		background: var(--sl-color-white);
+		color-scheme: light;
+	}
+
+	/* Astro's <Code> emits <pre class="astro-code">. Scoped CSS needs :global. */
+	.live-example :global(pre.astro-code) {
+		margin: 0;
+		padding: 0.95rem 1.1rem;
+		font-size: 0.8125rem;
+		border-radius: 0;
+		border: 0;
+	}
+
+	.le-tab-preview:focus-visible ~ .le-tabs .le-tab[for$="-preview"],
+	.le-tab-html:focus-visible    ~ .le-tabs .le-tab[for$="-html"],
+	.le-tab-css:focus-visible     ~ .le-tabs .le-tab[for$="-css"],
+	.le-tab-js:focus-visible      ~ .le-tabs .le-tab[for$="-js"] {
+		outline: 2px solid var(--sl-color-accent);
+		outline-offset: -2px;
+	}
 </style>
