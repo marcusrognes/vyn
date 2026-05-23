@@ -1,0 +1,15 @@
+{
+	"tasks": {
+		"dev":   "deno run -A --watch --unstable-node-globals --unstable-bare-node-builtins server.ts",
+		"start": "deno run -A --unstable-node-globals --unstable-bare-node-builtins server.ts",
+		"gen":   "deno run -A ../../packages/cli/src/index.ts gen",
+		"build": "deno run -A ../../packages/cli/src/index.ts build"
+	},
+	"imports": {
+		"@vynjs/core":   "../../packages/core/src/index.ts",
+		"@vynjs/server": "../../packages/server/src/index.ts",
+		"@vynjs/client": "../../packages/client/src/index.ts",
+		"@vynjs/ui":     "../../packages/ui/src/index.ts"
+	},
+	"compilerOptions": { "lib": ["deno.window", "dom", "dom.iterable", "esnext"], "strict": true }
+}

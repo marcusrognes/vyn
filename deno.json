@@ -6,7 +6,8 @@
 		"./packages/auth",
 		"./packages/server",
 		"./packages/cli",
-		"./packages/create"
+		"./packages/create",
+		"./examples/sandbox"
 	],
 	"tasks": {
 		"test":         "deno test -A --no-check --unstable-node-globals --unstable-bare-node-builtins packages/",
@@ -16,7 +17,8 @@
 		"fmt":          "deno fmt packages/",
 		"lint":         "deno lint packages/",
 		"publish:dry":  "deno publish --dry-run",
-		"publish:jsr":  "deno publish"
+		"publish:jsr":  "deno publish",
+		"sandbox":      "cd examples/sandbox && deno task dev"
 	},
 	"imports": {
 		"vyn:test": "./test/_bdd.ts"
