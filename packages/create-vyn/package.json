@@ -1,0 +1,24 @@
+{
+	"name": "create-vyn",
+	"version": "0.1.0",
+	"description": "Scaffolder for Vyn apps. Run via `deno create vyn@latest my-app` or `npm create vyn@latest my-app`.",
+	"type": "module",
+	"bin": {
+		"create-vyn": "./bin.mjs"
+	},
+	"files": [
+		"bin.mjs",
+		"README.md"
+	],
+	"keywords": ["vyn", "deno", "scaffold", "starter"],
+	"author": "Marcus Rognes",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url":  "https://github.com/marcusrognes/vyn",
+		"directory": "packages/create-vyn"
+	},
+	"engines": {
+		"node": ">=18"
+	}
+}
