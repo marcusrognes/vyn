@@ -15,8 +15,8 @@ typed values inside.
 ## Environment variables
 
 Declare every environment variable you need as a schema. Parse
-`process.env` (or `Deno.env.toObject()`) once at boot. The parsed
-result is your typed `env` object — import it anywhere.
+`Deno.env.toObject()` once at boot. The parsed result is your typed
+`env` object — import it anywhere.
 
 ```ts
 // env.ts
@@ -26,11 +26,9 @@ export const env = v.object({
 	DATABASE_URL: v.string().url(),
 	SESSION_SECRET: v.string().min(32),
 	PORT: v.string().regex(/^\d+$/).default("8000"),
-	NODE_ENV: v.string().regex(/^(development|production|test)$/).default("development"),
+	APP_ENV: v.enum(["development", "production", "test"]).default("development"),
 	OPENAI_KEY: v.string().optional(),
-}).parse(
-	typeof Deno !== "undefined" ? Deno.env.toObject() : process.env,
-);
+}).parse(Deno.env.toObject());
 ```
 
 That's the whole pattern. Some things to notice:
@@ -40,7 +38,7 @@ That's the whole pattern. Some things to notice:
   later — the failure has the variable name in it and points at the
   schema.
 - **Defaults are real defaults.** `PORT` is `"8000"` if unset.
-  `NODE_ENV` is `"development"`. The defaults are in code where you can
+  `APP_ENV` is `"development"`. The defaults are in code where you can
   see them, not in shell scripts or `.env.example` files that drift.
 - **Constraints are constraints.** `.url()`, `.min(32)`, regex
   patterns — same modifiers you use for action input. An accidentally
@@ -69,21 +67,12 @@ Put `env.ts` at the project root, next to `server.ts`. It is
 import-side-effect: the first import causes the parse. Vyn does not
 ship a special "load envs" step.
 
-### Runtime-specific reads
-
-`process.env` (Node) and `Deno.env.toObject()` (Deno) return slightly
-different shapes — Node returns `{ [k: string]: string | undefined }`,
-Deno returns `{ [k: string]: string }`. The schema accepts either
-because every field declares its own validator; missing keys parse as
-`undefined` and either default (if present) or fail (if required).
-
 ### Local development
 
-For local development, both runtimes pick up a `.env` file
-automatically — `node --env-file=.env` on Node, `deno --env-file=.env`
-on Deno. Vyn does not parse `.env` files itself; that's the runtime's
-job. Keep `.env` out of version control; commit a `.env.example` so
-contributors know what to set.
+For local development, Deno picks up a `.env` file automatically via
+`deno --env-file=.env`. Vyn does not parse `.env` files itself; that's
+the runtime's job. Keep `.env` out of version control; commit a
+`.env.example` so contributors know what to set.
 
 ## Context
 

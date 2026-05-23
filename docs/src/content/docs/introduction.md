@@ -4,9 +4,8 @@ description: What Vyn is, who it's for, and what makes it different.
 ---
 
 Vyn is a full-stack TypeScript framework that aims to be small enough to
-read in one sitting. It runs on Deno and Node from the same codebase, and
-it tries to add as little as possible on top of what those runtimes already
-ship.
+read in one sitting. It runs on Deno and tries to add as little as possible
+on top of what the runtime already ships.
 
 The framework is opinionated about a small number of things and unopinionated
 about everything else. There is one way to define a procedure, one way to

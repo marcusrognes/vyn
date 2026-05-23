@@ -22,9 +22,8 @@ The whole app is fewer than 200 lines of code.
 
 ## Prerequisites
 
-- Vyn installed. See [Getting started](/vyn/getting-started/) for the install
-  step on your runtime of choice.
-- A working directory: `mkdir todo && cd todo && vyn init`.
+- Deno 2+ installed. See [Getting started](/vyn/getting-started/).
+- A working directory: `mkdir todo && cd todo && deno run -A jsr:@vyn/cli init`.
 
 We'll use a small in-memory store so the tutorial stays focused on
 Vyn's shape. Swapping to SQLite (or any other store) is a one-file
@@ -32,13 +31,13 @@ change once you finish; see the [Next steps](#next-steps) section.
 
 :::note
 **Server vs browser code.** Everything is TypeScript. Files under
-`features/` and `server.ts` run on Node via 22+'s
-`--experimental-strip-types`. Files under `public/**/*.ts` are
-bundled on demand by `@vyn/server` when the browser requests their
-`.js` sibling — `<script src="/routes/index.js">` resolves to a
-bundle of `public/routes/index.ts`. Production `vyn build` writes
-the same bundles to `public/dist/` with content hashes and a
-manifest. The completed example lives in
+`features/` and `server.ts` run directly under Deno — no transpile
+step. Files under `public/**/*.ts` are bundled on demand by
+`@vyn/server` when the browser requests their `.js` sibling —
+`<script src="/routes/index.js">` resolves to a bundle of
+`public/routes/index.ts`. Production `vyn build` writes the same
+bundles to `public/dist/` with content hashes and a manifest. The
+completed example lives in
 [`examples/todo`](https://github.com/marcusrognes/vyn/tree/main/examples/todo).
 :::
 

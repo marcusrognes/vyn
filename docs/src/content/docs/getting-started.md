@@ -3,57 +3,25 @@ title: Getting started
 description: Install Vyn, scaffold an app, and serve it in under a minute.
 ---
 
-import { Tabs, TabItem } from '@astrojs/starlight/components';
-
 This page walks through scaffolding a Vyn app, running it, and seeing
-the result. Pick your runtime in the toggle below the first time and
-the docs honor your choice from then on — every code block, every
-install command.
+the result.
 
 ## Prerequisites
-
-<Tabs syncKey="runtime">
-<TabItem label="Deno">
 
 Deno 2 or newer. Check with `deno --version`. If you don't have it
 installed, see [deno.com/install](https://deno.com/install).
 
-</TabItem>
-<TabItem label="Node">
-
-Node 22 or newer (for native `node:sqlite` and `--experimental-strip-types`).
-Check with `node --version`. If you need to upgrade, see
-[nodejs.org](https://nodejs.org).
-
-</TabItem>
-</Tabs>
-
 ## Scaffold a new project
 
-Vyn ships a project scaffolder. Pick a name and run the create command
-for your runtime; the scaffolder drops the files, installs
-dependencies, and points the dev server at the right scripts.
-
-<Tabs syncKey="runtime">
-<TabItem label="Deno">
+Vyn ships a project scaffolder. Pick a name and run `deno create`;
+the scaffolder drops the files and writes a `deno.json` with the
+standard tasks.
 
 ```sh
 deno create vyn@latest my-app
 cd my-app
 deno task dev
 ```
-
-</TabItem>
-<TabItem label="Node">
-
-```sh
-npm create vyn@latest my-app
-cd my-app
-npm run dev
-```
-
-</TabItem>
-</Tabs>
 
 The dev server is now listening on `http://localhost:8000`. Open it
 and you'll see a tiny "hello, world" page.
@@ -95,34 +63,19 @@ If you already have a directory and just want to drop Vyn into it,
 use the `init` subcommand. It runs the same scaffolder against the
 current working directory.
 
-<Tabs syncKey="runtime">
-<TabItem label="Deno">
-
 ```sh
 cd existing-project
 deno run -A jsr:@vyn/cli init
 ```
 
-</TabItem>
-<TabItem label="Node">
-
-```sh
-cd existing-project
-npx @vyn/cli init
-```
-
-</TabItem>
-</Tabs>
-
 `init` will only write files that don't exist. Anything you've already
-got in place (a `.gitignore`, an `env.ts`, a `package.json`) is left
+got in place (a `.gitignore`, an `env.ts`, a `deno.json`) is left
 alone unless you pass `--force`.
 
 ## CLI overview
 
-Once installed, the `vyn` CLI is available via `deno task <cmd>` /
-`npm run <cmd>` for the standard subcommands. The scaffold writes
-these into the runtime's task file for you:
+Once installed, the `vyn` CLI is available via `deno task <cmd>` for
+the standard subcommands. The scaffold writes these into `deno.json`:
 
 | Command | What it does |
 |---|---|
@@ -133,9 +86,6 @@ these into the runtime's task file for you:
 | `vyn mcp --stdio`   | Launch the app's MCP server over stdio (for local clients like Claude Desktop). |
 | `vyn init`          | Scaffold Vyn files into the current directory. |
 | `vyn create <name>` | Alias for `mkdir <name> && cd <name> && vyn init`. |
-
-The CLI is the same on Deno and Node. The task file is the only
-runtime-specific thing.
 
 ## Hello, world
 
@@ -180,9 +130,9 @@ fetch, no code generation step on the client.
 
 ## Troubleshooting
 
-**`vyn` not found.** Check that the scaffold updated your runtime's
-task file. `deno task dev` and `npm run dev` should work even if
-`vyn` is not on your global PATH; the scripts call the CLI directly.
+**`vyn` not found.** Check that the scaffold wrote the tasks into
+`deno.json`. `deno task dev` should work even if `vyn` is not on your
+global PATH; the task calls the CLI directly.
 
 **Port 8000 in use.** Set `PORT=3000` (or another port) before the
 dev command, or change the default in `env.ts`.

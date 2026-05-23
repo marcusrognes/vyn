@@ -85,9 +85,7 @@ export const env = v.object({
 	SESSION_SECRET: v.string().min(32),
 	PORT:           v.string().regex(/^\d+$/).default("8000"),
 	NODE_ENV:       v.string().regex(/^(development|production|test)$/).default("development"),
-}).parse(
-	typeof Deno !== "undefined" ? Deno.env.toObject() : process.env,
-);
+}).parse(Deno.env.toObject());
 ```
 
 Create a `.env.example`:
@@ -102,7 +100,7 @@ Copy it to `.env` and pick a real secret (`openssl rand -hex 32`).
 
 A small file holds the connection and the migrations. Vyn does not own
 your data layer; this is just plain TypeScript using `node:sqlite`
-(available in both Deno and Node 22+).
+(Deno re-exports the Node 22 built-in).
 
 ```ts
 // db.ts

@@ -13,10 +13,10 @@ wire transformer, and wire Tailwind into the SPA shell.
 ## Scaffold
 
 ```sh
-npm create vyn@latest notebook
+deno create vyn@latest notebook
 cd notebook
-npm add mongodb superjson @anthropic-ai/sdk
-npm add -D tailwindcss @tailwindcss/postcss
+deno add npm:mongodb npm:superjson npm:@anthropic-ai/sdk
+deno add npm:tailwindcss npm:@tailwindcss/postcss
 ```
 
 The scaffolder produced a hello-world app. Strip the example feature
@@ -60,9 +60,7 @@ export const env = v.object({
 	PORT:             v.string().regex(/^\d+$/).default("8000"),
 	NODE_ENV:         v.string().regex(/^(development|production|test)$/).default("development"),
 	ANTHROPIC_API_KEY: v.string(),
-}).parse(
-	typeof Deno !== "undefined" ? Deno.env.toObject() : process.env,
-);
+}).parse(Deno.env.toObject());
 ```
 
 Create `.env`:

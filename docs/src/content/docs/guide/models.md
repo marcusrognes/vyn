@@ -132,6 +132,21 @@ v.array(v.string()).length(3)   // exactly 3
 v.array(v.string()).unique()    // all items distinct (deep equality)
 ```
 
+### Enums
+
+```ts
+v.enum(["draft", "published", "archived"] as const)
+// → Schema<"draft" | "published" | "archived">
+
+enum Role { Admin = "admin", Editor = "editor", Viewer = "viewer" }
+v.enum(Role)                    // → Schema<Role>
+```
+
+Both forms emit `{ enum: [...] }` in their JSON Schema and compose
+with `.optional`, `.nullable`, and `.default` like any other validator.
+The `as const` is what makes the array form give you a literal union
+in TypeScript rather than plain `string`.
+
 ### Composed example
 
 ```ts
