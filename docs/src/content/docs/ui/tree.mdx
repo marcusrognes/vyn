@@ -1,0 +1,154 @@
+---
+title: tree
+description: Keyboard-navigable nested tree with expand/collapse. Apply `data-tree` to a <ul> root; nested <ul>s become collapsible groups, ARIA roles wire themselves.
+sidebar:
+  order: 20
+---
+
+import LiveExample from "../../../components/LiveExample.astro";
+
+`@vyn/ui/tree` turns a nested `<ul>` into a fully-keyboarded tree view.
+Every `<li>` becomes a `treeitem`; any `<li>` whose direct child is a
+`<ul>` becomes an expandable folder. The behavior wires roles,
+`aria-expanded`, roving tabindex, and the arrow-key conventions you
+expect from a file tree.
+
+<LiveExample title="File-explorer tree" height="420px"
+	behaviors={["tree"]}
+	html={`
+<ul data-tree id="files">
+	<li>
+		📁 src
+		<ul>
+			<li>
+				📁 components
+				<ul>
+					<li data-value="Button.tsx">📄 Button.tsx</li>
+					<li data-value="Card.tsx">📄 Card.tsx</li>
+					<li data-value="Modal.tsx">📄 Modal.tsx</li>
+				</ul>
+			</li>
+			<li>
+				📁 pages
+				<ul>
+					<li data-value="index.tsx">📄 index.tsx</li>
+					<li data-value="about.tsx">📄 about.tsx</li>
+				</ul>
+			</li>
+			<li data-value="main.ts">📄 main.ts</li>
+			<li data-value="styles.css">📄 styles.css</li>
+		</ul>
+	</li>
+	<li>
+		📁 public
+		<ul>
+			<li data-value="favicon.ico">📄 favicon.ico</li>
+			<li data-value="robots.txt">📄 robots.txt</li>
+		</ul>
+	</li>
+	<li data-value="package.json">📄 package.json</li>
+	<li data-value="README.md">📄 README.md</li>
+</ul>
+
+<p id="out" class="out">Click a file or press Enter to activate it.</p>
+`}
+	css={`
+body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; }
+
+#files {
+	list-style: none; margin: 0; padding: 0.5rem;
+	max-width: 22rem;
+	background: white;
+	border: 1px solid #e2e8f0; border-radius: 10px;
+	box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+}
+#files ul {
+	list-style: none; padding: 0 0 0 1.1rem; margin: 0;
+	border-left: 1px dashed #e2e8f0;
+	margin-left: 0.45rem;
+}
+
+#files li {
+	padding: 0.25rem 0.45rem;
+	border-radius: 6px;
+	cursor: pointer;
+	user-select: none;
+	position: relative;
+}
+#files li:focus, #files li:focus-visible {
+	outline: none;
+	background: #eef2ff;
+	color: #4338ca;
+}
+
+/* Folder twisty before each expandable item */
+#files li[aria-expanded] { padding-left: 1.2rem; }
+#files li[aria-expanded]::before {
+	content: ""; position: absolute;
+	left: 0.4rem; top: 0.7rem;
+	width: 0; height: 0;
+	border-left: 5px solid #64748b;
+	border-top: 4px solid transparent;
+	border-bottom: 4px solid transparent;
+	transition: transform 120ms;
+	transform-origin: 2px 4px;
+}
+#files li[aria-expanded="true"]::before { transform: rotate(90deg); }
+
+/* Collapse children when not expanded */
+#files [role="treeitem"][aria-expanded="false"] > [role="group"] { display: none; }
+
+.out { font: 12px ui-monospace, Menlo, monospace; color: #4338ca; margin: 0.85rem 0 0; }
+`}
+	js={`
+files.addEventListener("activate", (e) => {
+	out.textContent = "Opened: " + e.detail.value;
+});
+`}
+/>
+
+```ts
+import "@vyn/ui/tree";
+```
+
+## Keyboard
+
+| Key | Effect |
+|---|---|
+| ↑ / ↓ | Move focus to the previous / next **visible** item |
+| → | Expand the current folder, or move to its first child if already open |
+| ← | Collapse the current folder, or move to its parent if already closed (or a leaf) |
+| Home / End | Move to the first / last visible item |
+| Enter, Space | Toggle a folder, or fire `activate` on a leaf |
+
+## Attributes
+
+Applied by the behavior — you don't usually write these yourself, but
+they're observable and overridable:
+
+| Element | Attribute | What it does |
+|---|---|---|
+| Root `<ul>` | `data-tree` | Activates the behavior |
+| Root `<ul>` | `role="tree"` | Set automatically |
+| Every `<li>` | `role="treeitem"` | Set automatically |
+| Folder `<li>` (direct child `<ul>`) | `aria-expanded="true" \| "false"` | Set automatically; toggle to start expanded |
+| Folder's child `<ul>` | `role="group"` | Set automatically |
+| Leaf `<li>` | `data-value="..."` | Surfaced in the `activate` event detail |
+
+## Events
+
+| Event | Detail | When |
+|---|---|---|
+| `toggle`   | `{ expanded: boolean, item: HTMLElement }` | Bubbles from a folder when expanded/collapsed |
+| `activate` | `{ item, value }` | A leaf is clicked or activated with Enter/Space |
+
+## Composing
+
+- The CSS rule that actually hides collapsed children lives in your
+  stylesheet — the behavior only flips the `aria-expanded` attribute.
+  This keeps the DOM stable (no items removed/inserted) so other
+  behaviors layered on top (selection, sortable, etc.) keep their
+  state.
+- Combine with [`@vyn/ui/select`](/vyn/ui/select/) on the tree root
+  for single-leaf-selection, or with [`@vyn/ui/scroll-into-view`](/vyn/ui/scroll-into-view/)
+  to keep the focused item visible in a tall sidebar.
