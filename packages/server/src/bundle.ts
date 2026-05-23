@@ -7,8 +7,9 @@
 // Prod (manifest passed): look up the pathname in the manifest and serve
 // the hashed dist/ file with an immutable cache-control header.
 //
-// The bundler abstracts Node (esbuild API) vs Deno (`deno bundle
-// --platform=browser` subprocess). Both produce a single ESM string.
+// Uses esbuild's JS API (works in both Node and Deno via `npm:esbuild`).
+// esbuild's metafile gives us the full input set for accurate cache
+// invalidation on transitive changes.
 
 import { readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
@@ -21,9 +22,6 @@ export type BundleOpts = {
 };
 
 type CacheEntry = { js: string; inputs: Map<string, number> };
-type Runtime = "node" | "deno";
-
-const RUNTIME: Runtime = (typeof (globalThis as any).Deno !== "undefined") ? "deno" : "node";
 
 export function makeTryBundle(opts: BundleOpts) {
 	const cache = new Map<string, CacheEntry>();
@@ -101,14 +99,24 @@ function jsResponse(js: string): Response {
 	});
 }
 
-async function bundleEntry(entryPath: string): Promise<CacheEntry> {
-	return RUNTIME === "deno" ? bundleWithDeno(entryPath) : bundleWithEsbuild(entryPath);
+const IS_DENO = typeof (globalThis as any).Deno !== "undefined";
+
+async function denoPluginsIfAvailable(): Promise<any[]> {
+	if (!IS_DENO) return [];
+	try {
+		const mod = await import("jsr:@luca/esbuild-deno-loader@^0.11.0");
+		return mod.denoPlugins({ loader: "portable" });
+	} catch (e) {
+		console.warn(`[vyn] @luca/esbuild-deno-loader unavailable — bare specifiers (e.g. @vyn/client) won't resolve. ${(e as Error).message}`);
+		return [];
+	}
 }
 
-async function bundleWithEsbuild(entryPath: string): Promise<CacheEntry> {
+async function bundleEntry(entryPath: string): Promise<CacheEntry> {
 	const esbuild = await import("esbuild").catch(() => {
-		throw new Error("esbuild not installed — `npm i esbuild` in your app, or use plain .js files");
+		throw new Error("esbuild not installed — `npm i esbuild` (Node) or add `\"esbuild\": \"npm:esbuild\"` to deno.json imports.");
 	});
+	const plugins = await denoPluginsIfAvailable();
 	const result = await esbuild.build({
 		entryPoints: [entryPath],
 		bundle:      true,
@@ -119,6 +127,7 @@ async function bundleWithEsbuild(entryPath: string): Promise<CacheEntry> {
 		metafile:    true,
 		sourcemap:   "inline",
 		logLevel:    "silent",
+		plugins,
 	});
 	const js = result.outputFiles![0].text;
 	const inputs = new Map<string, number>();
@@ -126,26 +135,9 @@ async function bundleWithEsbuild(entryPath: string): Promise<CacheEntry> {
 		try {
 			const s = await stat(path);
 			inputs.set(path, s.mtimeMs);
-		} catch { /* generated input, skip */ }
+		} catch { /* generated/virtual input, skip */ }
 	}
 	return { js, inputs };
-}
-
-async function bundleWithDeno(entryPath: string): Promise<CacheEntry> {
-	const Deno = (globalThis as any).Deno;
-	const cmd = new Deno.Command(Deno.execPath(), {
-		args:   ["bundle", "--platform=browser", entryPath],
-		stdout: "piped",
-		stderr: "piped",
-	});
-	const { code, stdout, stderr } = await cmd.output();
-	if (code !== 0) {
-		throw new Error(new TextDecoder().decode(stderr));
-	}
-	const js = new TextDecoder().decode(stdout);
-	// Deno bundle doesn't emit a metafile; track only the entry mtime.
-	const s = await stat(entryPath);
-	return { js, inputs: new Map([[entryPath, s.mtimeMs]]) };
 }
 
 // Read public/dist/manifest.json if present. Returns null in dev (no build run).
