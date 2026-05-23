@@ -1,6 +1,6 @@
 {
 	"name": "@vynjs/core",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Vyn \u2014 small full-stack TypeScript framework. Primitives, registry, validators, cron.",
 	"type": "module",
 	"main": "./dist/index.js",

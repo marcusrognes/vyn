@@ -1,6 +1,6 @@
 {
 	"name": "@vynjs/client",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Vyn client — createApp, cache, html/render, signals, components.",
 	"exports": {
 		".": "./src/index.ts"

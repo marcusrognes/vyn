@@ -1,6 +1,6 @@
 {
 	"name": "@vynjs/ui",
-	"version": "0.1.0",
+	"version": "0.2.0",
 	"description": "Accessibility-first behaviors and widgets for browser UIs.",
 	"exports": {
 		".":                  "./src/index.ts",
