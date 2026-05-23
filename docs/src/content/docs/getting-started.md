@@ -65,7 +65,7 @@ current working directory.
 
 ```sh
 cd existing-project
-deno run -A jsr:@vyn/cli init
+deno run -A jsr:@vynjs/cli init
 ```
 
 `init` will only write files that don't exist. Anything you've already
@@ -93,7 +93,7 @@ The scaffold includes one action and one route. The action lives at
 `features/hello/hello.actions.ts`:
 
 ```ts
-import { createQuery, v } from "@vyn/core";
+import { createQuery, v } from "@vynjs/core";
 
 export const greet = createQuery({
 	description: "Say hello to someone.",
@@ -106,7 +106,7 @@ export const greet = createQuery({
 The route at `public/routes/index.ts` calls it:
 
 ```ts
-import { createApp, $ } from "@vyn/client";
+import { createApp, $ } from "@vynjs/client";
 import type { AppRouter } from "../../_vyn.gen.ts";
 
 const { rpc } = createApp<AppRouter>();
@@ -140,3 +140,29 @@ dev command, or change the default in `env.ts`.
 **Type errors out of the box.** Run `vyn gen` once to populate the
 `_vyn.gen.ts` barrel and route params files. The dev server runs
 it automatically; the type checker doesn't.
+
+## Where the packages live
+
+Vyn publishes to [JSR](https://jsr.io/@vynjs) under the `@vynjs/`
+scope. Deno resolves `jsr:@vynjs/core` (and the scaffolder's
+`@vynjs/core` import map entry) directly.
+
+For Node-only projects that need to consume Vyn via npm, use JSR's
+npm bridge:
+
+```sh
+# one-time .npmrc setup
+echo "@jsr:registry=https://npm.jsr.io" >> .npmrc
+
+npm install @jsr/vynjs__core
+```
+
+Then import as:
+
+```ts
+import { createQuery, v } from "@jsr/vynjs__core";
+```
+
+The double-underscore is JSR's npm naming convention. Vyn is
+designed Deno-first; the npm bridge is there if a project genuinely
+can't run Deno.
