@@ -1,0 +1,12 @@
+{
+	"name": "@vynjs/server",
+	"version": "0.2.0",
+	"description": "Vyn server — serve(), RPC dispatcher, MCP, WebSocket, transformers.",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"publish": {
+		"include": ["src/**/*.ts", "README.md", "LICENSE", "deno.json"],
+		"exclude": ["src/**/*.test.ts", "test/**"]
+	}
+}

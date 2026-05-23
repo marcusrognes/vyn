@@ -1,0 +1,12 @@
+{
+	"name": "@vynjs/cli",
+	"version": "0.2.0",
+	"description": "Vyn CLI — init, dev, build, check, gen, mcp, worker.",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"publish": {
+		"include": ["src/**/*.ts", "README.md", "LICENSE", "deno.json"],
+		"exclude": ["src/**/*.test.ts", "test/**"]
+	}
+}

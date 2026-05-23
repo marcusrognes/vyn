@@ -3,7 +3,9 @@
 		"./packages/core",
 		"./packages/ui",
 		"./packages/client",
-		"./packages/auth"
+		"./packages/auth",
+		"./packages/server",
+		"./packages/cli"
 	],
 	"tasks": {
 		"test":         "deno test -A --no-check --unstable-node-globals --unstable-bare-node-builtins packages/",
