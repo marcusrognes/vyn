@@ -40,7 +40,7 @@ export async function tryStatic(req: Request, opts: StaticOpts): Promise<Respons
 		const s = await stat(filePath);
 		if (s.isFile()) {
 			const body = await readFile(filePath);
-			return new Response(body, {
+			return new Response(new Uint8Array(body), {
 				status:  200,
 				headers: {
 					"content-type": MIME[extname(filePath)] ?? "application/octet-stream",

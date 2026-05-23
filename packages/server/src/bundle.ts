@@ -38,7 +38,7 @@ export function makeTryBundle(opts: BundleOpts) {
 			if (!hashed) return null;
 			try {
 				const body = await readFile(join(opts.publicDir, hashed));
-				return new Response(body, {
+				return new Response(new Uint8Array(body), {
 					status:  200,
 					headers: {
 						"content-type":  "text/javascript; charset=utf-8",

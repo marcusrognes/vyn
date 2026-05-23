@@ -34,7 +34,7 @@ export class EventBus {
 		this.listeners.get(name)?.forEach((fn) => fn(value));
 	}
 
-	subscribe(name: string, handler: (value: unknown) => void) {
+	subscribe(name: string, handler: (value: unknown) => void): () => void {
 		let set = this.listeners.get(name);
 		if (!set) { set = new Set(); this.listeners.set(name, set); }
 		set.add(handler);

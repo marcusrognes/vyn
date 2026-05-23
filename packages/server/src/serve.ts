@@ -39,7 +39,13 @@ export type ServeOpts<S extends object = {}, D extends object = {}> = {
 	noListen?: boolean;
 };
 
-export async function serve<S extends object = {}, D extends object = {}>(opts: ServeOpts<S, D>) {
+export type ServeHandle<S> = {
+	close():     Promise<void>;
+	bus:         EventBus;
+	staticCtx:   S;
+};
+
+export async function serve<S extends object = {}, D extends object = {}>(opts: ServeOpts<S, D>): Promise<ServeHandle<S>> {
 	const transformer = opts.transformer ?? identityTransformer;
 	const publicDir   = opts.publicDir   ?? join(Deno.cwd(), "public");
 	const staticCtx   = (opts.staticContext ? await opts.staticContext() : ({} as S));
