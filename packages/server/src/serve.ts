@@ -1,11 +1,6 @@
-// serve() — boot the HTTP server, run staticContext once, and
-// dispatch requests across the RPC + WebSocket + static layers.
-//
-// Uses Node's built-in `node:http` so apps run without bundlers /
-// transpilers. WebSocket support uses the `ws` package because
-// `node:http` doesn't ship it natively.
+// serve() — boot Deno.serve, run staticContext once, dispatch requests
+// across the RPC + WebSocket + static layers.
 
-import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { handleRpc } from "./rpc.ts";
@@ -17,6 +12,12 @@ import { identityTransformer, type Transformer } from "./transformer.ts";
 import { EventBus, type BaseCtx, type CookieOpts } from "./ctx.ts";
 import { parseCookies, serializeCookie } from "./cookies.ts";
 import { installNotify, shutdownNotify, installBackgroundCtx, startCronJobs, stopCronJobs, type NotificationAdapter, type PreferencesResolver } from "@vyn/core";
+
+declare const Deno: {
+	serve: (opts: { port: number; hostname: string; onListen?: (...a: unknown[]) => void }, handler: (req: Request) => Response | Promise<Response>) => { shutdown: () => Promise<void> };
+	upgradeWebSocket: (req: Request) => { socket: WebSocket; response: Response };
+	cwd: () => string;
+};
 
 export type ServeOpts<S extends object = {}, D extends object = {}> = {
 	port:           number;
@@ -32,15 +33,15 @@ export type ServeOpts<S extends object = {}, D extends object = {}> = {
 		coalesceWindowMs?: number;
 	};
 	mcp?: boolean;
-	// CLI subcommands (vyn mcp --stdio, vyn worker) set this so serve()
-	// runs all the boot-time wiring (staticContext, installNotify,
-	// installBackgroundCtx) without binding to a port.
+	// CLI subcommands (vyn mcp --stdio, vyn worker) set this so serve() runs
+	// all boot-time wiring (staticContext, installNotify, installBackgroundCtx)
+	// without binding to a port.
 	noListen?: boolean;
 };
 
 export async function serve<S extends object = {}, D extends object = {}>(opts: ServeOpts<S, D>) {
 	const transformer = opts.transformer ?? identityTransformer;
-	const publicDir   = opts.publicDir   ?? join(process.cwd(), "public");
+	const publicDir   = opts.publicDir   ?? join(Deno.cwd(), "public");
 	const staticCtx   = (opts.staticContext ? await opts.staticContext() : ({} as S));
 	const indexHtml   = await readFile(join(publicDir, "index.html"), "utf-8").catch(() => undefined);
 	const manifest    = await loadManifest(publicDir);
@@ -49,21 +50,15 @@ export async function serve<S extends object = {}, D extends object = {}>(opts: 
 
 	if (opts.notify) installNotify(opts.notify);
 
-	// Background tasks (jobs, notification flush) run outside any request,
-	// so the framework copies the staticCtx into a module-level slot they
-	// can reach.
+	// Background tasks (jobs, notification flush) run outside any request, so
+	// the framework copies the staticCtx into a module-level slot they reach.
 	installBackgroundCtx(staticCtx);
 	startCronJobs();
 
-	const server = createServer(async (req, res) => {
-		const url     = `http://${req.headers.host}${req.url}`;
-		const request = nodeReqToFetch(req, url);
-
-		// Mutable response side-channel — actions write here via ctx.setHeader/setCookie/setStatus.
+	const buildBaseCtx = (request: Request) => {
 		const sideHeaders: Record<string, string> = {};
 		const sideCookies: string[] = [];
 		let sideStatus: number | undefined;
-
 		const baseCtx: BaseCtx = {
 			req:    request,
 			signal: request.signal,
@@ -72,94 +67,75 @@ export async function serve<S extends object = {}, D extends object = {}>(opts: 
 			setHeader(name, value) { sideHeaders[name] = value; },
 			setCookie(name, value, o?: CookieOpts) { sideCookies.push(serializeCookie(name, value, o)); },
 		};
+		return { baseCtx, sideHeaders, sideCookies, getStatus: () => sideStatus };
+	};
 
-		try {
-			let response: Response | null = null;
-			const url2 = new URL(url);
-
-			if (url2.pathname.startsWith("/rpc/")) {
-				response = await handleRpc(request, baseCtx, async (r, b) => {
-					const dyn = opts.createContext
-						? await opts.createContext({ req: r, staticCtx, baseCtx: b })
-						: ({} as D);
-					return { ...staticCtx, ...dyn };
-				}, transformer);
-			} else if (url2.pathname === "/mcp" && opts.mcp) {
-				response = await handleMcp(request, async () => {
-					const dyn = opts.createContext
-						? await opts.createContext({ req: request, staticCtx, baseCtx })
-						: ({} as D);
-					return { ...staticCtx, ...dyn, ...baseCtx };
-				});
-			} else if (url2.pathname === "/_vyn/client.js") {
-				response = await serveClientBundle();
-			} else if (url2.pathname === "/_vyn/ui.js") {
-				response = await serveUiBundle();
-			} else {
-				response = await tryBundle(url2.pathname);
-				if (!response) response = await tryStatic(request, { root: publicDir, indexHtml });
-			}
-
-			if (!response) response = new Response("not found", { status: 404 });
-			await sendFetchResponse(res, response, { sideHeaders, sideCookies, sideStatus });
-		} catch (e) {
-			console.error("[vyn] handler error:", e);
-			if (!res.headersSent) {
-				res.writeHead(500, { "content-type": "text/plain" });
-				res.end((e as Error).message);
-			} else {
-				res.end();
-			}
+	const dispatch = async (request: Request, baseCtx: BaseCtx): Promise<Response | null> => {
+		const url2 = new URL(request.url);
+		if (url2.pathname.startsWith("/rpc/")) {
+			return handleRpc(request, baseCtx, async (r, b) => {
+				const dyn = opts.createContext
+					? await opts.createContext({ req: r, staticCtx, baseCtx: b })
+					: ({} as D);
+				return { ...staticCtx, ...dyn };
+			}, transformer);
 		}
-	});
-
-	// WebSocket upgrade for subscriptions.
-	server.on("upgrade", async (req, socket, head) => {
-		if (!req.url?.startsWith("/ws")) {
-			socket.destroy();
-			return;
-		}
-		try {
-			const { WebSocketServer } = await import("ws");
-			const wss = (server as any).__wss ?? ((server as any).__wss = new WebSocketServer({ noServer: true }));
-			wss.handleUpgrade(req, socket, head, async (ws: WebSocket) => {
-				const url     = `http://${req.headers.host}${req.url}`;
-				const request = nodeReqToFetch(req, url);
-				const baseCtx: BaseCtx = {
-					req:    request,
-					signal: request.signal,
-					bus,
-					setStatus()   {},
-					setHeader()   {},
-					setCookie()   {},
-				};
-				attachWebSocket(ws, request, baseCtx, {
-					transformer,
-					makeCtx: async (r, b) => {
-						const dyn = opts.createContext
-							? await opts.createContext({ req: r, staticCtx, baseCtx: b })
-							: ({} as D);
-						return { ...staticCtx, ...dyn };
-					},
-				});
+		if (url2.pathname === "/mcp" && opts.mcp) {
+			return handleMcp(request, async () => {
+				const dyn = opts.createContext
+					? await opts.createContext({ req: request, staticCtx, baseCtx })
+					: ({} as D);
+				return { ...staticCtx, ...dyn, ...baseCtx };
 			});
-		} catch (e) {
-			console.error("[vyn] websocket upgrade failed (is the `ws` package installed?):", e);
-			socket.destroy();
 		}
-	});
+		if (url2.pathname === "/_vyn/client.js") return serveClientBundle();
+		if (url2.pathname === "/_vyn/ui.js")     return serveUiBundle();
+
+		const bundled = await tryBundle(url2.pathname);
+		if (bundled) return bundled;
+		return tryStatic(request, { root: publicDir, indexHtml });
+	};
 
 	if (opts.noListen) {
 		console.log(`[vyn] boot-only mode (noListen) — actions registered, no HTTP bind`);
-		return {
-			close: async () => { shutdownNotify(); },
-			bus,
-			staticCtx,
-		};
+		return { close: async () => { shutdownNotify(); }, bus, staticCtx };
 	}
 
-	await new Promise<void>((resolve) => {
-		server.listen(opts.port, opts.host ?? "0.0.0.0", () => resolve());
+	const denoServer = Deno.serve({ port: opts.port, hostname: opts.host ?? "0.0.0.0", onListen: () => {} }, async (request: Request) => {
+		const url2 = new URL(request.url);
+
+		// Native WS upgrade.
+		if (url2.pathname === "/ws" && request.headers.get("upgrade")?.toLowerCase() === "websocket") {
+			try {
+				const { socket, response } = Deno.upgradeWebSocket(request);
+				socket.addEventListener("open", () => {
+					const { baseCtx } = buildBaseCtx(request);
+					attachWebSocket(socket, request, baseCtx, {
+						transformer,
+						makeCtx: async (r, b) => {
+							const dyn = opts.createContext
+								? await opts.createContext({ req: r, staticCtx, baseCtx: b })
+								: ({} as D);
+							return { ...staticCtx, ...dyn };
+						},
+					});
+				});
+				return response;
+			} catch (e) {
+				console.error("[vyn] upgradeWebSocket failed:", e);
+				return new Response("ws upgrade failed", { status: 500 });
+			}
+		}
+
+		const { baseCtx, sideHeaders, sideCookies, getStatus } = buildBaseCtx(request);
+		try {
+			let response = await dispatch(request, baseCtx);
+			if (!response) response = new Response("not found", { status: 404 });
+			return applySideChannel(response, { sideHeaders, sideCookies, sideStatus: getStatus() });
+		} catch (e) {
+			console.error("[vyn] handler error:", e);
+			return new Response((e as Error).message, { status: 500, headers: { "content-type": "text/plain" } });
+		}
 	});
 
 	const { registry } = await import("@vyn/core");
@@ -169,63 +145,27 @@ export async function serve<S extends object = {}, D extends object = {}>(opts: 
 	await opts.onReady?.({ url });
 
 	return {
-		close: () => new Promise<void>((r) => { stopCronJobs(); shutdownNotify(); server.close(() => r()); }),
+		close: async () => { stopCronJobs(); shutdownNotify(); await denoServer.shutdown(); },
 		bus,
 		staticCtx,
 	};
 }
 
-function nodeReqToFetch(req: IncomingMessage, url: string): Request {
-	const headers = new Headers();
-	for (const [k, v] of Object.entries(req.headers)) {
-		if (Array.isArray(v)) v.forEach((vv) => headers.append(k, vv));
-		else if (v !== undefined) headers.set(k, v as string);
-	}
-	const init: RequestInit = { method: req.method, headers };
-	if (req.method && req.method !== "GET" && req.method !== "HEAD") {
-		init.body = nodeReadableToWebReadable(req) as any;
-		(init as any).duplex = "half";
-	}
-	return new Request(url, init);
+function applySideChannel(res: Response, side: { sideHeaders: Record<string, string>; sideCookies: string[]; sideStatus?: number }): Response {
+	if (!side.sideStatus && Object.keys(side.sideHeaders).length === 0 && side.sideCookies.length === 0) return res;
+	const headers = new Headers(res.headers);
+	for (const [k, v] of Object.entries(side.sideHeaders)) headers.set(k, v);
+	for (const c of side.sideCookies)                      headers.append("set-cookie", c);
+	return new Response(res.body, { status: side.sideStatus ?? res.status, headers });
 }
 
-function nodeReadableToWebReadable(req: IncomingMessage): ReadableStream<Uint8Array> {
-	return new ReadableStream({
-		start(controller) {
-			req.on("data",  (chunk) => controller.enqueue(new Uint8Array(chunk)));
-			req.on("end",   () => controller.close());
-			req.on("error", (e) => controller.error(e));
-		},
-	});
-}
-
-async function sendFetchResponse(res: ServerResponse, fetchRes: Response, side: { sideHeaders: Record<string, string>; sideCookies: string[]; sideStatus?: number }) {
-	const status = side.sideStatus ?? fetchRes.status;
-	const headers: Record<string, string | string[]> = {};
-	fetchRes.headers.forEach((v, k) => { headers[k] = v; });
-	for (const [k, v] of Object.entries(side.sideHeaders)) headers[k] = v;
-	if (side.sideCookies.length) headers["set-cookie"] = side.sideCookies;
-
-	res.writeHead(status, headers);
-	if (fetchRes.body) {
-		const reader = fetchRes.body.getReader();
-		while (true) {
-			const { done, value } = await reader.read();
-			if (done) break;
-			res.write(Buffer.from(value));
-		}
-	}
-	res.end();
-}
-
-// Resolves at boot time so the file is read once.
+// Resolves once per process so the file is read at first hit, then cached.
 let clientBundle: string | undefined;
 let uiBundle:     string | undefined;
 async function serveClientBundle(): Promise<Response> {
 	if (!clientBundle) {
-		const url = await import.meta.resolve?.("@vyn/client/browser.js");
-		const path = url ? new URL(url).pathname : require.resolve("@vyn/client/browser.js");
-		clientBundle = await readFile(path, "utf-8");
+		const url  = await import.meta.resolve("@vyn/client/browser.js");
+		clientBundle = await readFile(new URL(url), "utf-8");
 	}
 	return new Response(clientBundle, {
 		status:  200,
@@ -235,9 +175,8 @@ async function serveClientBundle(): Promise<Response> {
 async function serveUiBundle(): Promise<Response> {
 	if (!uiBundle) {
 		try {
-			const url = await import.meta.resolve?.("@vyn/ui/browser.js");
-			const path = url ? new URL(url).pathname : require.resolve("@vyn/ui/browser.js");
-			uiBundle = await readFile(path, "utf-8");
+			const url = await import.meta.resolve("@vyn/ui/browser.js");
+			uiBundle = await readFile(new URL(url), "utf-8");
 		} catch {
 			return new Response("@vyn/ui is not installed", { status: 404 });
 		}

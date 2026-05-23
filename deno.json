@@ -3,7 +3,9 @@
 		"test":       "deno test -A --no-check --unstable-node-globals --unstable-bare-node-builtins packages/",
 		"test:core":  "deno test -A --no-check --unstable-node-globals --unstable-bare-node-builtins packages/core/test/",
 		"test:watch": "deno test -A --no-check --unstable-node-globals --unstable-bare-node-builtins --watch packages/",
-		"check":      "deno check packages/core/src/ packages/server/src/ packages/client/src/"
+		"check":      "deno check packages/core/src/ packages/server/src/ packages/client/src/",
+		"fmt":        "deno fmt packages/",
+		"lint":       "deno lint packages/"
 	},
 	"imports": {
 		"vyn:test":       "./test/_bdd.ts",

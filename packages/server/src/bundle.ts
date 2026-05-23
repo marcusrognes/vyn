@@ -7,12 +7,14 @@
 // Prod (manifest passed): look up the pathname in the manifest and serve
 // the hashed dist/ file with an immutable cache-control header.
 //
-// Uses esbuild's JS API (works in both Node and Deno via `npm:esbuild`).
-// esbuild's metafile gives us the full input set for accurate cache
-// invalidation on transitive changes.
+// Uses `npm:esbuild` + `jsr:@luca/esbuild-deno-loader` so bare specifiers
+// declared in the consuming deno.json import map (e.g. "@vyn/client") resolve
+// in browser bundles. esbuild's metafile drives the transitive-input cache.
 
 import { readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
+import { denoPlugins } from "jsr:@luca/esbuild-deno-loader@^0.11.0";
+import * as esbuild from "npm:esbuild@^0.24.0";
 
 export type Manifest = Record<string, string>;  // srcUrl (e.g. "/routes/index.js") → hashed dist path ("/dist/routes/index.a1b2c3.js")
 
@@ -99,24 +101,7 @@ function jsResponse(js: string): Response {
 	});
 }
 
-const IS_DENO = typeof (globalThis as any).Deno !== "undefined";
-
-async function denoPluginsIfAvailable(): Promise<any[]> {
-	if (!IS_DENO) return [];
-	try {
-		const mod = await import("jsr:@luca/esbuild-deno-loader@^0.11.0");
-		return mod.denoPlugins({ loader: "portable" });
-	} catch (e) {
-		console.warn(`[vyn] @luca/esbuild-deno-loader unavailable — bare specifiers (e.g. @vyn/client) won't resolve. ${(e as Error).message}`);
-		return [];
-	}
-}
-
 async function bundleEntry(entryPath: string): Promise<CacheEntry> {
-	const esbuild = await import("esbuild").catch(() => {
-		throw new Error("esbuild not installed — `npm i esbuild` (Node) or add `\"esbuild\": \"npm:esbuild\"` to deno.json imports.");
-	});
-	const plugins = await denoPluginsIfAvailable();
 	const result = await esbuild.build({
 		entryPoints: [entryPath],
 		bundle:      true,
@@ -127,7 +112,7 @@ async function bundleEntry(entryPath: string): Promise<CacheEntry> {
 		metafile:    true,
 		sourcemap:   "inline",
 		logLevel:    "silent",
-		plugins,
+		plugins:     denoPlugins({ loader: "portable" }),
 	});
 	const js = result.outputFiles![0].text;
 	const inputs = new Map<string, number>();
