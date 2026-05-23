@@ -271,9 +271,9 @@ if (!customElements.get("v-toaster")) {
 		dismiss(id) { const el = this.#toasts.get(id); if (el) { el.remove(); this.#toasts.delete(id); } }
 	}
 	customElements.define("v-toaster", VToasterElement);
-	window.vynToast = (toast) => {
+	window.toast = (opts) => {
 		let t = document.querySelector("v-toaster");
 		if (!t) { t = document.createElement("v-toaster"); document.body.appendChild(t); }
-		return t.show(toast);
+		return t.show(opts);
 	};
 }

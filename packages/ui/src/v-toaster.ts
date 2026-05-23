@@ -1,7 +1,8 @@
 // <v-toaster position="bottom-end"> — singleton-friendly notification
-// stack. App code calls `toaster.show({ kind, body, timeout })` (or
-// the global `vynToast(...)` helper) and the toast appears, announces
-// via the live region, then dismisses itself.
+// stack. App code imports the `toast(...)` helper (or calls
+// `toaster.show({ kind, body, timeout })` on the element directly)
+// and the toast appears, announces via the live region, then
+// dismisses itself.
 
 import { live } from "./live.ts";
 
@@ -79,19 +80,17 @@ function escape(s: string): string {
 	return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-if (typeof window !== "undefined" && !customElements.get("v-toaster")) {
-	customElements.define("v-toaster", VToasterElement);
-
-	// Convenience global. App code calls vynToast({ body, kind })
-	// and the singleton toaster is created on first call.
-	(window as any).vynToast = (toast: Omit<Toast, "id">) => {
-		let t = document.querySelector("v-toaster") as VToasterElement | null;
-		if (!t) {
-			t = document.createElement("v-toaster") as VToasterElement;
-			document.body.appendChild(t);
-		}
-		return t.show(toast);
-	};
+// Imperative helper. Imports as `import { toast } from "@vyn/ui/v-toaster"`.
+// Lazily creates a singleton <v-toaster> on first call if one isn't mounted.
+export function toast(opts: Omit<Toast, "id">): number {
+	let t = document.querySelector("v-toaster") as VToasterElement | null;
+	if (!t) {
+		t = document.createElement("v-toaster") as VToasterElement;
+		document.body.appendChild(t);
+	}
+	return t.show(opts);
 }
 
-export {};
+if (typeof window !== "undefined" && !customElements.get("v-toaster")) {
+	customElements.define("v-toaster", VToasterElement);
+}

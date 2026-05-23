@@ -8,11 +8,12 @@ import LiveExample from "../../../components/LiveExample.astro";
 <LiveExample title="Trigger toast notifications" height="280px"
 	behaviors={["v-toaster"]}
 	html={`
-<button id="info">Info</button>
-<button id="ok">Success</button>
-<button id="warn">Warning</button>
-<button id="err">Error</button>
-<v-toaster id="toasts" position="bottom-end"></v-toaster>
+<button onclick="toast({ kind: 'info',    title: 'Heads up', body: 'New release available.' })">Info</button>
+<button onclick="toast({ kind: 'success', title: 'Saved',    body: 'Project saved to drafts.' })">Success</button>
+<button onclick="toast({ kind: 'warning', title: 'Slow',     body: 'Server is responding slowly.' })">Warning</button>
+<button onclick="toast({ kind: 'error',   title: 'Failed',   body: 'Could not reach server.' })">Error</button>
+
+<v-toaster position="bottom-end"></v-toaster>
 `}
 	css={`
 body { margin: 0; padding: 1.5rem; font: 14px/1.5 system-ui; background: #fafbff; color: #0f172a; min-height: 200px; }
@@ -29,13 +30,6 @@ v-toaster > div[data-kind="success"] { border-left: 4px solid #16a34a; }
 v-toaster > div[data-kind="warning"] { border-left: 4px solid #d97706; }
 v-toaster > div[data-kind="error"]   { border-left: 4px solid #dc2626; }
 v-toaster > div[data-kind="info"]    { border-left: 4px solid #4f46e5; }
-`}
-	js={`
-const t = document.getElementById("toasts");
-document.getElementById("info").addEventListener("click", () => t.show({ kind: "info",    title: "Heads up", body: "New release available." }));
-document.getElementById("ok"  ).addEventListener("click", () => t.show({ kind: "success", title: "Saved",    body: "Project saved to drafts." }));
-document.getElementById("warn").addEventListener("click", () => t.show({ kind: "warning", title: "Slow",     body: "Server is responding slowly." }));
-document.getElementById("err" ).addEventListener("click", () => t.show({ kind: "error",   title: "Failed",   body: "Could not reach server." }));
 `}
 />
 
