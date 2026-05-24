@@ -92,6 +92,27 @@ export const registry: Registry = {
 	},
 };
 
+// Re-key every action exported by `mod` so its registry name becomes
+// `${ns}.${exportName}`. createQuery/createMutation/etc. register
+// themselves with anonymous names at creation time; `vyn gen` calls
+// this after importing each *.actions.ts so the canonical names land.
+// Apps don't have to write `name: "todos.add"` on every action.
+export function rebindActions(ns: string, mod: Record<string, unknown>): void {
+	for (const [exportName, value] of Object.entries(mod)) {
+		if (!value || typeof value !== "object") continue;
+		const action = value as Action;
+		if (typeof action.kind !== "string" || typeof action.name !== "string") continue;
+		const fresh = `${ns}.${exportName}`;
+		if (action.name === fresh) continue;
+		actions.delete(action.name);
+		action.name = fresh;
+		if (actions.has(fresh)) {
+			throw new Error(`duplicate action name after rebind: ${fresh}`);
+		}
+		actions.set(fresh, action);
+	}
+}
+
 let anonCounter = 0;
 export function anonymousName(prefix: string): string {
 	return `${prefix}_anon_${++anonCounter}`;
