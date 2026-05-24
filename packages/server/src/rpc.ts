@@ -76,7 +76,7 @@ function runStreaming(action: Action, input: unknown, ctx: object, base: BaseCtx
 				else                       send("result", null);
 				controller.close();
 			} catch (e) {
-				const err = e instanceof RpcError ? e : new RpcError("internal", (e as Error).message);
+				const err = toRpcError(e);
 				send("error", err.toJSON());
 				controller.close();
 			}
@@ -92,18 +92,26 @@ function runStreaming(action: Action, input: unknown, ctx: object, base: BaseCtx
 	});
 }
 
-function jsonError(error: unknown, transformer: Transformer): Response {
-	if (error instanceof RpcError) {
-		return new Response(JSON.stringify({ ok: false, error: error.toJSON() }), {
-			status:  categoryToStatus(error.category),
-			headers: { "content-type": "application/json" },
-		});
-	}
-	const internal = new RpcError("internal", (error as Error).message ?? "internal error");
-	return new Response(JSON.stringify({ ok: false, error: internal.toJSON() }), {
-		status:  500,
+function jsonError(error: unknown, _transformer: Transformer): Response {
+	const mapped = toRpcError(error);
+	return new Response(JSON.stringify({ ok: false, error: mapped.toJSON() }), {
+		status:  categoryToStatus(mapped.category),
 		headers: { "content-type": "application/json" },
 	});
+}
+
+// Map a thrown value to an RpcError. ValidationError (from @vynjs/core)
+// becomes bad_request — the caller supplied bad input, not a server
+// fault. Cross-package instanceof can lie under version skew, so match
+// by error.name as well.
+function toRpcError(error: unknown): RpcError {
+	if (error instanceof RpcError) return error;
+	const e = error as Error & { name?: string; issues?: unknown };
+	if (e && (e.name === "ValidationError" || Array.isArray(e.issues))) {
+		const err = new RpcError("bad_request", e.message ?? "validation failed", e.issues);
+		return err;
+	}
+	return new RpcError("internal", e?.message ?? "internal error");
 }
 
 export type { Action };

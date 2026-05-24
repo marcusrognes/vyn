@@ -49,8 +49,14 @@ export async function serve<S extends object = {}, D extends object = {}>(opts: 
 	const transformer = opts.transformer ?? identityTransformer;
 	const publicDir   = opts.publicDir   ?? join(Deno.cwd(), "public");
 	const staticCtx   = (opts.staticContext ? await opts.staticContext() : ({} as S));
-	const indexHtml   = await readFile(join(publicDir, "index.html"), "utf-8").catch(() => undefined);
 	const manifest    = await loadManifest(publicDir);
+	// In dev (no prod manifest), re-read index.html on every request so
+	// edits show up without a server restart. In prod, read once at boot
+	// and cache.
+	const indexHtmlBoot = await readFile(join(publicDir, "index.html"), "utf-8").catch(() => undefined);
+	const readIndexHtml = manifest
+		? () => indexHtmlBoot
+		: () => readFile(join(publicDir, "index.html"), "utf-8").catch(() => indexHtmlBoot);
 	const tryBundle   = makeTryBundle({ publicDir, manifest });
 	const bus         = new EventBus();
 
@@ -99,7 +105,7 @@ export async function serve<S extends object = {}, D extends object = {}>(opts: 
 
 		const bundled = await tryBundle(url2.pathname);
 		if (bundled) return bundled;
-		return tryStatic(request, { root: publicDir, indexHtml });
+		return tryStatic(request, { root: publicDir, indexHtml: await readIndexHtml() });
 	};
 
 	if (opts.noListen) {
