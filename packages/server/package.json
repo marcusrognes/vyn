@@ -23,12 +23,7 @@
 		"test:watch": "vitest"
 	},
 	"dependencies": {
-		"@vynjs/core": "*",
-		"esbuild": "^0.24.0",
-		"ws": "^8.18.0"
-	},
-	"devDependencies": {
-		"@types/ws": "^8.5.13"
+		"@vynjs/core": "*"
 	},
 	"author": "Marcus Rognes",
 	"license": "MIT",
