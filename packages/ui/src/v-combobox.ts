@@ -9,12 +9,23 @@ class VComboboxElement extends HTMLElement {
 	static formAssociated = true;
 	#input!:    HTMLInputElement;
 	#listbox!:  HTMLUListElement;
+	#internals: ElementInternals;
 	// Source list (every option the component knows about) and the
 	// query-filtered subset that's actually displayed + navigated.
 	// Highlight is an index into #filtered, not #source.
 	#source: Suggestion[] = [];
 	#filtered: Suggestion[] = [];
 	#highlight = 0;
+	// The committed value — the `value` of the suggestion the user
+	// picked. Distinct from the input's displayed text, which is the
+	// suggestion's `label`. Falls back to free-text input.value when
+	// the user is typing and hasn't picked from the list.
+	#selectedValue: string | undefined;
+
+	constructor() {
+		super();
+		this.#internals = this.attachInternals();
+	}
 
 	connectedCallback() {
 		this.style.position = this.style.position || "relative";
@@ -34,13 +45,22 @@ class VComboboxElement extends HTMLElement {
 		const placeholder = this.getAttribute("placeholder");
 		if (placeholder) this.#input.placeholder = placeholder;
 		const initial = this.getAttribute("value");
-		if (initial) this.#input.value = initial;
+		if (initial) {
+			this.#input.value = initial;
+			this.#selectedValue = initial;
+			this.#internals.setFormValue(initial);
+		}
 
 		const raw = this.getAttribute("data-suggestions");
 		if (raw) { try { this.#source = JSON.parse(raw); } catch { /* ignore */ } }
 		this.#filtered = this.#source;
 
 		this.#input.addEventListener("input", () => {
+			// User is typing again — invalidate any prior committed pick
+			// and revert to free-text mode. The form value tracks the
+			// raw text until they select something.
+			this.#selectedValue = undefined;
+			this.#internals.setFormValue(this.#input.value);
 			// Local substring filter against label or value. Caller can
 			// still listen to `fetch` and replace the whole list via
 			// setSuggestions() for async / server-driven sources.
@@ -63,8 +83,15 @@ class VComboboxElement extends HTMLElement {
 		this.#applyFilter();
 	}
 
-	get value() { return this.#input?.value ?? ""; }
-	set value(v: string) { if (this.#input) this.#input.value = v; }
+	// The committed value (suggestion.value of whatever the user picked)
+	// when they picked from the list, or the raw text otherwise.
+	get value() { return this.#selectedValue ?? this.#input?.value ?? ""; }
+	set value(v: string) {
+		const match = this.#source.find((s) => s.value === v);
+		if (this.#input) this.#input.value = match?.label ?? v;
+		this.#selectedValue = v;
+		this.#internals.setFormValue(v);
+	}
 
 	#applyFilter() {
 		const q = this.#input.value.trim().toLowerCase();
@@ -118,8 +145,11 @@ class VComboboxElement extends HTMLElement {
 		}
 	}
 	#select(value: string) {
-		this.#input.value = value;
-		this.dispatchEvent(new CustomEvent("change", { detail: { value } }));
+		const s = this.#source.find((s) => s.value === value);
+		this.#input.value    = s?.label ?? value;
+		this.#selectedValue  = value;
+		this.#internals.setFormValue(value);
+		this.dispatchEvent(new CustomEvent("change", { detail: { value, label: s?.label ?? value } }));
 		this.#close();
 	}
 }
