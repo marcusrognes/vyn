@@ -9,6 +9,7 @@ import { v, type Schema } from "./v.ts";
 import { registry, anonymousName, type Action, type ToolSpec } from "./registry.ts";
 import { RpcError, isPermanent } from "./errors.ts";
 import { dispatchNotification } from "./notify-runtime.ts";
+import { publishViaTransport } from "./transport.ts";
 
 // ─── shared types ────────────────────────────────────────────────────
 
@@ -154,6 +155,11 @@ export type SubscriptionAction<I, O, C> = Action & {
 	name:  string;
 	run:   (opts: RunOpts<I, C>) => AsyncGenerator<O>;
 	emit:  (value: O) => void;
+	// Push a value into local subscriber queues without invoking the
+	// transport publish hook. The server uses this to deliver values
+	// received from a remote process — calling emit() there would echo
+	// the value back out and create a publish loop.
+	deliverLocal: (value: O) => void;
 };
 
 type SubscriptionDef<I, O, C> = Omit<BaseDef<I, O, C>, "run"> & {
@@ -176,9 +182,16 @@ export function createSubscription<I = unknown, O = unknown, C = unknown>(
 	// own queue so multiple subscribers don't fight for events.
 	const queues = new Set<{ push: (v: O) => void; close: () => void }>();
 
-	const emit = (value: O) => {
+	// deliverLocal only pushes to local queues. emit() additionally
+	// forwards to the transport publish hook, so a cross-process
+	// transport sees every locally-emitted event.
+	const deliverLocal = (value: O) => {
 		if (def.output) def.output.parse(value);
 		for (const q of queues) q.push(value);
+	};
+	const emit = (value: O) => {
+		deliverLocal(value);
+		publishViaTransport(action.name, value);
 	};
 
 	const action: SubscriptionAction<I, O, C> = {
@@ -189,6 +202,7 @@ export function createSubscription<I = unknown, O = unknown, C = unknown>(
 		output:      def.output as Schema<unknown> | undefined,
 		tool:        def.tool,
 		emit,
+		deliverLocal,
 
 		run(rawOpts) {
 			// Eagerly register the queue so emits between run() and the

@@ -11,7 +11,20 @@ import { makeTryBundle, loadManifest } from "./bundle.ts";
 import { identityTransformer, type Transformer } from "./transformer.ts";
 import { EventBus, type BaseCtx, type CookieOpts } from "./ctx.ts";
 import { parseCookies, serializeCookie } from "./cookies.ts";
-import { installNotify, shutdownNotify, installBackgroundCtx, startCronJobs, stopCronJobs, type NotificationAdapter, type PreferencesResolver } from "@vynjs/core";
+import { installNotify, shutdownNotify, installBackgroundCtx, startCronJobs, stopCronJobs, registry, installPublishHook, resetPublishHook, type NotificationAdapter, type PreferencesResolver, type Action } from "@vynjs/core";
+
+// Cross-process event fan-out. Implement this against any pub/sub
+// backend (Redis, NATS, Postgres LISTEN/NOTIFY, Kafka, …) and pass
+// it to serve({ transport }). subscribe is called once at boot —
+// invoke `deliver(name, value)` for every message you receive
+// from the broker. The framework handles dedup (its own publishes
+// echo back; it ignores those) and the dispatch to the matching
+// subscription's local queues.
+export type EventTransport = {
+	publish(name: string, value: unknown): void | Promise<void>;
+	subscribe(deliver: (name: string, value: unknown) => void): (() => void | Promise<void>) | Promise<() => void | Promise<void>>;
+	close?(): void | Promise<void>;
+};
 
 declare const Deno: {
 	serve: (opts: { port: number; hostname: string; onListen?: (...a: unknown[]) => void }, handler: (req: Request) => Response | Promise<Response>) => { shutdown: () => Promise<void> };
@@ -33,6 +46,8 @@ export type ServeOpts<S extends object = {}, D extends object = {}> = {
 		coalesceWindowMs?: number;
 	};
 	mcp?: boolean;
+	// Cross-process event fan-out. See EventTransport.
+	transport?: EventTransport;
 	// CLI subcommands (vyn mcp --stdio, vyn worker) set this so serve() runs
 	// all boot-time wiring (staticContext, installNotify, installBackgroundCtx)
 	// without binding to a port.
@@ -61,6 +76,35 @@ export async function serve<S extends object = {}, D extends object = {}>(opts: 
 	const bus         = new EventBus();
 
 	if (opts.notify) installNotify(opts.notify);
+
+	// Cross-process transport. The hook fires inside every subscription's
+	// emit(); the transport's subscribe() callback receives messages from
+	// other instances and dispatches them to local queues. An envelope with
+	// a per-process id keeps the publisher from echoing its own emits back
+	// to itself.
+	const instanceId = crypto.randomUUID();
+	let transportTeardown: (() => void | Promise<void>) | undefined;
+	if (opts.transport) {
+		const transport = opts.transport;
+		installPublishHook((name, value) => {
+			void Promise.resolve(transport.publish(name, { from: instanceId, payload: value }))
+				.catch((e) => console.warn(`[vyn] transport.publish(${name}) failed:`, e));
+		});
+		const unsub = await transport.subscribe((name, raw) => {
+			const env = raw as { from?: string; payload?: unknown } | undefined;
+			if (!env || env.from === instanceId) return;
+			const action = registry.get(name) as (Action & { deliverLocal?: (v: unknown) => void }) | undefined;
+			if (action?.kind === "subscription" && typeof action.deliverLocal === "function") {
+				try { action.deliverLocal(env.payload); }
+				catch (e) { console.warn(`[vyn] transport delivery to ${name} threw:`, e); }
+			}
+		});
+		transportTeardown = async () => {
+			try { await unsub(); } catch { /* ignore */ }
+			try { await transport.close?.(); } catch { /* ignore */ }
+			resetPublishHook();
+		};
+	}
 
 	// Background tasks (jobs, notification flush) run outside any request, so
 	// the framework copies the staticCtx into a module-level slot they reach.
@@ -110,7 +154,7 @@ export async function serve<S extends object = {}, D extends object = {}>(opts: 
 
 	if (opts.noListen) {
 		console.log(`[vyn] boot-only mode (noListen) — actions registered, no HTTP bind`);
-		return { close: async () => { shutdownNotify(); }, bus, staticCtx };
+		return { close: async () => { shutdownNotify(); await transportTeardown?.(); }, bus, staticCtx };
 	}
 
 	const denoServer = Deno.serve({ port: opts.port, hostname: opts.host ?? "0.0.0.0", onListen: () => {} }, async (request: Request) => {
@@ -157,7 +201,7 @@ export async function serve<S extends object = {}, D extends object = {}>(opts: 
 	await opts.onReady?.({ url });
 
 	return {
-		close: async () => { stopCronJobs(); shutdownNotify(); await denoServer.shutdown(); },
+		close: async () => { stopCronJobs(); shutdownNotify(); await transportTeardown?.(); await denoServer.shutdown(); },
 		bus,
 		staticCtx,
 	};

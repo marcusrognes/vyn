@@ -3,6 +3,7 @@
 export { v, ValidationError, type Schema, type ObjectSchema, type StringSchema, type NumberSchema, type ArraySchema, type Constraint, type VInfer } from "./v.ts";
 export { RpcError, categoryToStatus, isPermanent, type ErrorCategory } from "./errors.ts";
 export { registry, rebindActions, type Action, type ActionKind, type ToolSpec } from "./registry.ts";
+export { installPublishHook, publishViaTransport, resetPublishHook } from "./transport.ts";
 export {
 	createQuery,
 	createMutation,

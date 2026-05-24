@@ -1,250 +1,190 @@
 ---
 title: Custom transports
-description: How to fan out subscription events across processes. Vyn's emit() is in-process; this guide shows how to bridge it to Redis pub/sub (or any other broker) without framework changes.
+description: One global EventTransport interface on serve() — wire subscription.emit() to any pub/sub backend (Redis, NATS, Postgres LISTEN/NOTIFY, Kafka). Framework handles dedup, dispatch, and per-event-name routing.
 sidebar:
   order: 6
 ---
 
-`subscription.emit(value)` is in-process. It pushes `value` onto
-every active subscriber queue on the current Deno instance. That's
-the entire shape Vyn ships today — no `Transport` interface, no
-`serve({ transport })` option, no built-in adapters.
+`subscription.emit(value)` is in-process by default. Every active
+subscriber on the current Deno instance receives the value via a
+local queue. To fan out across instances — multiple Deno processes
+behind a load balancer, blue/green deploys, anywhere you need every
+subscriber to see every emit regardless of which node received the
+mutation — pass an `EventTransport` to `serve()`.
 
-For most apps that's fine. Single Deno process, one WebSocket per
-client, fan-out happens locally. When you need to run multiple
-instances (load balancer, blue/green, scale-out behind Fly/Render),
-you bridge `emit` to a broker yourself.
+One global transport handles every subscription. The framework
+hands it the event name and value; the transport decides how to
+shuttle bytes (one channel per name, one channel for all, sharded
+buckets — the transport's call).
 
-This guide builds that bridge with **Redis pub/sub** as the example.
-The pattern transfers directly to NATS, Postgres LISTEN/NOTIFY,
-Kafka — anything with a publish/subscribe primitive.
-
-## The pattern
-
-Two wires:
-
-1. **Publish:** after every local `emit`, also publish to the broker.
-2. **Subscribe:** on boot, subscribe to the broker; on each message
-   received, call the local `emit` on the matching action.
-
-The broker is the only thing that crosses processes. Local
-`emit` continues to drive local queues — exactly as before — so
-your action code does not change.
-
-```
-                ┌──────────────┐                ┌──────────────┐
-   mutation ──► │  instance A  │ ── publish ──► │    Redis     │
-                │  emit(value) │                │   pub/sub    │
-                └──────┬───────┘                └──────┬───────┘
-                       │                               │
-                  local queues                    subscribe
-                       │                               │
-                       ▼                               ▼
-                 client A's WS                ┌──────────────┐
-                                              │  instance B  │
-                                              │  emit(value) │
-                                              └──────┬───────┘
-                                                     │
-                                                local queues
-                                                     │
-                                                     ▼
-                                              client B's WS
-```
-
-## Step 1: define the subscription as usual
-
-Nothing transport-specific. Action code is identical to the
-single-process case.
+## The interface
 
 ```ts
-// features/todos/todos.actions.ts
-import { createSubscription, v } from "@vynjs/core";
+import type { EventTransport } from "@vynjs/server";
 
-const TodoSchema = v.object({
-  id:    v.string(),
-  title: v.string(),
-  done:  v.boolean(),
-});
-
-export const watch = createSubscription({
-  input:  v.object({}),
-  output: TodoSchema,
-  async *run({ events }) {
-    for await (const todo of events) yield todo;
-  },
-});
-```
-
-## Step 2: write the bridge
-
-A single module that knows about every action you want to fan out.
-Each entry maps a registry name to the action's `emit` and to a
-schema (so cross-process payloads are validated, not blindly
-trusted).
-
-```ts
-// lib/transport-redis.ts
-import { connect, type Redis } from "jsr:@db/redis";   // any Redis client
-import { watch as todosWatch } from "../features/todos/todos.actions.ts";
-
-// Every subscription that should fan out across instances.
-// Add one entry per action.
-const bridges = [
-  { channel: "todos.watch", emit: todosWatch.emit, parse: (v: unknown) => todosWatch.output?.parse(v) ?? v },
-] as const;
-
-export type RedisTransport = {
-  publish: (channel: string, value: unknown) => Promise<void>;
-  close:   () => Promise<void>;
+export type EventTransport = {
+	publish(name: string, value: unknown): void | Promise<void>;
+	subscribe(
+		deliver: (name: string, value: unknown) => void,
+	): (() => void | Promise<void>) | Promise<() => void | Promise<void>>;
+	close?(): void | Promise<void>;
 };
-
-export async function startRedisTransport(url: string): Promise<RedisTransport> {
-  const pub = await connect({ hostname: new URL(url).hostname });
-  const sub = await connect({ hostname: new URL(url).hostname });
-  const instanceId = crypto.randomUUID();
-
-  // Listen on every bridge channel. Skip messages we sent (so we
-  // don't double-emit on the originating instance — the local emit
-  // already happened).
-  for (const b of bridges) {
-    const iter = await sub.subscribe(b.channel);
-    (async () => {
-      for await (const { message } of iter.receive()) {
-        const env = JSON.parse(message) as { from: string; payload: unknown };
-        if (env.from === instanceId) continue;
-        b.emit(b.parse(env.payload));
-      }
-    })();
-  }
-
-  return {
-    async publish(channel, value) {
-      await pub.publish(channel, JSON.stringify({ from: instanceId, payload: value }));
-    },
-    async close() {
-      await Promise.all([pub.close(), sub.close()]);
-    },
-  };
-}
 ```
 
-The `from` field on the envelope is the deduplication trick: the
-instance that called `emit()` locally also publishes to Redis, then
-**ignores** the echo when Redis delivers its own message back. Every
-other instance treats the message as authoritative and calls its
-local `emit()`.
+- **`publish(name, value)`** — called once per local
+  `subscription.emit(value)`. Forward to your broker; do not call
+  the local subscribers, the framework already did.
+- **`subscribe(deliver)`** — called once at boot. The transport
+  must subscribe to whatever it needs from the broker; for every
+  message it receives from another process, call `deliver(name,
+  value)` and the framework will route to the right subscription's
+  local queues. Returns an unsubscribe function (sync or async).
+- **`close?()`** — called during `handle.close()`. Drain
+  connections, flush buffers.
 
-## Step 3: wrap `emit` to also publish
+The framework wraps every `publish` call in a `{ from, payload }`
+envelope and tags each instance with a unique id. Messages tagged
+with the local id are ignored on receive — no double-emit on the
+origin instance.
 
-You need every `action.emit(value)` to also hit Redis. The cleanest
-spot is a wrapper at boot:
-
-```ts
-// lib/transport-redis.ts (continued)
-export function wireEmit(transport: RedisTransport): void {
-  for (const b of bridges) {
-    const original = b.emit;
-    // Re-bind in place. The action's `emit` is just a function ref;
-    // we capture it, replace it with a publish-then-emit wrapper.
-    (b as { emit: typeof original }).emit = (value) => {
-      void transport.publish(b.channel, value);
-      original(value);
-    };
-  }
-}
-```
-
-A cleaner alternative if you control the action site: call
-`transport.publish(...)` inside the mutation alongside `emit()`.
-Slightly more boilerplate, no monkey-patching.
-
-```ts
-// features/todos/todos.actions.ts
-import { transport } from "../../lib/transport-redis.ts";
-
-export const add = createMutation({
-  input:  v.object({ title: v.string().min(1) }),
-  output: TodoSchema,
-  async run({ input }) {
-    const todo = { id: crypto.randomUUID(), title: input.title, done: false };
-    todos.push(todo);
-    watch.emit(todo);
-    await transport.publish("todos.watch", todo);
-    return todo;
-  },
-});
-```
-
-Pick one approach and stick with it. Mixing both will cause
-double-emits.
-
-## Step 4: boot the transport
+## Wiring it up
 
 ```ts
 // server.ts
 import { serve } from "@vynjs/server";
-import { startRedisTransport, wireEmit } from "./lib/transport-redis.ts";
+import { redisTransport } from "./lib/redis-transport.ts";
 import "./_vyn.gen.ts";
 
-const transport = await startRedisTransport(Deno.env.get("REDIS_URL")!);
-wireEmit(transport);
-
-const handle = await serve({ port: 8000 });
-
-Deno.addSignalListener("SIGTERM", async () => {
-  await handle.close();
-  await transport.close();
+await serve({
+	port: 8000,
+	transport: redisTransport({ url: Deno.env.get("REDIS_URL")! }),
 });
 ```
 
+No changes to action code. `subscription.emit(value)` continues to
+work; the transport runs in parallel.
+
+## Redis pub/sub example
+
+A single-channel implementation: every event flows through one
+Redis channel with the event name in the payload. Trade-off vs
+channel-per-name: simpler, but every node receives every event and
+filters in the framework. Fine for hundreds of subscriptions, less
+fine for thousands of channels.
+
+```ts
+// lib/redis-transport.ts
+import { connect } from "jsr:@db/redis";
+import type { EventTransport } from "@vynjs/server";
+
+export function redisTransport(opts: { url: string; channel?: string }): EventTransport {
+	const channel = opts.channel ?? "vyn.events";
+	let pub: Awaited<ReturnType<typeof connect>> | undefined;
+	let sub: Awaited<ReturnType<typeof connect>> | undefined;
+
+	return {
+		async publish(name, value) {
+			pub ??= await connect({ hostname: new URL(opts.url).hostname });
+			await pub.publish(channel, JSON.stringify({ name, value }));
+		},
+		async subscribe(deliver) {
+			sub = await connect({ hostname: new URL(opts.url).hostname });
+			const iter = await sub.subscribe(channel);
+			(async () => {
+				for await (const { message } of iter.receive()) {
+					try {
+						const { name, value } = JSON.parse(message) as { name: string; value: unknown };
+						deliver(name, value);
+					} catch (e) {
+						console.warn("[redis-transport] decode failed:", e);
+					}
+				}
+			})();
+			return async () => { await sub?.close(); };
+		},
+		async close() {
+			await Promise.all([pub?.close(), sub?.close()]);
+		},
+	};
+}
+```
+
+That's the entire integration. Drop it in `serve({ transport })`
+and every `.emit(...)` reaches every node.
+
+## NATS / Postgres LISTEN/NOTIFY / Kafka
+
+Same three methods, different client library:
+
+- **NATS**: `publish(subject, data)` + `subscribe(subject, cb)`.
+  Use one subject with name in payload, or one subject per name.
+- **Postgres LISTEN/NOTIFY**: `NOTIFY vyn_events, '...'` for
+  publish; `LISTEN vyn_events` for subscribe. Reuses your existing
+  DB connection.
+- **Kafka**: publish to a topic with the event name as the
+  partition key; consumer group reads and calls `deliver(name,
+  value)`. Buy at-least-once and offset replay.
+
 ## Delivery guarantees
 
-Pub/sub is **at-most-once**. If Redis drops the message (network
-blip, subscriber not yet connected), it's gone — the broker does
-not buffer or replay.
+Pub/sub is **at-most-once**. If the broker drops a message
+(subscriber not yet connected, network blip), it's gone. For
+realtime UIs this is usually fine — the next event repaints; nobody
+notices.
 
-For at-least-once delivery, use Redis Streams, Kafka, or a database
-log. Same shape: subscribe on boot → call local `emit` on each
-message; publish after local `emit`. The bridge gains an
-acknowledgment / offset step, the action code does not change.
+For at-least-once, use a durable backend (Kafka, Redis Streams,
+NATS JetStream). The framework treats every event the same — your
+transport ack/replay logic is internal to the transport.
+
+If your subscription's `run` triggers side effects on each event,
+make those idempotent — at-least-once means a single emit can
+arrive twice if the consumer restarted between receive and ack.
 
 ## Ordering
 
 Per-publisher ordering is preserved by every common broker.
-Cross-publisher ordering is not — if two instances `emit` at
-overlapping times, downstream order is the broker's call.
+Cross-publisher order is not guaranteed: if two instances emit at
+overlapping times, the broker decides the merge order.
 
-If your UI cares about strict order, attach a monotonic sequence
-number to the payload and resolve on the client. The framework will
-not.
+If your UI needs strict order, attach a monotonic sequence to the
+payload and resolve client-side. The framework will not.
 
 ## Multi-tenant routing
 
-Two ways to keep tenant A's events from reaching tenant B's
+Two ways to keep tenant A's events away from tenant B's
 subscribers:
 
-1. **Per-tenant channel.** `bridges` becomes
-   `{ channel: \`tenant-\${tenantId}.todos.watch\`, ... }`. One
-   bridge per active tenant. Cheap when tenants count in hundreds.
-2. **Filter in `run`.** Single channel, every node receives every
-   tenant's events, the action's `run` drops events that don't
-   match the request's tenant. Cheaper at scale.
+**1. Per-tenant event names.** Include the tenant id in the
+subscription name (`tenants.${id}.todos.watch`). The transport
+fans out as usual; only subscribers on the right name see the
+events. Cheap for hundreds of tenants, expensive for thousands.
 
-The trade-off is fewer channels (less subscription overhead) vs
-fewer delivered-then-discarded events (less wasted bandwidth). The
-right answer depends on the shape of your data.
+**2. Single name, filter in `run`.** Every node sees every
+tenant's events; the action's `run` drops events whose payload
+doesn't match the request's tenant. Less subscription overhead,
+more delivered-then-discarded bandwidth.
 
-## When you outgrow this
+Pick per the shape of your traffic.
 
-If you find yourself wiring more than two or three transports, or
-need composable wrappers (retry, observability, cross-backend
-replay), the bridge will start to feel like a half-built framework
-feature. Open an issue describing the shape — there's a real
-chance it lands in `@vynjs/server` after enough real-world
-patterns shake out.
+## Lifecycle
+
+The transport's `subscribe` runs **after** all `*.actions.ts`
+imports — `_vyn.gen.ts` populates the registry before `serve()`
+returns. `publish` is wired the moment `serve()` is called, so any
+`emit` after that point reaches the transport.
+
+On `handle.close()`:
+
+1. Subscribe-side unsubscribe (returned from `subscribe`).
+2. `transport.close?.()`.
+3. The HTTP server shuts down.
+
+For long-lived connections (pools, change-stream cursors),
+implement `close()` to release them. The framework awaits it
+before exiting.
 
 ## See also
 
 - [Realtime](/vyn/guide/realtime/) — subscriptions and the `emit()` shape
 - [Configuration](/vyn/guide/configuration/) — `serve()` options
-- [Actions](/vyn/guide/actions/) — the registry that produces the names you bridge
+- [Actions](/vyn/guide/actions/) — the registry that produces the event names
