@@ -7,11 +7,30 @@
 
 import * as esbuild from "esbuild";
 import { fileURLToPath } from "node:url";
-import { dirname, resolve, join } from "node:path";
+import { dirname, join } from "node:path";
 import { existsSync, statSync } from "node:fs";
 
-const here = dirname(fileURLToPath(import.meta.url));
-const UI_SRC = resolve(here, "../../../packages/ui/src");
+// `import.meta.url` points at the source file in dev but inside
+// `dist/.prerender/chunks/` after `astro build`, which breaks any
+// fixed-offset relative path. Walk up from `here` AND from `cwd()`
+// until we land on a directory that actually contains
+// packages/ui/src.
+function findUiSrc(): string {
+	const seeds = [dirname(fileURLToPath(import.meta.url)), process.cwd()];
+	for (const seed of seeds) {
+		let dir = seed;
+		for (let i = 0; i < 8; i++) {
+			const candidate = join(dir, "packages/ui/src");
+			if (existsSync(candidate)) return candidate;
+			const parent = dirname(dir);
+			if (parent === dir) break;
+			dir = parent;
+		}
+	}
+	throw new Error("could not locate packages/ui/src relative to docs/ or import.meta.url");
+}
+
+const UI_SRC = findUiSrc();
 
 const cache = new Map<string, { mtime: number; text: string }>();
 
