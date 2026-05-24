@@ -15,7 +15,7 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url":  "https://github.com/marcusrognes/vyn",
+		"url": "https://github.com/marcusrognes/vyn",
 		"directory": "packages/create-vyn"
 	},
 	"engines": {

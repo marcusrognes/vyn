@@ -2,10 +2,13 @@
 // modals, prefer <dialog>.showModal() which traps natively; this
 // behavior is for non-modal drawers and custom overlays.
 
-const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), [contenteditable="true"]';
+const FOCUSABLE =
+	'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), [contenteditable="true"]';
 
 function init() {
-	document.querySelectorAll<HTMLElement>("[data-focus-trap]:not([data-ft-wired])").forEach(wire);
+	document.querySelectorAll<HTMLElement>(
+		"[data-focus-trap]:not([data-ft-wired])",
+	).forEach(wire);
 }
 
 function wire(el: HTMLElement) {
@@ -34,28 +37,52 @@ function wire(el: HTMLElement) {
 	let active = false;
 	const observer = new MutationObserver(() => {
 		const v = visible();
-		if (v && !active) { active = true; activate(); }
-		else if (!v && active) { active = false; deactivate(); }
+		if (v && !active) {
+			active = true;
+			activate();
+		} else if (!v && active) {
+			active = false;
+			deactivate();
+		}
 	});
-	observer.observe(el, { attributes: true, attributeFilter: ["hidden", "style"] });
+	observer.observe(el, {
+		attributes: true,
+		attributeFilter: ["hidden", "style"],
+	});
 
-	if (visible()) { active = true; activate(); }
+	if (visible()) {
+		active = true;
+		activate();
+	}
 
 	el.addEventListener("keydown", (e) => {
 		if (e.key !== "Tab") return;
 		const list = focusable();
-		if (!list.length) { e.preventDefault(); return; }
+		if (!list.length) {
+			e.preventDefault();
+			return;
+		}
 		const first = list[0];
-		const last  = list[list.length - 1];
-		if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-		if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+		const last = list[list.length - 1];
+		if (e.shiftKey && document.activeElement === first) {
+			e.preventDefault();
+			last.focus();
+		}
+		if (!e.shiftKey && document.activeElement === last) {
+			e.preventDefault();
+			first.focus();
+		}
 	});
 }
 
 if (typeof document !== "undefined") {
-	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
-	else init();
-	new MutationObserver(init).observe(document.body ?? document.documentElement, { childList: true, subtree: true });
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", init);
+	} else init();
+	new MutationObserver(init).observe(
+		document.body ?? document.documentElement,
+		{ childList: true, subtree: true },
+	);
 }
 
 export {};

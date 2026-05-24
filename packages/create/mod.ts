@@ -24,7 +24,7 @@ const cmd = new Deno.Command(Deno.execPath(), {
 	args: ["run", "-A", cliSpec, "init", target],
 	stdout: "inherit",
 	stderr: "inherit",
-	stdin:  "inherit",
+	stdin: "inherit",
 });
 const { code } = await cmd.output();
 Deno.exit(code);

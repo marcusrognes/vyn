@@ -18,7 +18,8 @@
 //   `activate` { item: HTMLElement, value: string | undefined }
 
 function init() {
-	document.querySelectorAll<HTMLElement>("[data-tree]:not([data-tree-wired])").forEach(wire);
+	document.querySelectorAll<HTMLElement>("[data-tree]:not([data-tree-wired])")
+		.forEach(wire);
 }
 
 function wire(tree: HTMLElement) {
@@ -31,7 +32,9 @@ function wire(tree: HTMLElement) {
 		const childUl = li.querySelector<HTMLElement>(":scope > ul");
 		if (childUl) {
 			childUl.setAttribute("role", "group");
-			if (!li.hasAttribute("aria-expanded")) li.setAttribute("aria-expanded", "false");
+			if (!li.hasAttribute("aria-expanded")) {
+				li.setAttribute("aria-expanded", "false");
+			}
 		}
 	}
 	const first = tree.querySelector<HTMLElement>("li");
@@ -40,12 +43,14 @@ function wire(tree: HTMLElement) {
 	tree.addEventListener("keydown", (e) => {
 		const active = document.activeElement;
 		if (!(active instanceof HTMLElement)) return;
-		if (active.getAttribute("role") !== "treeitem" || !tree.contains(active)) return;
+		if (active.getAttribute("role") !== "treeitem" || !tree.contains(active)) {
+			return;
+		}
 
-		const visible    = visibleItems(tree);
-		const idx        = visible.indexOf(active);
+		const visible = visibleItems(tree);
+		const idx = visible.indexOf(active);
 		const expandable = active.hasAttribute("aria-expanded");
-		const expanded   = active.getAttribute("aria-expanded") === "true";
+		const expanded = active.getAttribute("aria-expanded") === "true";
 
 		switch (e.key) {
 			case "ArrowDown":
@@ -87,7 +92,9 @@ function wire(tree: HTMLElement) {
 	});
 
 	tree.addEventListener("click", (e) => {
-		const li = (e.target as HTMLElement).closest<HTMLElement>("li[role='treeitem']");
+		const li = (e.target as HTMLElement).closest<HTMLElement>(
+			"li[role='treeitem']",
+		);
 		if (!li || !tree.contains(li)) return;
 		focusItem(tree, li);
 		if (li.hasAttribute("aria-expanded")) {
@@ -106,7 +113,9 @@ function visibleItems(tree: HTMLElement): HTMLElement[] {
 			if (child.getAttribute("role") !== "treeitem") continue;
 			items.push(child);
 			if (child.getAttribute("aria-expanded") === "true") {
-				const group = child.querySelector<HTMLElement>(":scope > ul, :scope > [role='group']");
+				const group = child.querySelector<HTMLElement>(
+					":scope > ul, :scope > [role='group']",
+				);
 				if (group) walk(group);
 			}
 		}
@@ -117,7 +126,9 @@ function visibleItems(tree: HTMLElement): HTMLElement[] {
 
 function parentTreeItem(item: HTMLElement): HTMLElement | null {
 	let node: HTMLElement | null = item.parentElement;
-	while (node && node.getAttribute("role") !== "treeitem") node = node.parentElement;
+	while (node && node.getAttribute("role") !== "treeitem") {
+		node = node.parentElement;
+	}
 	return node;
 }
 
@@ -132,22 +143,30 @@ function focusItem(tree: HTMLElement, item: HTMLElement | null | undefined) {
 
 function toggle(item: HTMLElement, expand: boolean) {
 	item.setAttribute("aria-expanded", expand ? "true" : "false");
-	item.dispatchEvent(new CustomEvent("toggle", {
-		bubbles: true,
-		detail:  { expanded: expand, item },
-	}));
+	item.dispatchEvent(
+		new CustomEvent("toggle", {
+			bubbles: true,
+			detail: { expanded: expand, item },
+		}),
+	);
 }
 
 function activate(tree: HTMLElement, item: HTMLElement) {
-	tree.dispatchEvent(new CustomEvent("activate", {
-		detail: { item, value: item.dataset.value },
-	}));
+	tree.dispatchEvent(
+		new CustomEvent("activate", {
+			detail: { item, value: item.dataset.value },
+		}),
+	);
 }
 
 if (typeof document !== "undefined") {
-	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
-	else init();
-	new MutationObserver(init).observe(document.body ?? document.documentElement, { childList: true, subtree: true });
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", init);
+	} else init();
+	new MutationObserver(init).observe(
+		document.body ?? document.documentElement,
+		{ childList: true, subtree: true },
+	);
 }
 
 export {};

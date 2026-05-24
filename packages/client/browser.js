@@ -8,16 +8,28 @@ export function signal(initial) {
 	let value = initial;
 	const subs = new Set();
 	const fn = () => value;
-	fn.set    = (next) => { if (Object.is(value, next)) return; value = next; subs.forEach((cb) => cb(value)); };
+	fn.set = (next) => {
+		if (Object.is(value, next)) return;
+		value = next;
+		subs.forEach((cb) => cb(value));
+	};
 	fn.update = (mut) => fn.set(mut(value));
-	fn.subscribe = (cb) => { subs.add(cb); return () => subs.delete(cb); };
+	fn.subscribe = (cb) => {
+		subs.add(cb);
+		return () => subs.delete(cb);
+	};
 	return fn;
 }
 
 // ─── html / render ───────────────────────────────────────────────────
-function isHtml(v) { return v && typeof v === "object" && v.__html === true; }
+function isHtml(v) {
+	return v && typeof v === "object" && v.__html === true;
+}
 function escape(s) {
-	return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+	return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(
+		/>/g,
+		"&gt;",
+	).replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 function interp(v) {
 	if (v == null || v === false) return "";
@@ -37,12 +49,20 @@ export function html(strings, ...values) {
 	return { __html: true, source: out };
 }
 export function render(el, content) {
-	if (content == null) { el.innerHTML = ""; return; }
-	if (Array.isArray(content)) {
-		el.innerHTML = content.map((c) => (isHtml(c) ? c.source : interp(c))).join("");
+	if (content == null) {
+		el.innerHTML = "";
 		return;
 	}
-	if (typeof content === "string") { el.textContent = content; return; }
+	if (Array.isArray(content)) {
+		el.innerHTML = content.map((c) => (isHtml(c) ? c.source : interp(c))).join(
+			"",
+		);
+		return;
+	}
+	if (typeof content === "string") {
+		el.textContent = content;
+		return;
+	}
 	el.innerHTML = content.source;
 }
 
@@ -73,41 +93,56 @@ export function component(name, setup) {
 				get: (_, key) => {
 					if (typeof key !== "string") return undefined;
 					const v = this.dataset[key];
-					if (v !== undefined) { try { return JSON.parse(v); } catch { return v; } }
+					if (v !== undefined) {
+						try {
+							return JSON.parse(v);
+						} catch {
+							return v;
+						}
+					}
 					return this[key];
 				},
 			});
 			const cleanup = setup({
-				el:     this,
+				el: this,
 				props,
 				render: (content) => render(this, content),
-				on:     (type, handler) => this.addEventListener(type, handler),
+				on: (type, handler) => this.addEventListener(type, handler),
 			});
 			if (typeof cleanup === "function") this.__dispose = cleanup;
 		}
-		disconnectedCallback() { this.__dispose?.(); }
+		disconnectedCallback() {
+			this.__dispose?.();
+		}
 	}
 	customElements.define(name, Vc);
 }
 
 // ─── transformer + rpc ───────────────────────────────────────────────
-export const identityTransformer = { serialize: (v) => v, deserialize: (v) => v };
+export const identityTransformer = {
+	serialize: (v) => v,
+	deserialize: (v) => v,
+};
 
 function decodeError(e) {
 	const err = new Error(e?.message ?? "rpc error");
 	err.category = e?.category;
-	err.details  = e?.details;
+	err.details = e?.details;
 	return err;
 }
 
 class SubscriptionManager {
 	constructor(url, t) {
-		this.url = url; this.t = t;
-		this.subs = new Map(); this.idSeq = 0;
+		this.url = url;
+		this.t = t;
+		this.subs = new Map();
+		this.idSeq = 0;
 		this.pending = [];
 	}
 	ensure() {
-		if (this.ws && this.ws.readyState === WebSocket.OPEN) return Promise.resolve();
+		if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+			return Promise.resolve();
+		}
 		if (this.ws && this.ws.readyState === WebSocket.CONNECTING) {
 			return new Promise((r) => this.pending.push(r));
 		}
@@ -118,7 +153,10 @@ class SubscriptionManager {
 			if (!s) return;
 			if (f.kind === "value") s.onValue?.(this.t.deserialize(f.payload));
 			else if (f.kind === "error") s.onError?.(decodeError(f.error));
-			else if (f.kind === "end")   { s.onEnd?.(); this.subs.delete(f.id); }
+			else if (f.kind === "end") {
+				s.onEnd?.();
+				this.subs.delete(f.id);
+			}
 		});
 		return new Promise((resolve) => {
 			this.ws.addEventListener("open", () => {
@@ -131,37 +169,82 @@ class SubscriptionManager {
 		const id = String(++this.idSeq);
 		this.subs.set(id, handlers);
 		this.ensure().then(() => {
-			this.ws.send(JSON.stringify({ id, action, op: "subscribe", input: input === undefined ? undefined : this.t.serialize(input) }));
+			this.ws.send(
+				JSON.stringify({
+					id,
+					action,
+					op: "subscribe",
+					input: input === undefined ? undefined : this.t.serialize(input),
+				}),
+			);
 		});
 		return () => {
-			if (this.ws?.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify({ id, op: "unsubscribe" }));
+			if (this.ws?.readyState === WebSocket.OPEN) {
+				this.ws.send(JSON.stringify({ id, op: "unsubscribe" }));
+			}
 			this.subs.delete(id);
 		};
 	}
 	async *iterate(action, input, signal) {
-		const buf = []; let resolve = null; let done = false; let error = null;
+		const buf = [];
+		let resolve = null;
+		let done = false;
+		let error = null;
 		const un = this.subscribe(action, input, {
-			onValue: (v) => { buf.push(v); if (resolve) { const r = resolve; resolve = null; r(); } },
-			onError: (e) => { error = e; done = true; if (resolve) { const r = resolve; resolve = null; r(); } },
-			onEnd:   ()  => { done = true; if (resolve) { const r = resolve; resolve = null; r(); } },
+			onValue: (v) => {
+				buf.push(v);
+				if (resolve) {
+					const r = resolve;
+					resolve = null;
+					r();
+				}
+			},
+			onError: (e) => {
+				error = e;
+				done = true;
+				if (resolve) {
+					const r = resolve;
+					resolve = null;
+					r();
+				}
+			},
+			onEnd: () => {
+				done = true;
+				if (resolve) {
+					const r = resolve;
+					resolve = null;
+					r();
+				}
+			},
 		});
-		signal?.addEventListener("abort", () => { done = true; un(); });
+		signal?.addEventListener("abort", () => {
+			done = true;
+			un();
+		});
 		try {
 			while (!done) {
 				while (buf.length) yield buf.shift();
 				if (done) break;
-				await new Promise((r) => { resolve = r; });
+				await new Promise((r) => {
+					resolve = r;
+				});
 			}
 			if (error) throw error;
-		} finally { un(); }
+		} finally {
+			un();
+		}
 	}
 }
 
 async function runStreaming(url, body, onTick, t, signal) {
 	const res = await fetch(url, {
 		method: "POST",
-		headers: { "content-type": "application/json", accept: "text/event-stream" },
-		body, signal,
+		headers: {
+			"content-type": "application/json",
+			accept: "text/event-stream",
+		},
+		body,
+		signal,
 	});
 	if (!res.body) throw new Error("no response body");
 	const reader = res.body.getReader();
@@ -173,17 +256,18 @@ async function runStreaming(url, body, onTick, t, signal) {
 		buffer += decoder.decode(value, { stream: true });
 		let idx;
 		while ((idx = buffer.indexOf("\n\n")) >= 0) {
-			const event = buffer.slice(0, idx); buffer = buffer.slice(idx + 2);
+			const event = buffer.slice(0, idx);
+			buffer = buffer.slice(idx + 2);
 			const lines = event.split("\n");
 			let type = "message", data = "";
 			for (const ln of lines) {
 				if (ln.startsWith("event: ")) type = ln.slice(7);
-				if (ln.startsWith("data: "))  data += ln.slice(6);
+				if (ln.startsWith("data: ")) data += ln.slice(6);
 			}
 			const parsed = data ? t.deserialize(JSON.parse(data)) : undefined;
 			if (type === "tick") onTick(parsed);
 			else if (type === "result") result = parsed;
-			else if (type === "error")  error  = parsed;
+			else if (type === "error") error = parsed;
 		}
 	}
 	if (error) throw decodeError(error);
@@ -192,9 +276,9 @@ async function runStreaming(url, body, onTick, t, signal) {
 
 export function createRpcClient(opts = {}) {
 	const baseUrl = opts.baseUrl ?? location.origin;
-	const wsUrl   = opts.wsUrl ?? baseUrl.replace(/^http/, "ws");
-	const t       = opts.transformer ?? identityTransformer;
-	const wsMgr   = new SubscriptionManager(wsUrl, t);
+	const wsUrl = opts.wsUrl ?? baseUrl.replace(/^http/, "ws");
+	const t = opts.transformer ?? identityTransformer;
+	const wsMgr = new SubscriptionManager(wsUrl, t);
 
 	function makeProxy(path) {
 		const target = () => {};
@@ -205,15 +289,23 @@ export function createRpcClient(opts = {}) {
 				if (key === "query" || key === "mutate") {
 					return async (input, callOpts = {}) => {
 						const name = path.join(".");
-						const body = JSON.stringify({ input: input === undefined ? undefined : t.serialize(input) });
+						const body = JSON.stringify({
+							input: input === undefined ? undefined : t.serialize(input),
+						});
 						if (callOpts.onTick) {
-							return runStreaming(`${baseUrl}/rpc/${name}`, body, callOpts.onTick, t, callOpts.signal);
+							return runStreaming(
+								`${baseUrl}/rpc/${name}`,
+								body,
+								callOpts.onTick,
+								t,
+								callOpts.signal,
+							);
 						}
 						const res = await fetch(`${baseUrl}/rpc/${name}`, {
-							method:  "POST",
+							method: "POST",
 							headers: { "content-type": "application/json" },
 							body,
-							signal:  callOpts.signal,
+							signal: callOpts.signal,
 						});
 						const json = await res.json();
 						if (!json.ok) throw decodeError(json.error);
@@ -244,12 +336,16 @@ function stable(value) {
 }
 
 export class Cache {
-	constructor() { this.entries = new Map(); }
+	constructor() {
+		this.entries = new Map();
+	}
 	keyFor(callable, input) {
 		const name = callable.__name ?? "unknown";
 		return `${name}:${stable(input)}`;
 	}
-	get(callable, input) { return this.entries.get(this.keyFor(callable, input))?.value; }
+	get(callable, input) {
+		return this.entries.get(this.keyFor(callable, input))?.value;
+	}
 	set(callable, input, value) {
 		const key = this.keyFor(callable, input);
 		const entry = this.entries.get(key) ?? { value, listeners: new Set() };
@@ -278,7 +374,10 @@ export class Cache {
 	subscribe(callable, listener, input) {
 		const key = input !== undefined ? this.keyFor(callable, input) : `${callable.__name}:`;
 		let entry = this.entries.get(key);
-		if (!entry) { entry = { value: undefined, listeners: new Set() }; this.entries.set(key, entry); }
+		if (!entry) {
+			entry = { value: undefined, listeners: new Set() };
+			this.entries.set(key, entry);
+		}
 		entry.listeners.add(listener);
 		return () => entry.listeners.delete(listener);
 	}

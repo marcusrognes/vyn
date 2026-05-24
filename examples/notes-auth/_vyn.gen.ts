@@ -3,10 +3,10 @@ import "./features/auth/auth.actions.ts";
 import "./features/notes/notes.actions.ts";
 
 export const routes = [
-	{ pattern: "/",        file: "/routes/index.html" },
-	{ pattern: "/login",   file: "/routes/login.html" },
+	{ pattern: "/", file: "/routes/index.html" },
+	{ pattern: "/login", file: "/routes/login.html" },
 ] as const;
 
-import type * as auth  from "./features/auth/auth.actions.ts";
+import type * as auth from "./features/auth/auth.actions.ts";
 import type * as notes from "./features/notes/notes.actions.ts";
 export type AppRouter = { auth: typeof auth; notes: typeof notes };

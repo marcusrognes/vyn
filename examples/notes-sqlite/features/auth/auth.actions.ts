@@ -1,33 +1,35 @@
-import { createMutation, createQuery, v, RpcError } from "@vynjs/core";
-import { hashPassword, verifyPassword, randomToken } from "@vynjs/auth";
+import { createMutation, createQuery, RpcError, v } from "@vynjs/core";
+import { hashPassword, randomToken, verifyPassword } from "@vynjs/auth";
 import type { Ctx, User } from "../../ctx.ts";
 
 const Credentials = v.object({
-	email:    v.string().email(),
+	email: v.string().email(),
 	password: v.string().min(8).max(200),
 });
 
 const UserPublicSchema = v.object({
-	_id:       v.string().uuid(),
-	email:     v.string().email(),
+	_id: v.string().uuid(),
+	email: v.string().email(),
 	createdAt: v.number(),
 });
 
 const SESSION_TTL = 30 * 24 * 60 * 60 * 1000;
 
 export const signup = createMutation({
-	name:        "auth.signup",
+	name: "auth.signup",
 	description: "Create a new account and sign in.",
-	input:       Credentials,
-	output:      UserPublicSchema,
-	run: async (opts: { input: { email: string; password: string }; ctx: Ctx }) => {
+	input: Credentials,
+	output: UserPublicSchema,
+	run: async (
+		opts: { input: { email: string; password: string }; ctx: Ctx },
+	) => {
 		const existing = opts.ctx.users.find({ email: opts.input.email });
 		if (existing.length) throw new RpcError("conflict", "email already in use");
 		const user: User = {
-			_id:          crypto.randomUUID(),
-			email:        opts.input.email,
+			_id: crypto.randomUUID(),
+			email: opts.input.email,
 			passwordHash: await hashPassword(opts.input.password),
-			createdAt:    Date.now(),
+			createdAt: Date.now(),
 		};
 		opts.ctx.users.insert(user);
 		await issueSession(opts.ctx, user._id);
@@ -36,13 +38,17 @@ export const signup = createMutation({
 });
 
 export const login = createMutation({
-	name:        "auth.login",
+	name: "auth.login",
 	description: "Sign in to an existing account.",
-	input:       Credentials,
-	output:      UserPublicSchema,
-	run: async (opts: { input: { email: string; password: string }; ctx: Ctx }) => {
+	input: Credentials,
+	output: UserPublicSchema,
+	run: async (
+		opts: { input: { email: string; password: string }; ctx: Ctx },
+	) => {
 		const user = opts.ctx.users.find({ email: opts.input.email })[0];
-		if (!user || !(await verifyPassword(opts.input.password, user.passwordHash))) {
+		if (
+			!user || !(await verifyPassword(opts.input.password, user.passwordHash))
+		) {
 			throw new RpcError("unauthorized", "invalid email or password");
 		}
 		await issueSession(opts.ctx, user._id);
@@ -51,9 +57,9 @@ export const login = createMutation({
 });
 
 export const logout = createMutation({
-	name:        "auth.logout",
+	name: "auth.logout",
 	description: "Sign out the current user.",
-	input:       v.object({}),
+	input: v.object({}),
 	run: async (opts: { input: {}; ctx: Ctx }) => {
 		const cookieHeader = opts.ctx.req.headers.get("cookie") ?? "";
 		const token = parseToken(cookieHeader);
@@ -63,10 +69,10 @@ export const logout = createMutation({
 });
 
 export const me = createQuery({
-	name:        "auth.me",
+	name: "auth.me",
 	description: "Return the current user (or null if signed out).",
-	input:       v.object({}),
-	output:      UserPublicSchema.nullable(),
+	input: v.object({}),
+	output: UserPublicSchema.nullable(),
 	run: async (opts: { input: {}; ctx: Ctx }) => {
 		if (!opts.ctx.userId) return null;
 		const user = opts.ctx.users.get(opts.ctx.userId);
@@ -80,8 +86,8 @@ async function issueSession(ctx: Ctx, userId: string) {
 	const expiresAt = new Date(Date.now() + SESSION_TTL);
 	await ctx.sessions.set({ token, userId, expiresAt });
 	ctx.setCookie("session", token, {
-		path:     "/",
-		expires:  expiresAt,
+		path: "/",
+		expires: expiresAt,
 		httpOnly: true,
 		sameSite: "lax",
 	});

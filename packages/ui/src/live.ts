@@ -9,11 +9,11 @@ let assertiveQueue: string[] = [];
 let politeTimer: ReturnType<typeof setTimeout> | null = null;
 
 function ensureRegion(): { polite: HTMLElement; assertive: HTMLElement } {
-	let polite    = document.getElementById(REGION_ID + "-polite");
+	let polite = document.getElementById(REGION_ID + "-polite");
 	let assertive = document.getElementById(REGION_ID + "-assertive");
 	if (!polite) {
 		polite = document.createElement("div");
-		polite.id            = REGION_ID + "-polite";
+		polite.id = REGION_ID + "-polite";
 		polite.setAttribute("aria-live", "polite");
 		polite.setAttribute("aria-atomic", "true");
 		polite.style.cssText = "position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden";
@@ -21,7 +21,7 @@ function ensureRegion(): { polite: HTMLElement; assertive: HTMLElement } {
 	}
 	if (!assertive) {
 		assertive = document.createElement("div");
-		assertive.id            = REGION_ID + "-assertive";
+		assertive.id = REGION_ID + "-assertive";
 		assertive.setAttribute("aria-live", "assertive");
 		assertive.setAttribute("aria-atomic", "true");
 		assertive.style.cssText = "position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden";
@@ -30,7 +30,10 @@ function ensureRegion(): { polite: HTMLElement; assertive: HTMLElement } {
 	return { polite, assertive };
 }
 
-export function live(message: string, opts: { assertive?: boolean } = {}): void {
+export function live(
+	message: string,
+	opts: { assertive?: boolean } = {},
+): void {
 	const { polite, assertive } = ensureRegion();
 	if (opts.assertive) {
 		assertiveQueue.push(message);

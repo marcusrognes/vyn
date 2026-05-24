@@ -6,17 +6,10 @@
 //
 // Imported from tests via the "vyn:test" alias in deno.json.
 
-import {
-	describe as _describe,
-	it as _it,
-	beforeEach,
-	beforeAll,
-	afterEach,
-	afterAll,
-} from "jsr:@std/testing@^1/bdd";
+import { afterAll, afterEach, beforeAll, beforeEach, describe as _describe, it as _it } from "jsr:@std/testing@^1/bdd";
 export { expect } from "jsr:@std/expect@^1";
 
-type TestFn  = (...args: any[]) => any;
+type TestFn = (...args: any[]) => any;
 type EachRow = readonly unknown[] | Record<string, unknown> | unknown;
 
 function format(template: string, row: EachRow): string {
@@ -29,9 +22,15 @@ function format(template: string, row: EachRow): string {
 		});
 	}
 	if (row && typeof row === "object") {
-		return template.replace(/\$([a-zA-Z_$][\w$]*)/g, (_m, k) => String((row as any)[k]));
+		return template.replace(
+			/\$([a-zA-Z_$][\w$]*)/g,
+			(_m, k) => String((row as any)[k]),
+		);
 	}
-	return template.replace(/%[sdifjop%]/g, (m) => m === "%%" ? "%" : String(row));
+	return template.replace(
+		/%[sdifjop%]/g,
+		(m) => m === "%%" ? "%" : String(row),
+	);
 }
 
 function makeEach(base: (name: string, fn: TestFn) => void) {
@@ -40,7 +39,7 @@ function makeEach(base: (name: string, fn: TestFn) => void) {
 			for (const row of rows) {
 				const name = format(template, row as EachRow);
 				if (Array.isArray(row)) base(name, () => (fn as any)(...row));
-				else                    base(name, () => (fn as any)(row));
+				else base(name, () => (fn as any)(row));
 			}
 		};
 	};
@@ -50,7 +49,7 @@ function ignoreShim(base: (name: string, fn: TestFn) => void) {
 	return (name: string, fn?: TestFn) => base(name, fn ?? (() => {}));
 }
 
-export { beforeEach, beforeAll, afterEach, afterAll };
+export { afterAll, afterEach, beforeAll, beforeEach };
 
 export const it = Object.assign(_it, {
 	each: makeEach(_it as any),

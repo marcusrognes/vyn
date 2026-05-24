@@ -25,13 +25,17 @@
 // During drag, every peer in the payload is marked data-state="dragging" so
 // CSS can dim them.
 
-const MIME_TYPE  = "application/x-vyn-type";
-const MIME_DATA  = "application/x-vyn-data";
+const MIME_TYPE = "application/x-vyn-type";
+const MIME_DATA = "application/x-vyn-data";
 const MIME_MULTI = "application/x-vyn-multi";
 
 function init() {
-	document.querySelectorAll<HTMLElement>("[data-draggable]:not([data-dd-src-wired])").forEach(wireSource);
-	document.querySelectorAll<HTMLElement>("[data-dropzone]:not([data-dd-zone-wired])").forEach(wireZone);
+	document.querySelectorAll<HTMLElement>(
+		"[data-draggable]:not([data-dd-src-wired])",
+	).forEach(wireSource);
+	document.querySelectorAll<HTMLElement>(
+		"[data-dropzone]:not([data-dd-zone-wired])",
+	).forEach(wireZone);
 }
 
 function wireSource(el: HTMLElement) {
@@ -40,7 +44,7 @@ function wireSource(el: HTMLElement) {
 
 	el.addEventListener("dragstart", (e) => {
 		const type = el.dataset.draggable!;
-		const own  = el.dataset.value ?? el.dataset.payload ?? "";
+		const own = el.dataset.value ?? el.dataset.payload ?? "";
 		const { items, peers } = resolveSelectionPayload(el, own);
 
 		const data = items.length > 1 ? JSON.stringify(items) : (items[0] ?? "");
@@ -54,15 +58,20 @@ function wireSource(el: HTMLElement) {
 
 	el.addEventListener("dragend", () => {
 		delete el.dataset.state;
-		const own  = el.dataset.value ?? el.dataset.payload ?? "";
+		const own = el.dataset.value ?? el.dataset.payload ?? "";
 		const { peers } = resolveSelectionPayload(el, own);
 		for (const p of peers) delete p.dataset.state;
 	});
 }
 
-function resolveSelectionPayload(el: HTMLElement, fallback: string): { items: string[]; peers: HTMLElement[] } {
+function resolveSelectionPayload(
+	el: HTMLElement,
+	fallback: string,
+): { items: string[]; peers: HTMLElement[] } {
 	const container = el.closest<HTMLElement>("[data-select='multiple']");
-	if (!container) return { items: fallback ? [fallback] : [], peers: el ? [el] : [] };
+	if (!container) {
+		return { items: fallback ? [fallback] : [], peers: el ? [el] : [] };
+	}
 
 	const csv = container.dataset.value ?? "";
 	const selected = csv ? csv.split(",").filter(Boolean) : [];
@@ -72,9 +81,7 @@ function resolveSelectionPayload(el: HTMLElement, fallback: string): { items: st
 
 	const peers: HTMLElement[] = [];
 	for (const id of selected) {
-		const sel = (globalThis as any).CSS?.escape
-			? `[data-value="${CSS.escape(id)}"]`
-			: `[data-value="${id.replace(/"/g, "\\\"")}"]`;
+		const sel = (globalThis as any).CSS?.escape ? `[data-value="${CSS.escape(id)}"]` : `[data-value="${id.replace(/"/g, '\\"')}"]`;
 		const peer = container.querySelector<HTMLElement>(sel);
 		if (peer) peers.push(peer);
 	}
@@ -86,9 +93,7 @@ function wireZone(zone: HTMLElement) {
 	const accepts = (zone.dataset.accepts ?? "").split(/\s+/).filter(Boolean);
 
 	zone.addEventListener("dragover", (e) => {
-		const type = e.dataTransfer?.types.includes(MIME_TYPE)
-			? e.dataTransfer.getData(MIME_TYPE)
-			: null;
+		const type = e.dataTransfer?.types.includes(MIME_TYPE) ? e.dataTransfer.getData(MIME_TYPE) : null;
 		if (accepts.length && type && !accepts.includes(type)) return;
 		e.preventDefault();
 		zone.dataset.state = "over";
@@ -99,29 +104,40 @@ function wireZone(zone: HTMLElement) {
 	zone.addEventListener("drop", (e) => {
 		e.preventDefault();
 		delete zone.dataset.state;
-		const type  = e.dataTransfer?.getData(MIME_TYPE) ?? "";
-		const data  = e.dataTransfer?.getData(MIME_DATA) ?? "";
+		const type = e.dataTransfer?.getData(MIME_TYPE) ?? "";
+		const data = e.dataTransfer?.getData(MIME_DATA) ?? "";
 		const multi = e.dataTransfer?.getData(MIME_MULTI) === "1";
 
 		if (accepts.length && !accepts.includes(type)) {
-			zone.dispatchEvent(new CustomEvent("rejected", { detail: { type, data } }));
+			zone.dispatchEvent(
+				new CustomEvent("rejected", { detail: { type, data } }),
+			);
 			return;
 		}
 		let items: string[];
 		if (multi) {
-			try { items = JSON.parse(data) as string[]; }
-			catch { items = data ? [data] : []; }
+			try {
+				items = JSON.parse(data) as string[];
+			} catch {
+				items = data ? [data] : [];
+			}
 		} else {
 			items = data ? [data] : [];
 		}
-		zone.dispatchEvent(new CustomEvent("drop", { detail: { type, items, data } }));
+		zone.dispatchEvent(
+			new CustomEvent("drop", { detail: { type, items, data } }),
+		);
 	});
 }
 
 if (typeof document !== "undefined") {
-	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
-	else init();
-	new MutationObserver(init).observe(document.body ?? document.documentElement, { childList: true, subtree: true });
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", init);
+	} else init();
+	new MutationObserver(init).observe(
+		document.body ?? document.documentElement,
+		{ childList: true, subtree: true },
+	);
 }
 
 export {};

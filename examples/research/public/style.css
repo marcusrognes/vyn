@@ -1,3 +1,7 @@
 /* Tailwind via CDN supplies the utility layer; this file is intentionally minimal. */
-[data-state="visible"] { opacity: 1; }
-[data-state="hidden"]  { display: none; }
+[data-state="visible"] {
+	opacity: 1;
+}
+[data-state="hidden"] {
+	display: none;
+}

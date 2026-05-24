@@ -10,8 +10,8 @@ serve({
 	port: Number(process.env.PORT ?? 8000),
 
 	staticContext: async () => ({
-		users:    new Map<string, User>(),
-		notes:    new Map<string, Note>(),
+		users: new Map<string, User>(),
+		notes: new Map<string, Note>(),
 		sessions,
 	}),
 

@@ -23,13 +23,21 @@ describe("v.* validators", () => {
 		});
 
 		it(".pick subsets fields", () => {
-			const Note = v.object({ title: v.string(), body: v.string(), id: v.number() });
+			const Note = v.object({
+				title: v.string(),
+				body: v.string(),
+				id: v.number(),
+			});
 			const Picked = Note.pick(["title", "body"]);
 			expect(() => Picked.parse({ title: "x", body: "y" })).not.toThrow();
 		});
 
 		it(".omit removes fields", () => {
-			const Note = v.object({ title: v.string(), body: v.string(), id: v.number() });
+			const Note = v.object({
+				title: v.string(),
+				body: v.string(),
+				id: v.number(),
+			});
 			const Omitted = Note.omit(["id"]);
 			expect(() => Omitted.parse({ title: "x", body: "y" })).not.toThrow();
 		});
@@ -49,9 +57,9 @@ describe("v.* validators", () => {
 	describe("constructors (.create, .empty, .update, .parse)", () => {
 		it(".create fills defaults and returns a POJO", () => {
 			const Note = v.object({
-				_id:       v.string().default(() => "id"),
-				title:     v.string().default("New note"),
-				body:      v.string(),
+				_id: v.string().default(() => "id"),
+				title: v.string().default("New note"),
+				body: v.string(),
 				createdAt: v.number().default(() => Date.now()),
 			});
 			const draft = Note.create({ body: "hello" });
@@ -64,7 +72,7 @@ describe("v.* validators", () => {
 		it(".empty returns an instance filled entirely from defaults", () => {
 			const Note = v.object({
 				title: v.string().default("Untitled"),
-				body:  v.string().default(""),
+				body: v.string().default(""),
 			});
 			const blank = Note.empty();
 			expect(blank).toEqual({ title: "Untitled", body: "" });
@@ -147,12 +155,15 @@ describe("v.* validators", () => {
 
 		it(".url validates URL shape", () => {
 			expect(() => v.string().url().parse("not-url")).toThrow();
-			expect(v.string().url().parse("https://example.com")).toBe("https://example.com");
+			expect(v.string().url().parse("https://example.com")).toBe(
+				"https://example.com",
+			);
 		});
 
 		it(".uuid validates UUID shape", () => {
 			expect(() => v.string().uuid().parse("not-uuid")).toThrow();
-			expect(v.string().uuid().parse("550e8400-e29b-41d4-a716-446655440000")).toBeTruthy();
+			expect(v.string().uuid().parse("550e8400-e29b-41d4-a716-446655440000"))
+				.toBeTruthy();
 		});
 
 		it(".trim strips surrounding whitespace", () => {
@@ -203,7 +214,10 @@ describe("v.* validators", () => {
 
 		it(".unique rejects duplicates by deep equality", () => {
 			expect(() => v.array(v.string()).unique().parse(["a", "a"])).toThrow();
-			expect(v.array(v.string()).unique().parse(["a", "b"])).toEqual(["a", "b"]);
+			expect(v.array(v.string()).unique().parse(["a", "b"])).toEqual([
+				"a",
+				"b",
+			]);
 		});
 	});
 
@@ -211,9 +225,15 @@ describe("v.* validators", () => {
 		it(".fields[k].constraints lists the chain", () => {
 			const User = v.object({ email: v.string().email().trim().lowercase() });
 			const constraints = User.fields.email.constraints;
-			expect(constraints).toContainEqual(expect.objectContaining({ kind: "email" }));
-			expect(constraints).toContainEqual(expect.objectContaining({ kind: "trim" }));
-			expect(constraints).toContainEqual(expect.objectContaining({ kind: "lowercase" }));
+			expect(constraints).toContainEqual(
+				expect.objectContaining({ kind: "email" }),
+			);
+			expect(constraints).toContainEqual(
+				expect.objectContaining({ kind: "trim" }),
+			);
+			expect(constraints).toContainEqual(
+				expect.objectContaining({ kind: "lowercase" }),
+			);
 		});
 	});
 
@@ -234,7 +254,10 @@ describe("v.* validators", () => {
 		});
 
 		it("accepts values from a TS string enum object", () => {
-			enum Status { ACTIVE = "ACTIVE", DONE = "DONE" }
+			enum Status {
+				ACTIVE = "ACTIVE",
+				DONE = "DONE",
+			}
 			const S = v.enum(Status);
 			expect(S.parse("ACTIVE")).toBe("ACTIVE");
 			expect(S.parse("DONE")).toBe("DONE");

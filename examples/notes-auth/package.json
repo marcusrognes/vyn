@@ -4,13 +4,13 @@
 	"version": "0.0.0",
 	"type": "module",
 	"scripts": {
-		"dev":   "node --experimental-strip-types --watch server.ts",
+		"dev": "node --experimental-strip-types --watch server.ts",
 		"start": "node --experimental-strip-types server.ts"
 	},
 	"dependencies": {
-		"@vynjs/core":   "*",
+		"@vynjs/core": "*",
 		"@vynjs/server": "*",
 		"@vynjs/client": "*",
-		"@vynjs/auth":   "*"
+		"@vynjs/auth": "*"
 	}
 }

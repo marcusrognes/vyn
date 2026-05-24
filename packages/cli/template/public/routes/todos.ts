@@ -13,14 +13,14 @@ type Todo = { id: string; title: string; done: boolean };
 export default function mount(el: HTMLElement): () => void {
 	let items: Todo[] = [];
 
-	const listEl  = el.querySelector<HTMLUListElement>("#todos")!;
-	const formEl  = el.querySelector<HTMLFormElement>("#new-form")!;
+	const listEl = el.querySelector<HTMLUListElement>("#todos")!;
+	const formEl = el.querySelector<HTMLFormElement>("#new-form")!;
 	const inputEl = el.querySelector<HTMLInputElement>("#new-title")!;
 	const countEl = el.querySelector<HTMLSpanElement>("#count")!;
 
 	function paint(): void {
 		listEl.innerHTML = items.map((t) =>
-			`<li><todo-row data-id="${attr(t.id)}" data-title="${attr(t.title)}" data-done="${t.done}"></todo-row></li>`,
+			`<li><todo-row data-id="${attr(t.id)}" data-title="${attr(t.title)}" data-done="${t.done}"></todo-row></li>`
 		).join("");
 		const left = items.filter((r) => !r.done).length;
 		countEl.textContent = `${left} of ${items.length} left`;
@@ -31,15 +31,19 @@ export default function mount(el: HTMLElement): () => void {
 		const title = inputEl.value.trim();
 		if (!title) return;
 		inputEl.value = "";
-		try { await rpc.todos.add.mutate({ title }); }
-		catch (err) {
+		try {
+			await rpc.todos.add.mutate({ title });
+		} catch (err) {
 			inputEl.value = title;
 			console.warn("[todos.add] failed:", err);
 		}
 	};
 	formEl.addEventListener("submit", onSubmit);
 
-	void rpc.todos.list.query({}).then((rows) => { items = rows; paint(); });
+	void rpc.todos.list.query({}).then((rows) => {
+		items = rows;
+		paint();
+	});
 
 	const unsubscribe = rpc.todos.watch.listen({}, {
 		onValue: (todo: Todo & { _removed?: boolean }) => {
@@ -49,7 +53,7 @@ export default function mount(el: HTMLElement): () => void {
 			} else {
 				const i = items.findIndex((x) => x.id === todo.id);
 				if (i >= 0) items[i] = todo;
-				else        items.push(todo);
+				else items.push(todo);
 			}
 			paint();
 		},

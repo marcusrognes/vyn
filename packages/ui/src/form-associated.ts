@@ -4,7 +4,9 @@
 // behavior is for plain HTML composers.
 
 function init() {
-	document.querySelectorAll<HTMLElement>("[data-form-associated]:not([data-fa-wired])").forEach(wire);
+	document.querySelectorAll<HTMLElement>(
+		"[data-form-associated]:not([data-fa-wired])",
+	).forEach(wire);
 }
 
 function wire(el: HTMLElement) {
@@ -19,14 +21,20 @@ function wire(el: HTMLElement) {
 	el.appendChild(hidden);
 
 	// Sync when data-value changes.
-	const observer = new MutationObserver(() => { hidden.value = el.dataset.value ?? ""; });
+	const observer = new MutationObserver(() => {
+		hidden.value = el.dataset.value ?? "";
+	});
 	observer.observe(el, { attributes: true, attributeFilter: ["data-value"] });
 }
 
 if (typeof document !== "undefined") {
-	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
-	else init();
-	new MutationObserver(init).observe(document.body ?? document.documentElement, { childList: true, subtree: true });
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", init);
+	} else init();
+	new MutationObserver(init).observe(
+		document.body ?? document.documentElement,
+		{ childList: true, subtree: true },
+	);
 }
 
 export {};

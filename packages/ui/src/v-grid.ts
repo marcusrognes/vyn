@@ -45,7 +45,9 @@ class VGridElement extends HTMLElement {
 		cells[this.#active]?.setAttribute("tabindex", "-1");
 		this.#active = i;
 		cells[i].setAttribute("tabindex", "0");
-		this.dispatchEvent(new CustomEvent("cellfocus", { detail: { index: i, cell: cells[i] } }));
+		this.dispatchEvent(
+			new CustomEvent("cellfocus", { detail: { index: i, cell: cells[i] } }),
+		);
 	}
 
 	#focus(i: number) {
@@ -56,14 +58,32 @@ class VGridElement extends HTMLElement {
 	#onKey(e: KeyboardEvent) {
 		const cells = this.#cells();
 		const total = cells.length;
-		const cur   = this.#active;
+		const cur = this.#active;
 		switch (e.key) {
-			case "ArrowRight": e.preventDefault(); this.#focus(Math.min(cur + 1, total - 1)); break;
-			case "ArrowLeft":  e.preventDefault(); this.#focus(Math.max(cur - 1, 0)); break;
-			case "ArrowDown":  e.preventDefault(); this.#focus(Math.min(cur + this.#cols, total - 1)); break;
-			case "ArrowUp":    e.preventDefault(); this.#focus(Math.max(cur - this.#cols, 0)); break;
-			case "Home":       e.preventDefault(); this.#focus(0); break;
-			case "End":        e.preventDefault(); this.#focus(total - 1); break;
+			case "ArrowRight":
+				e.preventDefault();
+				this.#focus(Math.min(cur + 1, total - 1));
+				break;
+			case "ArrowLeft":
+				e.preventDefault();
+				this.#focus(Math.max(cur - 1, 0));
+				break;
+			case "ArrowDown":
+				e.preventDefault();
+				this.#focus(Math.min(cur + this.#cols, total - 1));
+				break;
+			case "ArrowUp":
+				e.preventDefault();
+				this.#focus(Math.max(cur - this.#cols, 0));
+				break;
+			case "Home":
+				e.preventDefault();
+				this.#focus(0);
+				break;
+			case "End":
+				e.preventDefault();
+				this.#focus(total - 1);
+				break;
 		}
 	}
 }

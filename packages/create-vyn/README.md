@@ -8,8 +8,7 @@ deno create npm:vyn -- my-app
 npm create vyn@latest my-app
 ```
 
-Drops a starter project (`deno.json`, `server.ts`, `public/`) into
-`my-app/`. Then:
+Drops a starter project (`deno.json`, `server.ts`, `public/`) into `my-app/`. Then:
 
 ```sh
 cd my-app

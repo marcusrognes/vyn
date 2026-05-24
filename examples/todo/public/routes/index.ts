@@ -6,7 +6,7 @@ import type { Todo } from "../../features/todos/todo.ts";
 const { rpc, cache } = createApp<AppRouter>({ baseUrl: location.origin });
 
 const listEl = document.getElementById("list")!;
-const form   = document.getElementById("add") as HTMLFormElement;
+const form = document.getElementById("add") as HTMLFormElement;
 
 function paint(todos: Todo[]) {
 	listEl.innerHTML = "";
@@ -34,10 +34,14 @@ rpc.todos.onChanged.listen({}, {
 	onValue(event) {
 		cache.patch(rpc.todos.list, (list: Todo[]) => {
 			switch (event.kind) {
-				case "added":   return [event.todo, ...list];
-				case "toggled": return list.map((t) => t._id === event.todo._id ? event.todo : t);
-				case "removed": return list.filter((t) => t._id !== event.todo._id);
-				default:        return list;
+				case "added":
+					return [event.todo, ...list];
+				case "toggled":
+					return list.map((t) => t._id === event.todo._id ? event.todo : t);
+				case "removed":
+					return list.filter((t) => t._id !== event.todo._id);
+				default:
+					return list;
 			}
 		}, {});
 	},

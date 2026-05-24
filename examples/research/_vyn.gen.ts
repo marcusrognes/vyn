@@ -5,6 +5,6 @@ import "./features/agent/deep-research.actions.ts";
 import "./features/inbox/inbox.actions.ts";
 
 export const routes = [
-	{ pattern: "/",                file: "/routes/index.html" },
+	{ pattern: "/", file: "/routes/index.html" },
 	{ pattern: "/research/:runId", file: "/routes/research.html" },
 ] as const;

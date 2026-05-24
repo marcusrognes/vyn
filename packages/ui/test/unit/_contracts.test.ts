@@ -18,9 +18,13 @@ describe.todo("select — single mode: data-value tracks selection");
 describe.todo("select — multiple mode: comma-separated value");
 describe.todo("select — aria-selected reflects on items");
 describe.todo("select — selection-follows-focus default in single mode");
-describe.todo("select — change event fires on click + on keyboard-nav activate");
+describe.todo(
+	"select — change event fires on click + on keyboard-nav activate",
+);
 
-describe.todo("anchor — JS fallback positioning when CSS Anchor Positioning unsupported");
+describe.todo(
+	"anchor — JS fallback positioning when CSS Anchor Positioning unsupported",
+);
 describe.todo("anchor — flip on insufficient space");
 describe.todo("anchor — uses CSS API when supported");
 
@@ -29,7 +33,9 @@ describe.todo("dismiss — preventDefault keeps element open");
 describe.todo("dismiss — focus restoration");
 
 describe.todo("popover — combines anchor + dismiss");
-describe.todo("popover — uses native popover attribute internally where supported");
+describe.todo(
+	"popover — uses native popover attribute internally where supported",
+);
 
 describe.todo("focus-trap — Tab cycles within element");
 describe.todo("focus-trap — focus restored to previous element on deactivate");

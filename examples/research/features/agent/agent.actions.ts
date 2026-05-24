@@ -6,19 +6,31 @@ import { createMutation, v } from "@vynjs/core";
 import type { Ctx } from "../../ctx.ts";
 
 const Tick = v.union(
-	v.object({ kind: v.literal("status"),      message: v.string(), progress: v.number().optional() }),
-	v.object({ kind: v.literal("tool_call"),   tool: v.string(), input: v.unknown() }),
-	v.object({ kind: v.literal("tool_result"), tool: v.string(), output: v.unknown() }),
-	v.object({ kind: v.literal("text_delta"),  text: v.string() }),
+	v.object({
+		kind: v.literal("status"),
+		message: v.string(),
+		progress: v.number().optional(),
+	}),
+	v.object({
+		kind: v.literal("tool_call"),
+		tool: v.string(),
+		input: v.unknown(),
+	}),
+	v.object({
+		kind: v.literal("tool_result"),
+		tool: v.string(),
+		output: v.unknown(),
+	}),
+	v.object({ kind: v.literal("text_delta"), text: v.string() }),
 );
 
 export const ask = createMutation({
-	name:        "agent.ask",
+	name: "agent.ask",
 	description: "Answer a question with tool use; streams progress via opts.tick.",
-	input:       v.object({ question: v.string().min(1).max(2000) }),
-	output:      v.object({ answer: v.string(), citations: v.array(v.string()) }),
-	progress:    Tick,
-	tool:        {},
+	input: v.object({ question: v.string().min(1).max(2000) }),
+	output: v.object({ answer: v.string(), citations: v.array(v.string()) }),
+	progress: Tick,
+	tool: {},
 	run: async (opts) => {
 		const tick = opts.tick!;
 		const question = opts.input.question;
@@ -29,27 +41,33 @@ export const ask = createMutation({
 	},
 });
 
-async function runRealAgent(question: string, tick: (e: unknown) => void, apiKey: string) {
+async function runRealAgent(
+	question: string,
+	tick: (e: unknown) => void,
+	apiKey: string,
+) {
 	tick({ kind: "status", message: "Calling Claude…", progress: 0.1 });
 
 	const res = await fetch("https://api.anthropic.com/v1/messages", {
-		method:  "POST",
+		method: "POST",
 		headers: {
-			"x-api-key":          apiKey,
-			"anthropic-version":  "2023-06-01",
-			"content-type":       "application/json",
+			"x-api-key": apiKey,
+			"anthropic-version": "2023-06-01",
+			"content-type": "application/json",
 		},
 		body: JSON.stringify({
-			model:       "claude-opus-4-7",
-			max_tokens:  1024,
-			stream:      true,
-			messages:    [{ role: "user", content: question }],
+			model: "claude-opus-4-7",
+			max_tokens: 1024,
+			stream: true,
+			messages: [{ role: "user", content: question }],
 		}),
 	});
 
-	if (!res.ok || !res.body) throw new Error(`anthropic API error: ${res.status}`);
+	if (!res.ok || !res.body) {
+		throw new Error(`anthropic API error: ${res.status}`);
+	}
 
-	const reader  = res.body.getReader();
+	const reader = res.body.getReader();
 	const decoder = new TextDecoder();
 	let buffer = "";
 	let answer = "";
@@ -61,7 +79,7 @@ async function runRealAgent(question: string, tick: (e: unknown) => void, apiKey
 		let idx;
 		while ((idx = buffer.indexOf("\n\n")) >= 0) {
 			const event = buffer.slice(0, idx);
-			buffer      = buffer.slice(idx + 2);
+			buffer = buffer.slice(idx + 2);
 			const lines = event.split("\n");
 			let data = "";
 			for (const ln of lines) {
@@ -70,7 +88,10 @@ async function runRealAgent(question: string, tick: (e: unknown) => void, apiKey
 			if (!data) continue;
 			try {
 				const payload = JSON.parse(data);
-				if (payload.type === "content_block_delta" && payload.delta?.type === "text_delta") {
+				if (
+					payload.type === "content_block_delta" &&
+					payload.delta?.type === "text_delta"
+				) {
 					const text = payload.delta.text as string;
 					answer += text;
 					tick({ kind: "text_delta", text });

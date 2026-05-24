@@ -26,8 +26,8 @@ describe("createQuery", () => {
 	it("accepts an explicit input validator", async () => {
 		const { v } = await import("../src/index.ts");
 		const q = createQuery({
-			input:  v.object({ name: v.string() }),
-			run:    async (opts) => `hello ${opts.input.name}`,
+			input: v.object({ name: v.string() }),
+			run: async (opts) => `hello ${opts.input.name}`,
 		});
 		expect(q.input).toBeDefined();
 	});
@@ -40,9 +40,9 @@ describe("createQuery", () => {
 	it("validates output against the output schema when present in dev mode", async () => {
 		const { v } = await import("../src/index.ts");
 		const q = createQuery({
-			input:  v.object({}),
+			input: v.object({}),
 			output: v.string(),
-			run:    async () => 42 as unknown as string,   // wrong shape
+			run: async () => 42 as unknown as string, // wrong shape
 		});
 		await expect(q.run({ input: {}, ctx: {} })).rejects.toThrow();
 	});
@@ -75,7 +75,7 @@ describe("createQuery", () => {
 		const { v } = await import("../src/index.ts");
 		const q = createQuery({
 			input: v.object({ name: v.string() }),
-			run:   async (opts) => opts.input.name,
+			run: async (opts) => opts.input.name,
 		});
 		await expect(q.run({ input: { name: 42 }, ctx: {} })).rejects.toThrow();
 	});
@@ -84,7 +84,7 @@ describe("createQuery", () => {
 		expect(() =>
 			createQuery({
 				tool: {},
-				run:  async () => "x",
+				run: async () => "x",
 				// no description
 			})
 		).toThrow(/description/);
@@ -109,11 +109,12 @@ describe("createQuery", () => {
 			progress: v.object({ kind: v.literal("status"), message: v.string() }),
 			run: async (opts) => {
 				opts.tick({ kind: "status", message: "ok" });
-				opts.tick({ kind: "wrong" } as never);   // invalid
+				opts.tick({ kind: "wrong" } as never); // invalid
 				return "x";
 			},
 		});
-		await expect(q.run({ input: {}, ctx: {}, tick: () => undefined })).rejects.toThrow();
+		await expect(q.run({ input: {}, ctx: {}, tick: () => undefined })).rejects
+			.toThrow();
 	});
 
 	it("opts.tick is a no-op (or warning) when no listener is attached", async () => {
@@ -132,8 +133,8 @@ describe("createQuery", () => {
 		expect(() =>
 			createQuery({
 				description: "Greet",
-				tool:        {},
-				run:         async () => "x",
+				tool: {},
+				run: async () => "x",
 			})
 		).not.toThrow();
 	});

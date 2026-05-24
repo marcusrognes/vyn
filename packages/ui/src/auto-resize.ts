@@ -3,7 +3,9 @@
 // it's not yet Baseline.
 
 function init() {
-	document.querySelectorAll<HTMLTextAreaElement>("textarea[data-auto-resize]:not([data-ar-wired])").forEach(wire);
+	document.querySelectorAll<HTMLTextAreaElement>(
+		"textarea[data-auto-resize]:not([data-ar-wired])",
+	).forEach(wire);
 }
 
 function wire(ta: HTMLTextAreaElement) {
@@ -16,7 +18,7 @@ function wire(ta: HTMLTextAreaElement) {
 		const lineHeight = parseInt(getComputedStyle(ta).lineHeight, 10) || 20;
 		const minH = lineHeight * minRows;
 		const maxH = lineHeight * maxRows;
-		const h    = Math.min(Math.max(ta.scrollHeight, minH), maxH);
+		const h = Math.min(Math.max(ta.scrollHeight, minH), maxH);
 		ta.style.height = `${h}px`;
 		ta.style.overflowY = ta.scrollHeight > maxH ? "auto" : "hidden";
 	}
@@ -25,9 +27,13 @@ function wire(ta: HTMLTextAreaElement) {
 }
 
 if (typeof document !== "undefined") {
-	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
-	else init();
-	new MutationObserver(init).observe(document.body ?? document.documentElement, { childList: true, subtree: true });
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", init);
+	} else init();
+	new MutationObserver(init).observe(
+		document.body ?? document.documentElement,
+		{ childList: true, subtree: true },
+	);
 }
 
 export {};

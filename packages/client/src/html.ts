@@ -11,7 +11,8 @@
 export type Html = { __html: true; source: string };
 
 function isHtml(v: unknown): v is Html {
-	return typeof v === "object" && v !== null && (v as { __html?: unknown }).__html === true;
+	return typeof v === "object" && v !== null &&
+		(v as { __html?: unknown }).__html === true;
 }
 
 function escape(s: string): string {
@@ -33,7 +34,10 @@ function interp(v: unknown): string {
 	return escape(String(v));
 }
 
-export function html(strings: TemplateStringsArray, ...values: unknown[]): Html {
+export function html(
+	strings: TemplateStringsArray,
+	...values: unknown[]
+): Html {
 	let out = "";
 	for (let i = 0; i < strings.length; i++) {
 		out += strings[i];
@@ -42,12 +46,23 @@ export function html(strings: TemplateStringsArray, ...values: unknown[]): Html 
 	return { __html: true, source: out };
 }
 
-export function render(el: Element, content: Html | Html[] | string | null): void {
-	if (content === null) { el.innerHTML = ""; return; }
-	if (Array.isArray(content)) {
-		el.innerHTML = content.map((c) => (isHtml(c) ? c.source : interp(c))).join("");
+export function render(
+	el: Element,
+	content: Html | Html[] | string | null,
+): void {
+	if (content === null) {
+		el.innerHTML = "";
 		return;
 	}
-	if (typeof content === "string") { el.textContent = content; return; }
+	if (Array.isArray(content)) {
+		el.innerHTML = content.map((c) => (isHtml(c) ? c.source : interp(c))).join(
+			"",
+		);
+		return;
+	}
+	if (typeof content === "string") {
+		el.textContent = content;
+		return;
+	}
 	el.innerHTML = content.source;
 }

@@ -2,24 +2,29 @@ import { createApp, html, render } from "/_vyn/client.js";
 import superjson from "https://esm.sh/superjson@2.2.2";
 
 const transformer = {
-	serialize:   (v) => superjson.serialize(v),
+	serialize: (v) => superjson.serialize(v),
 	deserialize: (v) => superjson.deserialize(v),
 };
 
 const { rpc } = createApp({ transformer });
-const route   = document.getElementById("route");
-const bell    = document.getElementById("bell");
-const badge   = document.getElementById("badge");
+const route = document.getElementById("route");
+const bell = document.getElementById("bell");
+const badge = document.getElementById("badge");
 const inboxEl = document.getElementById("inbox");
 
-function escape(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function escape(s) {
+	return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(
+		/>/g,
+		"&gt;",
+	);
+}
 
 // ─── routing ─────────────────────────────────────────────────────────
 async function navigate() {
 	const path = location.pathname;
 	const m = path.match(/^\/research\/([0-9a-f-]+)\/?$/i);
 	if (m) await renderRun(m[1]);
-	else   renderDashboard();
+	else renderDashboard();
 }
 window.addEventListener("popstate", navigate);
 document.addEventListener("click", (e) => {
@@ -46,11 +51,11 @@ function renderDashboard() {
 			<ul id="citations" class="mt-3 flex flex-wrap gap-2 text-sm"></ul>
 		</section>
 	`;
-	const form     = document.getElementById("ask");
-	const result   = document.getElementById("result");
+	const form = document.getElementById("ask");
+	const result = document.getElementById("result");
 	const statusEl = document.getElementById("status");
 	const answerEl = document.getElementById("answer");
-	const citesEl  = document.getElementById("citations");
+	const citesEl = document.getElementById("citations");
 
 	form.addEventListener("submit", async (e) => {
 		e.preventDefault();
@@ -58,7 +63,9 @@ function renderDashboard() {
 		const deep = e.submitter?.shiftKey;
 		form.querySelector("input").value = "";
 		if (deep) {
-			const { runId } = await rpc.research.startDeepResearch.mutate({ topic: question });
+			const { runId } = await rpc.research.startDeepResearch.mutate({
+				topic: question,
+			});
 			history.pushState({}, "", `/research/${runId}`);
 			await renderRun(runId);
 			return;
@@ -66,18 +73,31 @@ function renderDashboard() {
 		result.hidden = false;
 		statusEl.textContent = "Working…";
 		answerEl.textContent = "";
-		citesEl.innerHTML    = "";
+		citesEl.innerHTML = "";
 		const out = await rpc.agent.ask.mutate({ question }, {
 			onTick(event) {
-				if (event.kind === "status")     statusEl.textContent = event.message;
-				if (event.kind === "tool_call")  statusEl.textContent = `Calling ${event.tool}…`;
+				if (event.kind === "status") statusEl.textContent = event.message;
+				if (event.kind === "tool_call") {
+					statusEl.textContent = `Calling ${event.tool}…`;
+				}
 				if (event.kind === "text_delta") answerEl.textContent += event.text;
 			},
 		});
 		statusEl.textContent = "Done";
-		render(citesEl, out.citations.map((c) =>
-			html`<li><a href="${c}" target="_blank" class="px-2 py-1 rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100">${c}</a></li>`
-		));
+		render(
+			citesEl,
+			out.citations.map((c) =>
+				html`
+					<li>
+						<a
+							href="${c}"
+							target="_blank"
+							class="px-2 py-1 rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
+						>${c}</a>
+					</li>
+				`
+			),
+		);
 	});
 }
 
@@ -97,15 +117,15 @@ async function renderRun(runId) {
 		<article id="report" class="prose prose-slate mt-6" hidden></article>
 		<ul id="citations" class="mt-4 flex flex-wrap gap-2 text-sm"></ul>
 	`;
-	const topicEl  = document.getElementById("topic");
+	const topicEl = document.getElementById("topic");
 	const statusEl = document.getElementById("status");
-	const bar      = document.getElementById("bar");
+	const bar = document.getElementById("bar");
 	const eventsEl = document.getElementById("events");
 	const reportEl = document.getElementById("report");
-	const citesEl  = document.getElementById("citations");
+	const citesEl = document.getElementById("citations");
 
 	const run = await rpc.research.getRun.mutate({ runId });
-	topicEl.textContent  = run?.topic ?? "(unknown)";
+	topicEl.textContent = run?.topic ?? "(unknown)";
 	statusEl.textContent = run?.status ?? "unknown";
 
 	if (run?.status === "completed" && run?.result) {
@@ -113,18 +133,28 @@ async function renderRun(runId) {
 		return;
 	}
 
-	if (!run?.jobId) { statusEl.textContent = "no job id"; return; }
+	if (!run?.jobId) {
+		statusEl.textContent = "no job id";
+		return;
+	}
 
 	const events = [];
-	for await (const e of rpc.research.deepResearch.iterate({ jobId: run.jobId })) {
+	for await (
+		const e of rpc.research.deepResearch.iterate({ jobId: run.jobId })
+	) {
 		if (e.kind === "tick") {
 			events.push(e.payload);
 			eventsEl.innerHTML = events.slice(-20).map((p) => `<li>⋯ ${escape(p.stage)} ${Math.round((p.pct ?? 0) * 100)}%</li>`).join("");
-			if (typeof e.payload.pct === "number") bar.style.width = `${e.payload.pct * 100}%`;
+			if (typeof e.payload.pct === "number") {
+				bar.style.width = `${e.payload.pct * 100}%`;
+			}
 			statusEl.textContent = e.payload.stage;
 		}
-		if (e.kind === "result") { statusEl.textContent = "Complete"; bar.style.width = "100%"; }
-		if (e.kind === "error")  { statusEl.textContent = `Failed: ${e.error.message}`; }
+		if (e.kind === "result") {
+			statusEl.textContent = "Complete";
+			bar.style.width = "100%";
+		}
+		if (e.kind === "error") statusEl.textContent = `Failed: ${e.error.message}`;
 	}
 
 	// Reload final run from server.
@@ -135,7 +165,11 @@ async function renderRun(runId) {
 		reportEl.hidden = false;
 		reportEl.textContent = r.summary;
 		citesEl.innerHTML = (r.citations ?? [])
-			.map((c) => `<li><a href="${c}" target="_blank" class="px-2 py-1 rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100">${escape(c)}</a></li>`)
+			.map((c) =>
+				`<li><a href="${c}" target="_blank" class="px-2 py-1 rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100">${
+					escape(c)
+				}</a></li>`
+			)
 			.join("");
 	}
 }
@@ -145,7 +179,7 @@ async function refreshBadge() {
 	const { count } = await rpc.inbox.count.query({ unreadOnly: true });
 	badge.textContent = count > 0 ? String(count) : "";
 	badge.classList.toggle("hidden", count === 0);
-	badge.classList.toggle("flex",   count > 0);
+	badge.classList.toggle("flex", count > 0);
 }
 
 async function showInbox() {
@@ -155,19 +189,24 @@ async function showInbox() {
 	inboxEl.innerHTML = rows.length === 0
 		? `<div class="p-4 text-sm text-slate-500">Nothing yet.</div>`
 		: `<ul class="divide-y divide-slate-200">
-			${rows.map((r) => `
+			${
+			rows.map((r) => `
 				<li data-id="${r._id}" class="px-4 py-3 hover:bg-slate-50 cursor-pointer ${r.readAt ? "" : "bg-indigo-50/40"}">
 					<div class="font-medium text-sm">${escape(r.payload?.title ?? r.notification)}</div>
 					<div class="text-sm text-slate-600 line-clamp-2">${escape(r.payload?.body ?? "")}</div>
 					<div class="text-xs text-slate-400 mt-1">${new Date(r.createdAt).toLocaleString()}</div>
 				</li>
-			`).join("")}
+			`).join("")
+		}
 		</ul>`;
 }
 
 bell.addEventListener("click", async () => {
 	if (inboxEl.hidden) await showInbox();
-	else { inboxEl.hidden = true; bell.setAttribute("aria-expanded", "false"); }
+	else {
+		inboxEl.hidden = true;
+		bell.setAttribute("aria-expanded", "false");
+	}
 });
 
 inboxEl.addEventListener("click", async (e) => {
@@ -188,7 +227,9 @@ inboxEl.addEventListener("click", async (e) => {
 });
 
 rpc.research.onNotification.listen({}, {
-	onValue: () => { refreshBadge(); },
+	onValue: () => {
+		refreshBadge();
+	},
 });
 
 await refreshBadge();

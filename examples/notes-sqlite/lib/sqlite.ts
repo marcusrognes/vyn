@@ -6,8 +6,8 @@
 import { DatabaseSync, type StatementSync } from "node:sqlite";
 
 export type DbHandle = {
-	db:         DatabaseSync;
-	close():    void;
+	db: DatabaseSync;
+	close(): void;
 	collection<T extends { _id: string | number }>(table: string): Collection<T>;
 };
 
@@ -24,16 +24,24 @@ export type Collection<T extends { _id: string | number }> = {
 export function openSqlite(filename: string): DbHandle {
 	const db = new DatabaseSync(filename);
 
-	function collection<T extends { _id: string | number }>(table: string): Collection<T> {
+	function collection<T extends { _id: string | number }>(
+		table: string,
+	): Collection<T> {
 		// Tables in this convention are { _id PRIMARY KEY, data JSON }
-		db.exec(`CREATE TABLE IF NOT EXISTS ${q(table)} (_id TEXT PRIMARY KEY, data TEXT NOT NULL)`);
+		db.exec(
+			`CREATE TABLE IF NOT EXISTS ${q(table)} (_id TEXT PRIMARY KEY, data TEXT NOT NULL)`,
+		);
 
-		const insertStmt = db.prepare(`INSERT INTO ${q(table)} (_id, data) VALUES (?, ?)`);
-		const updateStmt = db.prepare(`UPDATE ${q(table)} SET data = ? WHERE _id = ?`);
-		const getStmt    = db.prepare(`SELECT data FROM ${q(table)} WHERE _id = ?`);
+		const insertStmt = db.prepare(
+			`INSERT INTO ${q(table)} (_id, data) VALUES (?, ?)`,
+		);
+		const updateStmt = db.prepare(
+			`UPDATE ${q(table)} SET data = ? WHERE _id = ?`,
+		);
+		const getStmt = db.prepare(`SELECT data FROM ${q(table)} WHERE _id = ?`);
 		const deleteStmt = db.prepare(`DELETE FROM ${q(table)} WHERE _id = ?`);
-		const allStmt    = db.prepare(`SELECT data FROM ${q(table)}`);
-		const countStmt  = db.prepare(`SELECT COUNT(*) AS n FROM ${q(table)}`);
+		const allStmt = db.prepare(`SELECT data FROM ${q(table)}`);
+		const countStmt = db.prepare(`SELECT COUNT(*) AS n FROM ${q(table)}`);
 
 		function matches(row: T, filter: Partial<T>): boolean {
 			for (const [k, v] of Object.entries(filter)) {
@@ -93,6 +101,8 @@ export function openSqlite(filename: string): DbHandle {
 }
 
 function q(name: string): string {
-	if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)) throw new Error(`unsafe table name: ${name}`);
+	if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)) {
+		throw new Error(`unsafe table name: ${name}`);
+	}
 	return `"${name}"`;
 }

@@ -5,13 +5,16 @@
 type Direction = "vertical" | "horizontal" | "both";
 
 function init() {
-	const containers = document.querySelectorAll<HTMLElement>("[data-keyboard-nav]:not([data-kn-wired])");
+	const containers = document.querySelectorAll<HTMLElement>(
+		"[data-keyboard-nav]:not([data-kn-wired])",
+	);
 	containers.forEach((c) => wire(c));
 }
 
 function wire(container: HTMLElement) {
 	container.dataset.knWired = "true";
-	const direction = (container.dataset.direction as Direction | undefined) ?? "vertical";
+	const direction = (container.dataset.direction as Direction | undefined) ??
+		"vertical";
 
 	function items(): HTMLElement[] {
 		return [...container.children]
@@ -30,7 +33,9 @@ function wire(container: HTMLElement) {
 		items().forEach((i) => i.setAttribute("tabindex", "-1"));
 		item.setAttribute("tabindex", "0");
 		item.focus();
-		container.dispatchEvent(new CustomEvent("focuschange", { detail: { item } }));
+		container.dispatchEvent(
+			new CustomEvent("focuschange", { detail: { item } }),
+		);
 	}
 
 	// Set initial tabindex.
@@ -40,17 +45,37 @@ function wire(container: HTMLElement) {
 	container.addEventListener("keydown", (e) => {
 		const k = e.key;
 		const list = items();
-		if (k === "ArrowDown"  && direction !== "horizontal") { e.preventDefault(); move(+1); }
-		if (k === "ArrowUp"    && direction !== "horizontal") { e.preventDefault(); move(-1); }
-		if (k === "ArrowRight" && direction !== "vertical")   { e.preventDefault(); move(+1); }
-		if (k === "ArrowLeft"  && direction !== "vertical")   { e.preventDefault(); move(-1); }
-		if (k === "Home")  { e.preventDefault(); focusItem(list[0]); }
-		if (k === "End")   { e.preventDefault(); focusItem(list[list.length - 1]); }
+		if (k === "ArrowDown" && direction !== "horizontal") {
+			e.preventDefault();
+			move(+1);
+		}
+		if (k === "ArrowUp" && direction !== "horizontal") {
+			e.preventDefault();
+			move(-1);
+		}
+		if (k === "ArrowRight" && direction !== "vertical") {
+			e.preventDefault();
+			move(+1);
+		}
+		if (k === "ArrowLeft" && direction !== "vertical") {
+			e.preventDefault();
+			move(-1);
+		}
+		if (k === "Home") {
+			e.preventDefault();
+			focusItem(list[0]);
+		}
+		if (k === "End") {
+			e.preventDefault();
+			focusItem(list[list.length - 1]);
+		}
 		if (k === "Enter" || k === " ") {
 			const active = document.activeElement as HTMLElement | null;
 			if (active && list.includes(active)) {
 				e.preventDefault();
-				container.dispatchEvent(new CustomEvent("activate", { detail: { item: active } }));
+				container.dispatchEvent(
+					new CustomEvent("activate", { detail: { item: active } }),
+				);
 			}
 		}
 	});
@@ -59,8 +84,11 @@ function wire(container: HTMLElement) {
 if (typeof document !== "undefined") {
 	if (document.readyState === "loading") {
 		document.addEventListener("DOMContentLoaded", init);
-	} else { init(); }
-	new MutationObserver(init).observe(document.body ?? document.documentElement, { childList: true, subtree: true });
+	} else init();
+	new MutationObserver(init).observe(
+		document.body ?? document.documentElement,
+		{ childList: true, subtree: true },
+	);
 }
 
 export {};

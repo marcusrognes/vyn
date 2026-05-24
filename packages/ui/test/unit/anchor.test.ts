@@ -1,8 +1,10 @@
 // @vitest-environment happy-dom
-import { describe, expect, it, beforeEach } from "vyn:test";
+import { beforeEach, describe, expect, it } from "vyn:test";
 import "../../src/anchor.ts";
 
-beforeEach(() => { document.body.innerHTML = ""; });
+beforeEach(() => {
+	document.body.innerHTML = "";
+});
 
 describe("anchor", () => {
 	it("sets position:fixed + top/left on the anchored element", async () => {

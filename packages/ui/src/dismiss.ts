@@ -4,7 +4,8 @@
 // or cancel-able dismiss flows.
 
 function init() {
-	document.querySelectorAll<HTMLElement>("[data-dismiss]:not([data-dis-wired])").forEach(wire);
+	document.querySelectorAll<HTMLElement>("[data-dismiss]:not([data-dis-wired])")
+		.forEach(wire);
 }
 
 function wire(el: HTMLElement) {
@@ -12,7 +13,10 @@ function wire(el: HTMLElement) {
 	const triggers = (el.dataset.dismissOn ?? "escape outside").split(/\s+/);
 
 	function fire(reason: "escape" | "outside" | "focus-out") {
-		const event = new CustomEvent("dismiss", { detail: { reason }, cancelable: true });
+		const event = new CustomEvent("dismiss", {
+			detail: { reason },
+			cancelable: true,
+		});
 		el.dispatchEvent(event);
 		if (!event.defaultPrevented) {
 			el.dispatchEvent(new CustomEvent("dismissed", { detail: { reason } }));
@@ -44,9 +48,13 @@ function wire(el: HTMLElement) {
 }
 
 if (typeof document !== "undefined") {
-	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
-	else init();
-	new MutationObserver(init).observe(document.body ?? document.documentElement, { childList: true, subtree: true });
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", init);
+	} else init();
+	new MutationObserver(init).observe(
+		document.body ?? document.documentElement,
+		{ childList: true, subtree: true },
+	);
 }
 
 export {};

@@ -1,18 +1,18 @@
 // Inbox actions — copied into this app from the docs recipe.
 // They expect the inbox adapter to be installed under `ctx.inbox`.
 
-import { createQuery, createMutation, createSubscription, v, RpcError } from "@vynjs/core";
+import { createMutation, createQuery, createSubscription, RpcError, v } from "@vynjs/core";
 import type { InboxRow, InboxStore } from "./inbox.ts";
 
 type InboxCtx = { userId: string | null; inbox: InboxStore };
 
 const InboxRowSchema = v.object({
-	_id:          v.string(),
-	userId:       v.string(),
+	_id: v.string(),
+	userId: v.string(),
 	notification: v.string(),
-	payload:      v.any(),
-	createdAt:    v.date(),
-	readAt:       v.date().nullable(),
+	payload: v.any(),
+	createdAt: v.date(),
+	readAt: v.date().nullable(),
 }) as any;
 
 function requireUser(opts: { ctx: InboxCtx }): string {
@@ -20,15 +20,17 @@ function requireUser(opts: { ctx: InboxCtx }): string {
 	return opts.ctx.userId;
 }
 
-export const list =createQuery({
-	name:        "inbox.list",
+export const list = createQuery({
+	name: "inbox.list",
 	description: "List the current user's inbox rows, newest first.",
-	input:       v.object({
+	input: v.object({
 		unreadOnly: v.boolean().default(false),
-		limit:      v.number().min(1).max(100).default(20),
+		limit: v.number().min(1).max(100).default(20),
 	}),
-	output:      v.array(InboxRowSchema),
-	run: async (opts: { input: { unreadOnly: boolean; limit: number }; ctx: InboxCtx }) => {
+	output: v.array(InboxRowSchema),
+	run: async (
+		opts: { input: { unreadOnly: boolean; limit: number }; ctx: InboxCtx },
+	) => {
 		const userId = requireUser(opts);
 		const filter: { userId: string; readAt?: null } = { userId };
 		if (opts.input.unreadOnly) filter.readAt = null;
@@ -39,11 +41,11 @@ export const list =createQuery({
 	},
 });
 
-export const count =createQuery({
-	name:        "inbox.count",
+export const count = createQuery({
+	name: "inbox.count",
 	description: "Count the current user's inbox rows.",
-	input:       v.object({ unreadOnly: v.boolean().default(false) }),
-	output:      v.object({ count: v.number() }),
+	input: v.object({ unreadOnly: v.boolean().default(false) }),
+	output: v.object({ count: v.number() }),
 	run: async (opts: { input: { unreadOnly: boolean }; ctx: InboxCtx }) => {
 		const userId = requireUser(opts);
 		const filter: { userId: string; readAt?: null } = { userId };
@@ -53,10 +55,10 @@ export const count =createQuery({
 	},
 });
 
-export const markRead =createMutation({
-	name:        "inbox.markRead",
+export const markRead = createMutation({
+	name: "inbox.markRead",
 	description: "Mark an inbox row as read.",
-	input:       v.object({ _id: v.string() }),
+	input: v.object({ _id: v.string() }),
 	run: async (opts: { input: { _id: string }; ctx: InboxCtx }) => {
 		const userId = requireUser(opts);
 		await opts.ctx.inbox.updateOne?.(
@@ -67,9 +69,9 @@ export const markRead =createMutation({
 });
 
 export const markAllRead = createMutation({
-	name:        "inbox.markAllRead",
+	name: "inbox.markAllRead",
 	description: "Mark every unread row for the current user as read.",
-	input:       v.object({}),
+	input: v.object({}),
 	run: async (opts: { input: {}; ctx: InboxCtx }) => {
 		const userId = requireUser(opts);
 		await opts.ctx.inbox.updateMany?.(
@@ -80,10 +82,10 @@ export const markAllRead = createMutation({
 });
 
 export const onNew = createSubscription({
-	name:        "inbox.onNew",
+	name: "inbox.onNew",
 	description: "Stream new inbox rows for the current user.",
-	input:       v.object({}),
-	output:      InboxRowSchema,
+	input: v.object({}),
+	output: InboxRowSchema,
 	run: async function* (opts) {
 		const ctx = opts.ctx as InboxCtx;
 		const userId = requireUser({ ctx });

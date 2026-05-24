@@ -5,9 +5,9 @@ import "./_vyn.gen.ts";
 import type { Note } from "./features/notes/note.ts";
 import type { User } from "./ctx.ts";
 
-const db       = openSqlite(process.env.DB_PATH ?? "./notes.db");
-const users    = db.collection<User>("users");
-const notes    = db.collection<Note>("notes");
+const db = openSqlite(process.env.DB_PATH ?? "./notes.db");
+const users = db.collection<User>("users");
+const notes = db.collection<Note>("notes");
 const sessions = createMemorySessionStore();
 
 serve({

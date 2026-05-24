@@ -1,8 +1,10 @@
 // @vitest-environment happy-dom
-import { describe, expect, it, beforeEach } from "vyn:test";
+import { beforeEach, describe, expect, it } from "vyn:test";
 import { toast } from "../../src/v-toaster.ts";
 
-beforeEach(() => { document.body.innerHTML = ""; });
+beforeEach(() => {
+	document.body.innerHTML = "";
+});
 
 describe("<v-toaster>", () => {
 	it("toast() appends a toast element", async () => {
@@ -15,7 +17,7 @@ describe("<v-toaster>", () => {
 	it("clicking a toast dismisses it", async () => {
 		toast({ body: "removable" });
 		const toaster = document.querySelector("v-toaster")!;
-		const el      = toaster.children[0] as HTMLElement;
+		const el = toaster.children[0] as HTMLElement;
 		el.click();
 		expect(toaster.children.length).toBe(0);
 	});

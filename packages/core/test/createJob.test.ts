@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from "vyn:test";
+import { beforeEach, describe, expect, it } from "vyn:test";
 import { createJob, registry, RpcError } from "../src/index.ts";
 
 // Contracts from /guide/jobs/
@@ -25,7 +25,18 @@ describe("createJob", () => {
 
 		it("exposes .run, .now, .at, .in, .cancel, .status, .watch, .result", () => {
 			const j = createJob({ run: async () => undefined });
-			for (const m of ["run", "now", "at", "in", "cancel", "status", "watch", "result"]) {
+			for (
+				const m of [
+					"run",
+					"now",
+					"at",
+					"in",
+					"cancel",
+					"status",
+					"watch",
+					"result",
+				]
+			) {
 				expect(typeof (j as any)[m]).toBe("function");
 			}
 		});
@@ -50,7 +61,11 @@ describe("createJob", () => {
 					job = opts.job;
 				},
 			});
-			await j.run({ input: {}, ctx: {}, job: { id: "j1", attempt: 0, scheduledAt: new Date() } });
+			await j.run({
+				input: {},
+				ctx: {},
+				job: { id: "j1", attempt: 0, scheduledAt: new Date() },
+			});
 			expect(job).toMatchObject({ id: "j1", attempt: 0 });
 		});
 
@@ -58,7 +73,7 @@ describe("createJob", () => {
 			const { v } = await import("../src/index.ts");
 			const j = createJob({
 				input: v.object({ id: v.string() }),
-				run:   async () => undefined,
+				run: async () => undefined,
 			});
 			await expect(j.run({ input: { id: 42 }, ctx: {} })).rejects.toThrow();
 		});
@@ -85,7 +100,9 @@ describe("createJob", () => {
 			const before = Date.now();
 			const id = await j.in(60_000, {});
 			const status = await j.status(id);
-			expect(status.scheduledAt!.getTime()).toBeGreaterThanOrEqual(before + 60_000);
+			expect(status.scheduledAt!.getTime()).toBeGreaterThanOrEqual(
+				before + 60_000,
+			);
 		});
 
 		it(".cancel(jobId) removes a queued job", async () => {
@@ -109,7 +126,7 @@ describe("createJob", () => {
 		it("schedule.cron registers a recurring schedule at boot", () => {
 			const j = createJob({
 				schedule: { cron: "0 4 * * *" },
-				run:      async () => undefined,
+				run: async () => undefined,
 			});
 			expect(j.schedule?.cron).toBe("0 4 * * *");
 		});
@@ -117,7 +134,7 @@ describe("createJob", () => {
 		it("schedule.interval accepts ms", () => {
 			const j = createJob({
 				schedule: { interval: 60_000 },
-				run:      async () => undefined,
+				run: async () => undefined,
 			});
 			expect(j.schedule?.interval).toBe(60_000);
 		});
@@ -125,7 +142,7 @@ describe("createJob", () => {
 		it("schedule.interval accepts human-readable strings", () => {
 			const j = createJob({
 				schedule: { interval: "5 minutes" },
-				run:      async () => undefined,
+				run: async () => undefined,
 			});
 			expect(j.schedule?.interval).toBe("5 minutes");
 		});
@@ -133,7 +150,7 @@ describe("createJob", () => {
 		it("schedule.timezone honors cron tz", () => {
 			const j = createJob({
 				schedule: { cron: "0 9 * * *", timezone: "Europe/Oslo" },
-				run:      async () => undefined,
+				run: async () => undefined,
 			});
 			expect(j.schedule?.timezone).toBe("Europe/Oslo");
 		});
@@ -151,7 +168,10 @@ describe("createJob", () => {
 		});
 
 		it("backoff='exponential' computes 2^attempt seconds, capped at 5 minutes", () => {
-			const j = createJob({ backoff: "exponential", run: async () => undefined });
+			const j = createJob({
+				backoff: "exponential",
+				run: async () => undefined,
+			});
 			const fn = (j as any).backoffFn;
 			expect(fn(0)).toBe(1_000);
 			expect(fn(1)).toBe(2_000);
@@ -168,13 +188,16 @@ describe("createJob", () => {
 		it("backoff custom function is honored", () => {
 			const j = createJob({
 				backoff: { fn: (attempt: number) => attempt * 100 },
-				run:     async () => undefined,
+				run: async () => undefined,
 			});
 			expect((j as any).backoffFn(3)).toBe(300);
 		});
 
 		it.each([
-			"unauthorized", "forbidden", "not_found", "bad_request",
+			"unauthorized",
+			"forbidden",
+			"not_found",
+			"bad_request",
 		])("RpcError(%s) is permanent — no retry", (cat) => {
 			const j = createJob({ retries: 5, run: async () => undefined });
 			const e = new RpcError(cat, "msg");
@@ -182,7 +205,9 @@ describe("createJob", () => {
 		});
 
 		it.each([
-			"internal", "conflict", "rate_limited",
+			"internal",
+			"conflict",
+			"rate_limited",
 		])("RpcError(%s) triggers retry", (cat) => {
 			const j = createJob({ retries: 5, run: async () => undefined });
 			const e = new RpcError(cat, "msg");
@@ -199,7 +224,7 @@ describe("createJob", () => {
 		it("terminates run after configured ms, counts as failure", async () => {
 			const j = createJob({
 				timeout: 50,
-				run:     async () => new Promise(() => undefined), // never resolves
+				run: async () => new Promise(() => undefined), // never resolves
 			});
 			await expect(j.run({ input: {}, ctx: {} })).rejects.toThrow(/timeout/i);
 		});
@@ -232,7 +257,8 @@ describe("createJob", () => {
 					opts.tick({ wrong: "shape" } as never);
 				},
 			});
-			await expect(j.run({ input: {}, ctx: {}, tick: () => undefined })).rejects.toThrow();
+			await expect(j.run({ input: {}, ctx: {}, tick: () => undefined })).rejects
+				.toThrow();
 		});
 	});
 
@@ -255,13 +281,18 @@ describe("createJob", () => {
 			const id = await j.now({});
 			const last: any[] = [];
 			for await (const e of j.watch(id)) last.push(e);
-			expect(last[last.length - 1]).toMatchObject({ kind: "result", value: "ok" });
+			expect(last[last.length - 1]).toMatchObject({
+				kind: "result",
+				value: "ok",
+			});
 		});
 
 		it(".watch yields { kind:'error', error } when run throws permanently", async () => {
 			const j = createJob({
 				retries: 0,
-				run:     async () => { throw new Error("boom"); },
+				run: async () => {
+					throw new Error("boom");
+				},
 			});
 			const id = await j.now({});
 			const events: any[] = [];
@@ -278,7 +309,9 @@ describe("createJob", () => {
 		it(".result(jobId) rejects with the final error on permanent failure", async () => {
 			const j = createJob({
 				retries: 0,
-				run:     async () => { throw new Error("boom"); },
+				run: async () => {
+					throw new Error("boom");
+				},
 			});
 			const id = await j.now({});
 			await expect(j.result(id)).rejects.toThrow(/boom/);
@@ -286,7 +319,9 @@ describe("createJob", () => {
 
 		it(".status(jobId).lastTick is the most recent tick payload", async () => {
 			const j = createJob({
-				run: async (opts) => { opts.tick({ stage: "final" }); },
+				run: async (opts) => {
+					opts.tick({ stage: "final" });
+				},
 			});
 			const id = await j.now({});
 			await j.result(id);
@@ -297,7 +332,9 @@ describe("createJob", () => {
 		it("tick history retained for a configurable window after completion", async () => {
 			const j = createJob({
 				tickRetentionMs: 60_000,
-				run: async (opts) => { opts.tick({ stage: "done" }); },
+				run: async (opts) => {
+					opts.tick({ stage: "done" });
+				},
 			});
 			expect(j.tickRetentionMs).toBe(60_000);
 		});
@@ -310,13 +347,19 @@ describe("createJob", () => {
 	});
 
 	describe("JobStore interface", () => {
-		it.todo("implements enqueue / next / complete / fail / cancel / status / close");
+		it.todo(
+			"implements enqueue / next / complete / fail / cancel / status / close",
+		);
 		it.todo("in-memory store is the default");
 	});
 
 	describe("bus events", () => {
 		it.each([
-			"job.enqueued", "job.started", "job.completed", "job.failed", "job.retried",
+			"job.enqueued",
+			"job.started",
+			"job.completed",
+			"job.failed",
+			"job.retried",
 		])("emits '%s'", async (event) => {
 			// Each lifecycle step fires the matching bus event with the job id.
 			// Test will assert via a bus subscription once implementation lands.

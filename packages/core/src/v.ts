@@ -26,17 +26,26 @@ export type Schema<T> = {
 	default(value: T | (() => T)): Schema<T>;
 };
 
-export type ObjectSchema<S extends Record<string, Schema<unknown>>> = Schema<InferObject<S>> & {
-	readonly fields: S;
-	pick<K extends keyof S & string>(keys: K[]): ObjectSchema<Pick<S, K>>;
-	omit<K extends keyof S & string>(keys: K[]): ObjectSchema<Omit<S, K>>;
-	partial(): ObjectSchema<{ [K in keyof S]: ReturnType<S[K]["optional"]> }>;
-	extend<E extends Record<string, Schema<unknown>>>(extra: E): ObjectSchema<S & E>;
-	merge<O extends Record<string, Schema<unknown>>>(other: ObjectSchema<O>): ObjectSchema<S & O>;
-	create(partial: Partial<InferObject<S>>): InferObject<S>;
-	empty(): InferObject<S>;
-	update(existing: InferObject<S>, patch: Partial<InferObject<S>>): InferObject<S>;
-};
+export type ObjectSchema<S extends Record<string, Schema<unknown>>> =
+	& Schema<InferObject<S>>
+	& {
+		readonly fields: S;
+		pick<K extends keyof S & string>(keys: K[]): ObjectSchema<Pick<S, K>>;
+		omit<K extends keyof S & string>(keys: K[]): ObjectSchema<Omit<S, K>>;
+		partial(): ObjectSchema<{ [K in keyof S]: ReturnType<S[K]["optional"]> }>;
+		extend<E extends Record<string, Schema<unknown>>>(
+			extra: E,
+		): ObjectSchema<S & E>;
+		merge<O extends Record<string, Schema<unknown>>>(
+			other: ObjectSchema<O>,
+		): ObjectSchema<S & O>;
+		create(partial: Partial<InferObject<S>>): InferObject<S>;
+		empty(): InferObject<S>;
+		update(
+			existing: InferObject<S>,
+			patch: Partial<InferObject<S>>,
+		): InferObject<S>;
+	};
 
 export type StringSchema = Schema<string> & {
 	min(n: number, message?: string): StringSchema;
@@ -76,9 +85,20 @@ export type InferObject<S extends Record<string, Schema<unknown>>> = {
 export type Infer<S> = S extends Schema<infer T> ? T : never;
 
 export class ValidationError extends Error {
-	issues: { path: (string | number)[]; kind: string; expected?: string; message?: string }[];
+	issues: {
+		path: (string | number)[];
+		kind: string;
+		expected?: string;
+		message?: string;
+	}[];
 	constructor(issues: ValidationError["issues"]) {
-		super(`validation failed: ${issues.map((i) => `${i.path.join(".") || "<root>"} ${i.kind}`).join(", ")}`);
+		super(
+			`validation failed: ${
+				issues.map((i) => `${i.path.join(".") || "<root>"} ${i.kind}`).join(
+					", ",
+				)
+			}`,
+		);
 		this.issues = issues;
 		this.name = "ValidationError";
 	}
@@ -94,8 +114,8 @@ function makeSchema<T>(opts: {
 }): Schema<T> {
 	const cons = opts.constraints ?? [];
 	const self: Schema<T> = {
-		kind:        opts.kind,
-		schema:      opts.schema,
+		kind: opts.kind,
+		schema: opts.schema,
 		constraints: cons,
 
 		parse(input) {
@@ -117,8 +137,8 @@ function makeSchema<T>(opts: {
 
 function makeOptional<T>(inner: Schema<T>): Schema<T | undefined> {
 	return makeSchema<T | undefined>({
-		kind:        inner.kind + "?",
-		schema:      inner.schema,
+		kind: inner.kind + "?",
+		schema: inner.schema,
 		constraints: [...inner.constraints, { kind: "optional" }],
 		parse: (input) => {
 			if (input === undefined) return undefined;
@@ -129,8 +149,8 @@ function makeOptional<T>(inner: Schema<T>): Schema<T | undefined> {
 
 function makeNullable<T>(inner: Schema<T>): Schema<T | null> {
 	return makeSchema<T | null>({
-		kind:        inner.kind + "|null",
-		schema:      inner.schema,
+		kind: inner.kind + "|null",
+		schema: inner.schema,
 		constraints: [...inner.constraints, { kind: "nullable" }],
 		parse: (input) => {
 			if (input === null) return null;
@@ -141,8 +161,8 @@ function makeNullable<T>(inner: Schema<T>): Schema<T | null> {
 
 function makeDefault<T>(inner: Schema<T>, value: T | (() => T)): Schema<T> {
 	return makeSchema<T>({
-		kind:        inner.kind,
-		schema:      inner.schema,
+		kind: inner.kind,
+		schema: inner.schema,
 		constraints: [...inner.constraints, { kind: "default" }],
 		parse: (input) => {
 			if (input === undefined) {
@@ -153,7 +173,11 @@ function makeDefault<T>(inner: Schema<T>, value: T | (() => T)): Schema<T> {
 	});
 }
 
-function fail(path: (string | number)[], kind: string, extra?: Partial<ValidationError["issues"][number]>): never {
+function fail(
+	path: (string | number)[],
+	kind: string,
+	extra?: Partial<ValidationError["issues"][number]>,
+): never {
 	throw new ValidationError([{ path, kind, ...extra }]);
 }
 
@@ -170,25 +194,60 @@ function string(): StringSchema {
 
 function buildString(constraints: Constraint[]): StringSchema {
 	const base = makeSchema<string>({
-		kind:        "string",
-		schema:      { type: "string" },
+		kind: "string",
+		schema: { type: "string" },
 		constraints,
 		parse: (input, path) => {
 			if (typeof input !== "string") fail(path, "string");
 			let value = input;
 			for (const c of constraints) {
 				switch (c.kind) {
-					case "min":        if (value.length < (c.value as number)) fail(path, "min", { expected: String(c.value) }); break;
-					case "max":        if (value.length > (c.value as number)) fail(path, "max", { expected: String(c.value) }); break;
-					case "length":     if (value.length !== (c.value as number)) fail(path, "length", { expected: String(c.value) }); break;
-					case "regex":      if (!(c.re as RegExp).test(value)) fail(path, "regex"); break;
-					case "email":      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) fail(path, "email"); break;
-					case "url":        try { new URL(value); } catch { fail(path, "url"); } break;
-					case "uuid":       if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) fail(path, "uuid"); break;
-					case "startsWith": if (!value.startsWith(c.value as string)) fail(path, "startsWith"); break;
-					case "endsWith":   if (!value.endsWith(c.value as string)) fail(path, "endsWith"); break;
-					case "trim":       value = value.trim(); break;
-					case "lowercase":  if (value !== value.toLowerCase()) fail(path, "lowercase"); break;
+					case "min":
+						if (value.length < (c.value as number)) {
+							fail(path, "min", { expected: String(c.value) });
+						}
+						break;
+					case "max":
+						if (value.length > (c.value as number)) {
+							fail(path, "max", { expected: String(c.value) });
+						}
+						break;
+					case "length":
+						if (value.length !== (c.value as number)) {
+							fail(path, "length", { expected: String(c.value) });
+						}
+						break;
+					case "regex":
+						if (!(c.re as RegExp).test(value)) fail(path, "regex");
+						break;
+					case "email":
+						if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) fail(path, "email");
+						break;
+					case "url":
+						try {
+							new URL(value);
+						} catch {
+							fail(path, "url");
+						}
+						break;
+					case "uuid":
+						if (
+							!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+								.test(value)
+						) fail(path, "uuid");
+						break;
+					case "startsWith":
+						if (!value.startsWith(c.value as string)) fail(path, "startsWith");
+						break;
+					case "endsWith":
+						if (!value.endsWith(c.value as string)) fail(path, "endsWith");
+						break;
+					case "trim":
+						value = value.trim();
+						break;
+					case "lowercase":
+						if (value !== value.toLowerCase()) fail(path, "lowercase");
+						break;
 				}
 			}
 			return value;
@@ -197,17 +256,17 @@ function buildString(constraints: Constraint[]): StringSchema {
 
 	const add = (c: Constraint) => buildString([...constraints, c]);
 
-	base.min        = (n, message) => add({ kind: "min",        value: n, message });
-	base.max        = (n, message) => add({ kind: "max",        value: n, message });
-	base.length     = (n, message) => add({ kind: "length",     value: n, message });
-	base.regex      = (re, message) => add({ kind: "regex",     re,       message });
-	base.email      = (message) => add({ kind: "email",      message });
-	base.url        = (message) => add({ kind: "url",        message });
-	base.uuid       = (message) => add({ kind: "uuid",       message });
+	base.min = (n, message) => add({ kind: "min", value: n, message });
+	base.max = (n, message) => add({ kind: "max", value: n, message });
+	base.length = (n, message) => add({ kind: "length", value: n, message });
+	base.regex = (re, message) => add({ kind: "regex", re, message });
+	base.email = (message) => add({ kind: "email", message });
+	base.url = (message) => add({ kind: "url", message });
+	base.uuid = (message) => add({ kind: "uuid", message });
 	base.startsWith = (s, message) => add({ kind: "startsWith", value: s, message });
-	base.endsWith   = (s, message) => add({ kind: "endsWith",   value: s, message });
-	base.trim       = () => add({ kind: "trim" });
-	base.lowercase  = (message) => add({ kind: "lowercase", message });
+	base.endsWith = (s, message) => add({ kind: "endsWith", value: s, message });
+	base.trim = () => add({ kind: "trim" });
+	base.lowercase = (message) => add({ kind: "lowercase", message });
 
 	return base;
 }
@@ -220,21 +279,35 @@ function number(): NumberSchema {
 
 function buildNumber(constraints: Constraint[]): NumberSchema {
 	const base = makeSchema<number>({
-		kind:        "number",
-		schema:      { type: "number" },
+		kind: "number",
+		schema: { type: "number" },
 		constraints,
 		parse: (input, path) => {
 			if (typeof input !== "number") fail(path, "number");
 			const v = input;
 			for (const c of constraints) {
 				switch (c.kind) {
-					case "min":        if (v < (c.value as number)) fail(path, "min"); break;
-					case "max":        if (v > (c.value as number)) fail(path, "max"); break;
-					case "integer":    if (!Number.isInteger(v)) fail(path, "integer"); break;
-					case "positive":   if (v <= 0) fail(path, "positive"); break;
-					case "negative":   if (v >= 0) fail(path, "negative"); break;
-					case "multipleOf": if (v % (c.value as number) !== 0) fail(path, "multipleOf"); break;
-					case "finite":     if (!Number.isFinite(v)) fail(path, "finite"); break;
+					case "min":
+						if (v < (c.value as number)) fail(path, "min");
+						break;
+					case "max":
+						if (v > (c.value as number)) fail(path, "max");
+						break;
+					case "integer":
+						if (!Number.isInteger(v)) fail(path, "integer");
+						break;
+					case "positive":
+						if (v <= 0) fail(path, "positive");
+						break;
+					case "negative":
+						if (v >= 0) fail(path, "negative");
+						break;
+					case "multipleOf":
+						if (v % (c.value as number) !== 0) fail(path, "multipleOf");
+						break;
+					case "finite":
+						if (!Number.isFinite(v)) fail(path, "finite");
+						break;
 				}
 			}
 			return v;
@@ -243,13 +316,13 @@ function buildNumber(constraints: Constraint[]): NumberSchema {
 
 	const add = (c: Constraint) => buildNumber([...constraints, c]);
 
-	base.min        = (n) => add({ kind: "min", value: n });
-	base.max        = (n) => add({ kind: "max", value: n });
-	base.integer    = () => add({ kind: "integer" });
-	base.positive   = () => add({ kind: "positive" });
-	base.negative   = () => add({ kind: "negative" });
+	base.min = (n) => add({ kind: "min", value: n });
+	base.max = (n) => add({ kind: "max", value: n });
+	base.integer = () => add({ kind: "integer" });
+	base.positive = () => add({ kind: "positive" });
+	base.negative = () => add({ kind: "negative" });
 	base.multipleOf = (n) => add({ kind: "multipleOf", value: n });
-	base.finite     = () => add({ kind: "finite" });
+	base.finite = () => add({ kind: "finite" });
 
 	return base;
 }
@@ -258,9 +331,9 @@ function buildNumber(constraints: Constraint[]): NumberSchema {
 
 function boolean(): Schema<boolean> {
 	return makeSchema<boolean>({
-		kind:   "boolean",
+		kind: "boolean",
 		schema: { type: "boolean" },
-		parse:  (input, path) => {
+		parse: (input, path) => {
 			if (typeof input !== "boolean") fail(path, "boolean");
 			return input;
 		},
@@ -269,9 +342,9 @@ function boolean(): Schema<boolean> {
 
 function date(): Schema<Date> {
 	return makeSchema<Date>({
-		kind:   "date",
+		kind: "date",
 		schema: { type: "string", format: "date-time" },
-		parse:  (input, path) => {
+		parse: (input, path) => {
 			if (input instanceof Date) return input;
 			if (typeof input === "string" || typeof input === "number") {
 				const d = new Date(input);
@@ -284,9 +357,9 @@ function date(): Schema<Date> {
 
 function any(): Schema<unknown> {
 	return makeSchema<unknown>({
-		kind:   "any",
+		kind: "any",
 		schema: {},
-		parse:  (input) => input,
+		parse: (input) => input,
 	});
 }
 
@@ -296,9 +369,9 @@ function unknown(): Schema<unknown> {
 
 function literal<L extends string | number | boolean>(value: L): Schema<L> {
 	return makeSchema<L>({
-		kind:   "literal",
+		kind: "literal",
 		schema: { const: value },
-		parse:  (input, path) => {
+		parse: (input, path) => {
 			if (input !== value) fail(path, "literal");
 			return input as L;
 		},
@@ -313,17 +386,22 @@ function literal<L extends string | number | boolean>(value: L): Schema<L> {
 // the produced Schema will accept the string keys *and* the numeric values
 // — best practice is string enums.
 function enumOf<const L extends string>(values: readonly L[]): Schema<L>;
-function enumOf<E extends Record<string, string | number>>(obj: E): Schema<E[keyof E] & (string | number)>;
+function enumOf<E extends Record<string, string | number>>(
+	obj: E,
+): Schema<E[keyof E] & (string | number)>;
 function enumOf(values: any): Schema<any> {
 	const list: (string | number)[] = Array.isArray(values)
 		? values
 		: Object.values(values).filter((v) => typeof v === "string" || typeof v === "number");
 	const set = new Set<string | number>(list);
 	return makeSchema<string | number>({
-		kind:   "enum",
+		kind: "enum",
 		schema: { enum: list },
-		parse:  (input, path) => {
-			if ((typeof input !== "string" && typeof input !== "number") || !set.has(input)) {
+		parse: (input, path) => {
+			if (
+				(typeof input !== "string" && typeof input !== "number") ||
+				!set.has(input)
+			) {
 				fail(path, "enum", { expected: list.map(String).join("|") });
 			}
 			return input;
@@ -337,22 +415,33 @@ function array<T>(item: Schema<T>): ArraySchema<T> {
 	return buildArray(item, []);
 }
 
-function buildArray<T>(item: Schema<T>, constraints: Constraint[]): ArraySchema<T> {
+function buildArray<T>(
+	item: Schema<T>,
+	constraints: Constraint[],
+): ArraySchema<T> {
 	const base = makeSchema<T[]>({
-		kind:        "array",
-		schema:      { type: "array", items: item.schema },
+		kind: "array",
+		schema: { type: "array", items: item.schema },
 		constraints,
 		parse: (input, path) => {
 			if (!Array.isArray(input)) fail(path, "array");
 			const parsed: T[] = [];
 			for (let i = 0; i < input.length; i++) {
-				parsed.push((item as any).parseAt ? (item as any).parseAt(input[i], [...path, i]) : item.parse(input[i]));
+				parsed.push(
+					(item as any).parseAt ? (item as any).parseAt(input[i], [...path, i]) : item.parse(input[i]),
+				);
 			}
 			for (const c of constraints) {
 				switch (c.kind) {
-					case "min":    if (parsed.length < (c.value as number)) fail(path, "min"); break;
-					case "max":    if (parsed.length > (c.value as number)) fail(path, "max"); break;
-					case "length": if (parsed.length !== (c.value as number)) fail(path, "length"); break;
+					case "min":
+						if (parsed.length < (c.value as number)) fail(path, "min");
+						break;
+					case "max":
+						if (parsed.length > (c.value as number)) fail(path, "max");
+						break;
+					case "length":
+						if (parsed.length !== (c.value as number)) fail(path, "length");
+						break;
 					case "unique": {
 						const seen = new Set<string>();
 						for (const v of parsed) {
@@ -370,8 +459,8 @@ function buildArray<T>(item: Schema<T>, constraints: Constraint[]): ArraySchema<
 
 	const add = (c: Constraint) => buildArray(item, [...constraints, c]);
 
-	base.min    = (n) => add({ kind: "min",    value: n });
-	base.max    = (n) => add({ kind: "max",    value: n });
+	base.min = (n) => add({ kind: "min", value: n });
+	base.max = (n) => add({ kind: "max", value: n });
 	base.length = (n) => add({ kind: "length", value: n });
 	base.unique = () => add({ kind: "unique" });
 
@@ -380,21 +469,29 @@ function buildArray<T>(item: Schema<T>, constraints: Constraint[]): ArraySchema<
 
 // ─── objects ─────────────────────────────────────────────────────────
 
-function object<S extends Record<string, Schema<unknown>>>(fields: S): ObjectSchema<S> {
+function object<S extends Record<string, Schema<unknown>>>(
+	fields: S,
+): ObjectSchema<S> {
 	const schema = {
 		type: "object",
-		properties: Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, v.schema])),
-		required:   Object.entries(fields).filter(([, v]) => !v.constraints.some((c) => c.kind === "optional" || c.kind === "default")).map(([k]) => k),
+		properties: Object.fromEntries(
+			Object.entries(fields).map(([k, v]) => [k, v.schema]),
+		),
+		required: Object.entries(fields).filter(([, v]) => !v.constraints.some((c) => c.kind === "optional" || c.kind === "default")).map((
+			[k],
+		) => k),
 	};
 
 	const base: ObjectSchema<S> = {
-		kind:        "object",
+		kind: "object",
 		schema,
 		constraints: [],
 		fields,
 
 		parse(input) {
-			if (typeof input !== "object" || input === null || Array.isArray(input)) fail([], "object");
+			if (typeof input !== "object" || input === null || Array.isArray(input)) {
+				fail([], "object");
+			}
 			const out: Record<string, unknown> = {};
 			const issues: ValidationError["issues"] = [];
 			for (const [k, fieldSchema] of Object.entries(fields)) {
@@ -402,7 +499,9 @@ function object<S extends Record<string, Schema<unknown>>>(fields: S): ObjectSch
 					out[k] = fieldSchema.parse((input as Record<string, unknown>)[k]);
 				} catch (e) {
 					if (e instanceof ValidationError) {
-						issues.push(...e.issues.map((i) => ({ ...i, path: [k, ...i.path] })));
+						issues.push(
+							...e.issues.map((i) => ({ ...i, path: [k, ...i.path] })),
+						);
 					} else {
 						throw e;
 					}
@@ -412,23 +511,39 @@ function object<S extends Record<string, Schema<unknown>>>(fields: S): ObjectSch
 			return out as InferObject<S>;
 		},
 
-		optional()  { return makeOptional(this) as Schema<InferObject<S> | undefined> as ObjectSchema<S>; },
-		nullable()  { return makeNullable(this) as Schema<InferObject<S> | null> as ObjectSchema<S>; },
-		default(v)  { return makeDefault(this as Schema<InferObject<S>>, v) as ObjectSchema<S>; },
+		optional() {
+			return makeOptional(this) as Schema<
+				InferObject<S> | undefined
+			> as ObjectSchema<S>;
+		},
+		nullable() {
+			return makeNullable(this) as Schema<
+				InferObject<S> | null
+			> as ObjectSchema<S>;
+		},
+		default(v) {
+			return makeDefault(this as Schema<InferObject<S>>, v) as ObjectSchema<S>;
+		},
 
 		pick(keys) {
-			const picked = Object.fromEntries(keys.map((k) => [k, fields[k]])) as Pick<S, typeof keys[number]>;
+			const picked = Object.fromEntries(
+				keys.map((k) => [k, fields[k]]),
+			) as Pick<S, typeof keys[number]>;
 			return object(picked);
 		},
 
 		omit(keys) {
-			const set    = new Set(keys);
-			const picked = Object.fromEntries(Object.entries(fields).filter(([k]) => !set.has(k as any)));
+			const set = new Set(keys);
+			const picked = Object.fromEntries(
+				Object.entries(fields).filter(([k]) => !set.has(k as any)),
+			);
 			return object(picked as any) as any;
 		},
 
 		partial() {
-			const partialFields = Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, v.optional()]));
+			const partialFields = Object.fromEntries(
+				Object.entries(fields).map(([k, v]) => [k, v.optional()]),
+			);
 			return object(partialFields as any) as any;
 		},
 
@@ -449,7 +564,10 @@ function object<S extends Record<string, Schema<unknown>>>(fields: S): ObjectSch
 		},
 
 		update(existing, patch) {
-			return this.parse({ ...(existing as object), ...(patch as object) }) as InferObject<S>;
+			return this.parse({
+				...(existing as object),
+				...(patch as object),
+			}) as InferObject<S>;
 		},
 	};
 
@@ -458,15 +576,18 @@ function object<S extends Record<string, Schema<unknown>>>(fields: S): ObjectSch
 
 // ─── unions ──────────────────────────────────────────────────────────
 
-function union<T extends Schema<unknown>[]>(...members: T): Schema<T[number] extends Schema<infer U> ? U : never> {
+function union<T extends Schema<unknown>[]>(
+	...members: T
+): Schema<T[number] extends Schema<infer U> ? U : never> {
 	type R = T[number] extends Schema<infer U> ? U : never;
 	return makeSchema<R>({
-		kind:   "union",
+		kind: "union",
 		schema: { oneOf: members.map((m) => m.schema) },
-		parse:  (input, path) => {
+		parse: (input, path) => {
 			for (const m of members) {
-				try { return m.parse(input) as R; }
-				catch (_) { /* try next */ }
+				try {
+					return m.parse(input) as R;
+				} catch (_) { /* try next */ }
 			}
 			fail(path, "union");
 		},
@@ -475,12 +596,17 @@ function union<T extends Schema<unknown>[]>(...members: T): Schema<T[number] ext
 
 // ─── record ──────────────────────────────────────────────────────────
 
-function record<V>(_keySchema: Schema<string>, valueSchema: Schema<V>): Schema<Record<string, V>> {
+function record<V>(
+	_keySchema: Schema<string>,
+	valueSchema: Schema<V>,
+): Schema<Record<string, V>> {
 	return makeSchema<Record<string, V>>({
-		kind:   "record",
+		kind: "record",
 		schema: { type: "object", additionalProperties: valueSchema.schema },
-		parse:  (input, path) => {
-			if (typeof input !== "object" || input === null || Array.isArray(input)) fail(path, "record");
+		parse: (input, path) => {
+			if (typeof input !== "object" || input === null || Array.isArray(input)) {
+				fail(path, "record");
+			}
 			const out: Record<string, V> = {};
 			for (const [k, val] of Object.entries(input)) {
 				out[k] = valueSchema.parse(val);
@@ -492,22 +618,27 @@ function record<V>(_keySchema: Schema<string>, valueSchema: Schema<V>): Schema<R
 
 // ─── instance / map ──────────────────────────────────────────────────
 
-function instanceOf<C extends new (...args: any[]) => any>(ctor: C): Schema<InstanceType<C>> {
+function instanceOf<C extends new (...args: any[]) => any>(
+	ctor: C,
+): Schema<InstanceType<C>> {
 	return makeSchema<InstanceType<C>>({
-		kind:   "instanceOf",
+		kind: "instanceOf",
 		schema: { type: "object" }, // best-effort JSON Schema
-		parse:  (input, path) => {
+		parse: (input, path) => {
 			if (!(input instanceof ctor)) fail(path, "instanceOf");
 			return input as InstanceType<C>;
 		},
 	});
 }
 
-function map<K, V>(_keySchema: Schema<K>, _valueSchema: Schema<V>): Schema<Map<K, V>> {
+function map<K, V>(
+	_keySchema: Schema<K>,
+	_valueSchema: Schema<V>,
+): Schema<Map<K, V>> {
 	return makeSchema<Map<K, V>>({
-		kind:   "map",
+		kind: "map",
 		schema: { type: "object" },
-		parse:  (input, path) => {
+		parse: (input, path) => {
 			if (!(input instanceof Map)) fail(path, "map");
 			return input as Map<K, V>;
 		},

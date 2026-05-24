@@ -2,7 +2,9 @@
 // configured trigger), scroll it into view within the container.
 
 function init() {
-	document.querySelectorAll<HTMLElement>("[data-scroll-into-view]:not([data-siv-wired])").forEach(wire);
+	document.querySelectorAll<HTMLElement>(
+		"[data-scroll-into-view]:not([data-siv-wired])",
+	).forEach(wire);
 }
 
 function wire(container: HTMLElement) {
@@ -11,19 +13,29 @@ function wire(container: HTMLElement) {
 
 	function scrollChild(child: Element) {
 		if (!(child instanceof HTMLElement)) return;
-		(child as any).scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+		(child as any).scrollIntoView({
+			block: "nearest",
+			inline: "nearest",
+			behavior: "smooth",
+		});
 	}
 
 	if (trigger === "focus") {
 		container.addEventListener("focusin", (e) => {
-			if (e.target instanceof Element && container.contains(e.target)) scrollChild(e.target);
+			if (e.target instanceof Element && container.contains(e.target)) {
+				scrollChild(e.target);
+			}
 		});
 	} else if (trigger === "selected") {
 		const observer = new MutationObserver(() => {
 			const sel = container.querySelector('[aria-selected="true"]');
 			if (sel) scrollChild(sel);
 		});
-		observer.observe(container, { subtree: true, attributes: true, attributeFilter: ["aria-selected"] });
+		observer.observe(container, {
+			subtree: true,
+			attributes: true,
+			attributeFilter: ["aria-selected"],
+		});
 	} else {
 		// Custom attribute name to watch on children
 		const observer = new MutationObserver(() => {
@@ -35,9 +47,13 @@ function wire(container: HTMLElement) {
 }
 
 if (typeof document !== "undefined") {
-	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
-	else init();
-	new MutationObserver(init).observe(document.body ?? document.documentElement, { childList: true, subtree: true });
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", init);
+	} else init();
+	new MutationObserver(init).observe(
+		document.body ?? document.documentElement,
+		{ childList: true, subtree: true },
+	);
 }
 
 export {};

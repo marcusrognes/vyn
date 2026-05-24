@@ -1,5 +1,5 @@
-import { describe, expect, it, beforeEach } from "vyn:test";
-import { createQuery, createMutation, createSubscription, registry } from "../src/index.ts";
+import { beforeEach, describe, expect, it } from "vyn:test";
+import { createMutation, createQuery, createSubscription, registry } from "../src/index.ts";
 
 // Contracts from /guide/actions/#the-registry
 describe("registry", () => {
@@ -40,22 +40,22 @@ describe("registry", () => {
 
 	it("byTool() returns actions with a tool field", () => {
 		const q = createQuery({
-			name:        "q.tooled",
+			name: "q.tooled",
 			description: "x",
-			tool:        {},
-			output:      {} as any,
-			run:         async () => "x",
+			tool: {},
+			output: {} as any,
+			run: async () => "x",
 		});
 		expect(registry.byTool()).toContain(q);
 	});
 
 	it("byTool({ category }) filters by tool.category", () => {
 		const q = createQuery({
-			name:        "q.notes.list",
+			name: "q.notes.list",
 			description: "x",
-			tool:        { category: "notes" },
-			output:      {} as any,
-			run:         async () => "x",
+			tool: { category: "notes" },
+			output: {} as any,
+			run: async () => "x",
 		});
 		expect(registry.byTool({ category: "notes" })).toContain(q);
 	});
@@ -77,8 +77,8 @@ describe("registry", () => {
 
 	it("duplicate names throw at registration time", () => {
 		createQuery({ name: "dupe", run: async () => "x" });
-		expect(() =>
-			createQuery({ name: "dupe", run: async () => "y" })
-		).toThrow(/duplicate/);
+		expect(() => createQuery({ name: "dupe", run: async () => "y" })).toThrow(
+			/duplicate/,
+		);
 	});
 });

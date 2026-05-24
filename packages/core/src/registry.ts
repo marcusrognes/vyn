@@ -4,23 +4,28 @@
 
 import type { Schema } from "./v.ts";
 
-export type ActionKind = "query" | "mutation" | "subscription" | "job" | "notification";
+export type ActionKind =
+	| "query"
+	| "mutation"
+	| "subscription"
+	| "job"
+	| "notification";
 
 export type ToolSpec = {
 	description?: string;
-	examples?:    Array<{ input: unknown; output?: unknown }>;
-	category?:    string;
-	dangerous?:   boolean;
-	hidden?:      boolean;
+	examples?: Array<{ input: unknown; output?: unknown }>;
+	category?: string;
+	dangerous?: boolean;
+	hidden?: boolean;
 };
 
 export type Action = {
-	kind:        ActionKind;
-	name:        string;
+	kind: ActionKind;
+	name: string;
 	description?: string;
-	input?:      Schema<unknown>;
-	output?:     Schema<unknown>;
-	tool?:       ToolSpec;
+	input?: Schema<unknown>;
+	output?: Schema<unknown>;
+	tool?: ToolSpec;
 	// Each primitive adds its own fields; we keep this open.
 	[k: string]: unknown;
 };
@@ -75,7 +80,7 @@ export const registry: Registry = {
 		const out: Record<string, { input?: unknown; output?: unknown }> = {};
 		for (const a of actions.values()) {
 			out[a.name] = {
-				input:  a.input?.schema,
+				input: a.input?.schema,
 				output: a.output?.schema,
 			};
 		}
@@ -101,7 +106,9 @@ export function rebindActions(ns: string, mod: Record<string, unknown>): void {
 	for (const [exportName, value] of Object.entries(mod)) {
 		if (!value || typeof value !== "object") continue;
 		const action = value as Action;
-		if (typeof action.kind !== "string" || typeof action.name !== "string") continue;
+		if (typeof action.kind !== "string" || typeof action.name !== "string") {
+			continue;
+		}
 		const fresh = `${ns}.${exportName}`;
 		if (action.name === fresh) continue;
 		actions.delete(action.name);

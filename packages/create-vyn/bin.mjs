@@ -25,12 +25,21 @@ mkdirSync(dir, { recursive: true });
 
 const result = spawnSync(
 	"deno",
-	["run", "-A", "--unstable-node-globals", "--unstable-bare-node-builtins", "jsr:@vynjs/cli@^0.2", "init"],
+	[
+		"run",
+		"-A",
+		"--unstable-node-globals",
+		"--unstable-bare-node-builtins",
+		"jsr:@vynjs/cli@^0.2",
+		"init",
+	],
 	{ cwd: dir, stdio: "inherit" },
 );
 
 if (result.error?.code === "ENOENT") {
-	console.error("\nError: deno is not installed. Get it at https://deno.com/install");
+	console.error(
+		"\nError: deno is not installed. Get it at https://deno.com/install",
+	);
 	process.exit(1);
 }
 

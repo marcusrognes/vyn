@@ -3,31 +3,44 @@
 // with frames `{ id, kind: 'value' | 'error' | 'end', payload? }` until
 // the client closes or unsubscribes.
 
-import { registry, RpcError, type Action } from "@vynjs/core";
+import { type Action, registry, RpcError } from "@vynjs/core";
 import { type Transformer } from "./transformer.ts";
 import type { BaseCtx } from "./ctx.ts";
 
 export type WSContext = {
 	transformer: Transformer;
-	makeCtx:     (req: Request, baseCtx: BaseCtx) => Promise<object>;
+	makeCtx: (req: Request, baseCtx: BaseCtx) => Promise<object>;
 };
 
 type ClientFrame = {
-	id:     string;
+	id: string;
 	action: string;
 	input?: unknown;
-	op?:    "subscribe" | "unsubscribe";
+	op?: "subscribe" | "unsubscribe";
 };
 
-export function attachWebSocket(ws: WebSocket, req: Request, base: BaseCtx, surface: WSContext) {
+export function attachWebSocket(
+	ws: WebSocket,
+	req: Request,
+	base: BaseCtx,
+	surface: WSContext,
+) {
 	const subs = new Map<string, AbortController>();
 
 	ws.addEventListener("message", async (event) => {
 		let frame: ClientFrame;
 		try {
-			frame = JSON.parse(typeof event.data === "string" ? event.data : new TextDecoder().decode(event.data as ArrayBuffer));
+			frame = JSON.parse(
+				typeof event.data === "string" ? event.data : new TextDecoder().decode(event.data as ArrayBuffer),
+			);
 		} catch {
-			return ws.send(JSON.stringify({ id: null, kind: "error", error: { category: "bad_request", message: "invalid frame" } }));
+			return ws.send(
+				JSON.stringify({
+					id: null,
+					kind: "error",
+					error: { category: "bad_request", message: "invalid frame" },
+				}),
+			);
 		}
 
 		if (frame.op === "unsubscribe") {
@@ -38,7 +51,16 @@ export function attachWebSocket(ws: WebSocket, req: Request, base: BaseCtx, surf
 
 		const action = registry.get(frame.action);
 		if (!action || action.kind !== "subscription") {
-			ws.send(JSON.stringify({ id: frame.id, kind: "error", error: { category: "not_found", message: `no such subscription: ${frame.action}` } }));
+			ws.send(
+				JSON.stringify({
+					id: frame.id,
+					kind: "error",
+					error: {
+						category: "not_found",
+						message: `no such subscription: ${frame.action}`,
+					},
+				}),
+			);
 			return;
 		}
 
@@ -50,10 +72,16 @@ export function attachWebSocket(ws: WebSocket, req: Request, base: BaseCtx, surf
 
 		try {
 			const input = frame.input !== undefined ? surface.transformer.deserialize(frame.input) : undefined;
-			const iter  = (action as any).run({ input, ctx, signal: ctrl.signal });
+			const iter = (action as any).run({ input, ctx, signal: ctrl.signal });
 			for await (const value of iter) {
 				if (ctrl.signal.aborted) break;
-				ws.send(JSON.stringify({ id: frame.id, kind: "value", payload: surface.transformer.serialize(value) }));
+				ws.send(
+					JSON.stringify({
+						id: frame.id,
+						kind: "value",
+						payload: surface.transformer.serialize(value),
+					}),
+				);
 			}
 			ws.send(JSON.stringify({ id: frame.id, kind: "end" }));
 		} catch (e) {

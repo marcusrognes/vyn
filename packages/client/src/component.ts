@@ -32,7 +32,7 @@ import type { Html } from "./html.ts";
 import { render as renderHtml } from "./html.ts";
 
 export type HostElement<P> = HTMLElement & {
-	props:  P;
+	props: P;
 	render: () => void;
 };
 
@@ -40,15 +40,22 @@ export type ComponentSetup<P> = (el: HostElement<P>) => (() => void) | void;
 
 // Typed identity helper. Lets authors write `export default component<Props>(setup)`
 // for prop inference without coupling to the registration step.
-export function component<P extends object = Record<string, unknown>>(setup: ComponentSetup<P>): ComponentSetup<P> {
+export function component<P extends object = Record<string, unknown>>(
+	setup: ComponentSetup<P>,
+): ComponentSetup<P> {
 	return setup;
 }
 
 // Imperative registration. Called by `_vyn.client.gen.ts` (or manually
 // from anywhere a component needs to live under a chosen tag).
-export function defineComponent<P extends object = Record<string, unknown>>(name: string, setup: ComponentSetup<P>): void {
+export function defineComponent<P extends object = Record<string, unknown>>(
+	name: string,
+	setup: ComponentSetup<P>,
+): void {
 	if (!name.includes("-")) {
-		throw new Error(`defineComponent: tag name "${name}" must contain a hyphen (HTML spec)`);
+		throw new Error(
+			`defineComponent: tag name "${name}" must contain a hyphen (HTML spec)`,
+		);
 	}
 	if (customElements.get(name)) return;
 
@@ -89,12 +96,14 @@ export type { Html };
 // in to JSON parsing for unambiguous JSON values. Numeric and other
 // strings stay strings, which is what v.string()-typed actions want.
 function coerce(v: string): unknown {
-	if (v === "true")  return true;
+	if (v === "true") return true;
 	if (v === "false") return false;
-	if (v === "null")  return null;
+	if (v === "null") return null;
 	const first = v.charCodeAt(0);
 	if (first === 0x7B || first === 0x5B) {
-		try { return JSON.parse(v); } catch { /* fall through */ }
+		try {
+			return JSON.parse(v);
+		} catch { /* fall through */ }
 	}
 	return v;
 }

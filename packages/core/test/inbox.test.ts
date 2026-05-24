@@ -18,7 +18,9 @@ describe("@vynjs/notify-inbox", () => {
 			const writes: unknown[] = [];
 			const adapter = inboxAdapter({
 				collection: {
-					insertOne: async (doc: unknown) => { writes.push(doc); },
+					insertOne: async (doc: unknown) => {
+						writes.push(doc);
+					},
 				} as any,
 			});
 			await adapter.send({ payload: { title: "x" } } as any, {} as any);
@@ -29,35 +31,47 @@ describe("@vynjs/notify-inbox", () => {
 			const { inboxAdapter } = await import("../src/index.ts");
 			let row: any;
 			const adapter = inboxAdapter({
-				collection: { insertOne: async (doc: any) => { row = doc; } } as any,
+				collection: {
+					insertOne: async (doc: any) => {
+						row = doc;
+					},
+				} as any,
 			});
 			await adapter.send(
-				{ notification: "comments.posted", payload: { title: "x", body: "y" } } as any,
+				{
+					notification: "comments.posted",
+					payload: { title: "x", body: "y" },
+				} as any,
 				{ userId: "u1" } as any,
 			);
 			expect(row).toMatchObject({
-				userId:       "u1",
+				userId: "u1",
 				notification: "comments.posted",
-				payload:      { title: "x", body: "y" },
-				readAt:       null,
+				payload: { title: "x", body: "y" },
+				readAt: null,
 			});
 			expect(row._id).toBeDefined();
 			expect(row.createdAt).toBeInstanceOf(Date);
 		});
 
 		it("optionally emits to a subscription for live badge updates", async () => {
-			const { inboxAdapter, createSubscription } = await import("../src/index.ts");
+			const { inboxAdapter, createSubscription } = await import(
+				"../src/index.ts"
+			);
 			const emitted: unknown[] = [];
 			const onNotification = createSubscription({
 				name: "test.onNotification",
-				run:  async function* () {},
+				run: async function* () {},
 			});
 			(onNotification as any).emit = (v: unknown) => emitted.push(v);
 			const adapter = inboxAdapter({
-				collection:   { insertOne: async () => undefined } as any,
+				collection: { insertOne: async () => undefined } as any,
 				subscription: onNotification as any,
 			});
-			await adapter.send({ payload: { title: "x" } } as any, { userId: "u1" } as any);
+			await adapter.send(
+				{ payload: { title: "x" } } as any,
+				{ userId: "u1" } as any,
+			);
 			expect(emitted).toHaveLength(1);
 		});
 
@@ -65,7 +79,11 @@ describe("@vynjs/notify-inbox", () => {
 			const { inboxAdapter } = await import("../src/index.ts");
 			let row: any;
 			const adapter = inboxAdapter({
-				collection: { insertOne: async (doc: any) => { row = doc; } } as any,
+				collection: {
+					insertOne: async (doc: any) => {
+						row = doc;
+					},
+				} as any,
 			});
 			await adapter.send(
 				{ payload: { title: "Bundle" }, groupedWith: ["x1", "x2"] } as any,
@@ -79,7 +97,7 @@ describe("@vynjs/notify-inbox", () => {
 		it("returns rows newest-first, paginated", async () => {
 			// Fixture: 3 rows for user u1, ordered desc by createdAt
 			// rpc.inbox.list({ limit: 2 }) returns the two newest
-			expect(true).toBe(true);   // requires action stub
+			expect(true).toBe(true); // requires action stub
 		});
 
 		it("unreadOnly:true filters to readAt:null", async () => {

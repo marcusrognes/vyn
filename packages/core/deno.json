@@ -3,7 +3,7 @@
 	"version": "0.2.0",
 	"description": "Small full-stack TypeScript framework — primitives, registry, validators, cron.",
 	"exports": {
-		".":     "./src/index.ts",
+		".": "./src/index.ts",
 		"./util": "./src/util.ts"
 	},
 	"publish": {

@@ -18,17 +18,20 @@
 import { type Html, render as renderHtml } from "./html.ts";
 
 export type RouteParams = Record<string, string>;
-export type RouteMount  = (el: HTMLElement, params: RouteParams) => (() => void) | void | Promise<(() => void) | void>;
+export type RouteMount = (
+	el: HTMLElement,
+	params: RouteParams,
+) => (() => void) | void | Promise<(() => void) | void>;
 
 export type Route = {
-	path:   string;                         // "/", "/about", "/posts/:id"
-	view:   Html | string | (() => Html | string | Promise<Html | string>);
+	path: string; // "/", "/about", "/posts/:id"
+	view: Html | string | (() => Html | string | Promise<Html | string>);
 	mount?: RouteMount;
 };
 
 export type RouterOpts = {
-	routes:    Route[];
-	mount:     HTMLElement | string;
+	routes: Route[];
+	mount: HTMLElement | string;
 	notFound?: Route["view"];
 };
 
@@ -41,10 +44,12 @@ export type Router = {
 type Matcher = { route: Route; re: RegExp; params: string[] };
 
 export function createRouter(opts: RouterOpts): Router {
-	const root = typeof opts.mount === "string"
-		? document.querySelector<HTMLElement>(opts.mount)
-		: opts.mount;
-	if (!root) throw new Error(`createRouter: mount target not found: ${String(opts.mount)}`);
+	const root = typeof opts.mount === "string" ? document.querySelector<HTMLElement>(opts.mount) : opts.mount;
+	if (!root) {
+		throw new Error(
+			`createRouter: mount target not found: ${String(opts.mount)}`,
+		);
+	}
 
 	const matchers: Matcher[] = opts.routes.map((route) => {
 		const params: string[] = [];
@@ -62,7 +67,9 @@ export function createRouter(opts: RouterOpts): Router {
 			const x = m.re.exec(path);
 			if (!x) continue;
 			const params: RouteParams = {};
-			m.params.forEach((p, i) => { params[p] = decodeURIComponent(x[i + 1]); });
+			m.params.forEach((p, i) => {
+				params[p] = decodeURIComponent(x[i + 1]);
+			});
 			return { route: m.route, params };
 		}
 		return null;
@@ -73,9 +80,13 @@ export function createRouter(opts: RouterOpts): Router {
 
 	async function navigate(): Promise<void> {
 		const my = ++token;
-		const m  = match(location.pathname);
+		const m = match(location.pathname);
 
-		try { cleanup?.(); } catch (e) { console.error("[router] cleanup threw:", e); }
+		try {
+			cleanup?.();
+		} catch (e) {
+			console.error("[router] cleanup threw:", e);
+		}
 		cleanup = undefined;
 
 		const view = m ? m.route.view : opts.notFound;
@@ -84,13 +95,16 @@ export function createRouter(opts: RouterOpts): Router {
 		const content = typeof view === "function" ? await view() : view;
 		if (my !== token) return;
 		if (typeof content === "string") root!.innerHTML = content;
-		else                              renderHtml(root!, content);
+		else renderHtml(root!, content);
 
 		const mountFn = m?.route.mount;
 		if (mountFn) {
 			try {
 				const ret = await mountFn(root!, m!.params);
-				if (my !== token) { ret?.(); return; }
+				if (my !== token) {
+					ret?.();
+					return;
+				}
 				cleanup = ret ?? undefined;
 			} catch (e) {
 				console.error("[router] mount threw:", e);
@@ -105,7 +119,10 @@ export function createRouter(opts: RouterOpts): Router {
 	}
 
 	function onClick(e: MouseEvent): void {
-		if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+		if (
+			e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey ||
+			e.shiftKey || e.altKey
+		) return;
 		const link = (e.target as Element | null)?.closest("a");
 		if (!link) return;
 		const href = link.getAttribute("href");
@@ -113,12 +130,17 @@ export function createRouter(opts: RouterOpts): Router {
 		if (link.target && link.target !== "_self") return;
 		if (link.hasAttribute("download")) return;
 		if (link.origin !== location.origin) return;
-		if (href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:")) return;
+		if (
+			href.startsWith("#") || href.startsWith("mailto:") ||
+			href.startsWith("tel:")
+		) return;
 		e.preventDefault();
 		go(link.pathname + link.search);
 	}
 
-	function onPop(): void { void navigate(); }
+	function onPop(): void {
+		void navigate();
+	}
 
 	document.addEventListener("click", onClick);
 	window.addEventListener("popstate", onPop);
@@ -127,13 +149,15 @@ export function createRouter(opts: RouterOpts): Router {
 	return {
 		go,
 		current: () => ({
-			path:   location.pathname,
+			path: location.pathname,
 			params: match(location.pathname)?.params ?? {},
 		}),
 		destroy: () => {
 			document.removeEventListener("click", onClick);
 			window.removeEventListener("popstate", onPop);
-			try { cleanup?.(); } catch { /* ignore */ }
+			try {
+				cleanup?.();
+			} catch { /* ignore */ }
 		},
 	};
 }

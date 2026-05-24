@@ -52,7 +52,7 @@ describe("createMutation", () => {
 		const { v } = await import("../src/index.ts");
 		const m = createMutation({
 			input: v.object({ id: v.string() }),
-			run:   async () => undefined,
+			run: async () => undefined,
 		});
 		await expect(m.run({ input: { id: 42 }, ctx: {} })).rejects.toThrow();
 	});
@@ -65,7 +65,10 @@ describe("createMutation", () => {
 
 	it("registers itself in the global registry on declaration", async () => {
 		const { registry } = await import("../src/index.ts");
-		const m = createMutation({ name: "test.notes.create", run: async () => "x" });
+		const m = createMutation({
+			name: "test.notes.create",
+			run: async () => "x",
+		});
 		expect(registry.get(m.name)).toBe(m);
 	});
 
@@ -73,7 +76,7 @@ describe("createMutation", () => {
 		expect(() =>
 			createMutation({
 				tool: {},
-				run:  async () => undefined,
+				run: async () => undefined,
 			})
 		).toThrow(/description/);
 	});
@@ -96,20 +99,21 @@ describe("createMutation", () => {
 		const m = createMutation({
 			progress: v.object({ kind: v.literal("status"), message: v.string() }),
 			run: async (opts) => {
-				opts.tick({ kind: "status", message: "ok" });           // valid
-				opts.tick({ kind: "wrong" } as never);                   // invalid; should throw
+				opts.tick({ kind: "status", message: "ok" }); // valid
+				opts.tick({ kind: "wrong" } as never); // invalid; should throw
 				return undefined;
 			},
 		});
-		await expect(m.run({ input: {}, ctx: {}, tick: () => undefined })).rejects.toThrow();
+		await expect(m.run({ input: {}, ctx: {}, tick: () => undefined })).rejects
+			.toThrow();
 	});
 
 	it("permits tool-tagged action without output (void-returning tools are valid)", () => {
 		expect(() =>
 			createMutation({
 				description: "Delete by id",
-				tool:        {},
-				run:         async () => undefined,
+				tool: {},
+				run: async () => undefined,
 			})
 		).not.toThrow();
 	});

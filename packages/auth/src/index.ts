@@ -4,7 +4,11 @@
 import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 
-const scryptAsync = promisify(scrypt) as (password: string, salt: Buffer, keylen: number) => Promise<Buffer>;
+const scryptAsync = promisify(scrypt) as (
+	password: string,
+	salt: Buffer,
+	keylen: number,
+) => Promise<Buffer>;
 
 const SCRYPT_KEYLEN = 64;
 
@@ -14,12 +18,15 @@ export async function hashPassword(password: string): Promise<string> {
 	return `${salt.toString("hex")}:${hash.toString("hex")}`;
 }
 
-export async function verifyPassword(password: string, stored: string): Promise<boolean> {
+export async function verifyPassword(
+	password: string,
+	stored: string,
+): Promise<boolean> {
 	const [saltHex, hashHex] = stored.split(":");
 	if (!saltHex || !hashHex) return false;
-	const salt   = Buffer.from(saltHex, "hex");
+	const salt = Buffer.from(saltHex, "hex");
 	const expected = Buffer.from(hashHex, "hex");
-	const actual   = await scryptAsync(password, salt, expected.length);
+	const actual = await scryptAsync(password, salt, expected.length);
 	if (actual.length !== expected.length) return false;
 	return timingSafeEqual(actual, expected);
 }
@@ -29,8 +36,8 @@ export function randomToken(bytes = 32): string {
 }
 
 export type Session = {
-	token:     string;
-	userId:    string;
+	token: string;
+	userId: string;
 	expiresAt: Date;
 };
 
@@ -46,10 +53,17 @@ export function createMemorySessionStore(): SessionStore {
 		async get(token) {
 			const s = store.get(token);
 			if (!s) return undefined;
-			if (s.expiresAt.getTime() < Date.now()) { store.delete(token); return undefined; }
+			if (s.expiresAt.getTime() < Date.now()) {
+				store.delete(token);
+				return undefined;
+			}
 			return s;
 		},
-		async set(session)   { store.set(session.token, session); },
-		async delete(token)  { store.delete(token); },
+		async set(session) {
+			store.set(session.token, session);
+		},
+		async delete(token) {
+			store.delete(token);
+		},
 	};
 }

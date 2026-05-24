@@ -48,12 +48,12 @@ describe("RpcError", () => {
 		// The mapping function lives in @vynjs/server; we re-export here for testing.
 		it.each([
 			["unauthorized", 401],
-			["forbidden",    403],
-			["not_found",    404],
-			["conflict",     409],
-			["bad_request",  400],
+			["forbidden", 403],
+			["not_found", 404],
+			["conflict", 409],
+			["bad_request", 400],
 			["rate_limited", 429],
-			["internal",     500],
+			["internal", 500],
 		])("'%s' maps to HTTP %i", async (category, expectedStatus) => {
 			// Import lazily to defer the cross-package coupling
 			const { categoryToStatus } = await import("../src/index.ts");
@@ -66,8 +66,8 @@ describe("RpcError", () => {
 			const e = new RpcError("not_found", "missing", { id: "x" });
 			expect(e.toJSON()).toEqual({
 				category: "not_found",
-				message:  "missing",
-				details:  { id: "x" },
+				message: "missing",
+				details: { id: "x" },
 			});
 		});
 

@@ -6,7 +6,13 @@
 		".": "./src/index.ts"
 	},
 	"publish": {
-		"include": ["src/**/*.ts", "browser.js", "README.md", "LICENSE", "deno.json"],
+		"include": [
+			"src/**/*.ts",
+			"browser.js",
+			"README.md",
+			"LICENSE",
+			"deno.json"
+		],
 		"exclude": ["src/**/*.test.ts", "test/**"]
 	}
 }

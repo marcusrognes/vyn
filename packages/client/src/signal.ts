@@ -10,8 +10,8 @@ export type Signal<T> = {
 };
 
 export function signal<T>(initial: T): Signal<T> {
-	let value     = initial;
-	const subs    = new Set<(value: T) => void>();
+	let value = initial;
+	const subs = new Set<(value: T) => void>();
 
 	const fn: Signal<T> = (() => value) as Signal<T>;
 
@@ -23,7 +23,9 @@ export function signal<T>(initial: T): Signal<T> {
 	fn.update = (mut: (v: T) => T) => fn.set(mut(value));
 	fn.subscribe = (cb) => {
 		subs.add(cb);
-		return () => { subs.delete(cb); };
+		return () => {
+			subs.delete(cb);
+		};
 	};
 
 	return fn;

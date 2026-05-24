@@ -1,13 +1,10 @@
 # Vyn
 
-Small full-stack TypeScript framework. Five action primitives, no
-magic, one zero-config bundler step for browser code. Runs on
-Node 22+.
+Small full-stack TypeScript framework. Five action primitives, no magic, one zero-config bundler step for browser code. Runs on Node 22+.
 
 - **Docs**: <https://rognes.guru/vyn/>
-- **Status**: pre-1.0 — the API is in place, the example apps work,
-  tests are green. See [`IMPLEMENTATION.md`](./IMPLEMENTATION.md) for
-  a per-package breakdown of what's built vs. still pending.
+- **Status**: pre-1.0 — the API is in place, the example apps work, tests are green. See [`IMPLEMENTATION.md`](./IMPLEMENTATION.md) for a
+  per-package breakdown of what's built vs. still pending.
 
 ## The five primitives
 
@@ -93,15 +90,14 @@ open http://localhost:8000
 
 ## Examples
 
-| Path | Demonstrates | Try it |
-|---|---|---|
-| `examples/todo`         | five primitives + RPC + realtime + MCP                       | `cd examples/todo && PORT=8000 npm run dev` |
-| `examples/notes-auth`   | sessions, per-user data, requireSession guard                | `PORT=8001 npm run dev` |
-| `examples/notes-sqlite` | same + SQLite persistence via `@vynjs/db-sqlite`               | `PORT=8002 npm run dev` |
-| `examples/research`     | streaming agent (`opts.tick`), jobs, notifications, inbox    | `PORT=8003 npm run dev` |
+| Path                    | Demonstrates                                              | Try it                                      |
+| ----------------------- | --------------------------------------------------------- | ------------------------------------------- |
+| `examples/todo`         | five primitives + RPC + realtime + MCP                    | `cd examples/todo && PORT=8000 npm run dev` |
+| `examples/notes-auth`   | sessions, per-user data, requireSession guard             | `PORT=8001 npm run dev`                     |
+| `examples/notes-sqlite` | same + SQLite persistence via `@vynjs/db-sqlite`          | `PORT=8002 npm run dev`                     |
+| `examples/research`     | streaming agent (`opts.tick`), jobs, notifications, inbox | `PORT=8003 npm run dev`                     |
 
-The research example talks to Claude when `ANTHROPIC_API_KEY` is
-set; otherwise it streams a deterministic mock so it runs without
+The research example talks to Claude when `ANTHROPIC_API_KEY` is set; otherwise it streams a deterministic mock so it runs without
 configuration.
 
 ## Built-in surfaces
@@ -111,12 +107,12 @@ configuration.
 - **MCP** — `/mcp` speaks JSON-RPC 2.0. `vyn mcp --stdio` runs the same surface over stdin/stdout for Claude Desktop.
 - **Static** — anything under `public/` is served as-is; route HTML files become pages via the SPA shell.
 - **Browser runtime** — `/_vyn/client.js` (~11 kB) and `/_vyn/ui.js` (~13 kB) are served directly.
-- **Browser source** — `public/**/*.ts` is bundled on demand in dev (esbuild, mtime cache) and pre-bundled with content hashes via `vyn build` in prod. `<script src="/foo.js">` resolves to the sibling `foo.ts`.
+- **Browser source** — `public/**/*.ts` is bundled on demand in dev (esbuild, mtime cache) and pre-bundled with content hashes via
+  `vyn build` in prod. `<script src="/foo.js">` resolves to the sibling `foo.ts`.
 
 ## Contributing
 
-The codebase is small and easy to read. Each package is independently
-testable via `npm test --workspace packages/<name>`. Suggestions and
+The codebase is small and easy to read. Each package is independently testable via `npm test --workspace packages/<name>`. Suggestions and
 PRs welcome.
 
 Source: <https://github.com/marcusrognes/vyn>

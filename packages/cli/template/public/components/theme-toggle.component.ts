@@ -8,14 +8,17 @@ import { component } from "@vynjs/client";
 
 type Theme = "system" | "light" | "dark";
 
-const order:  Theme[]                = ["system", "light", "dark"];
+const order: Theme[] = ["system", "light", "dark"];
 const labels = { system: "System", light: "Light", dark: "Dark" } as const;
-const root   = document.documentElement;
-const query  = matchMedia("(prefers-color-scheme: dark)");
+const root = document.documentElement;
+const query = matchMedia("(prefers-color-scheme: dark)");
 
 function apply(mode: Theme): void {
 	root.dataset.theme = mode;
-	root.classList.toggle("dark", mode === "dark" || (mode === "system" && query.matches));
+	root.classList.toggle(
+		"dark",
+		mode === "dark" || (mode === "system" && query.matches),
+	);
 	localStorage.setItem("theme", mode);
 	document.dispatchEvent(new CustomEvent("vyn:theme", { detail: { mode } }));
 }
@@ -49,7 +52,10 @@ export default component((el) => {
 
 	el.addEventListener("click", cycle);
 	el.addEventListener("keydown", (e: KeyboardEvent) => {
-		if (e.key === "Enter" || e.key === " ") { e.preventDefault(); cycle(); }
+		if (e.key === "Enter" || e.key === " ") {
+			e.preventDefault();
+			cycle();
+		}
 	});
 
 	document.addEventListener("vyn:theme", sync);

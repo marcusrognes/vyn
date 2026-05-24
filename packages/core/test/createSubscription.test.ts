@@ -21,7 +21,7 @@ describe("createSubscription", () => {
 			createSubscription({
 				// @ts-expect-error: match is no longer supported
 				match: () => true,
-				run:   async function* () {},
+				run: async function* () {},
 			})
 		).toThrow();
 	});
@@ -43,7 +43,11 @@ describe("createSubscription", () => {
 		});
 
 		// Start consumer
-		const consumer = s.run({ input: {}, ctx: {}, signal: new AbortController().signal });
+		const consumer = s.run({
+			input: {},
+			ctx: {},
+			signal: new AbortController().signal,
+		});
 		const iter = consumer[Symbol.asyncIterator]();
 
 		// Emit a value
@@ -56,13 +60,17 @@ describe("createSubscription", () => {
 	it("each yielded value validates against output", async () => {
 		const { v } = await import("../src/index.ts");
 		const s = createSubscription({
-			input:  v.object({}),
+			input: v.object({}),
 			output: v.string(),
-			run:    async function* () {
+			run: async function* () {
 				yield 42 as unknown as string;
 			},
 		});
-		const iter = s.run({ input: {}, ctx: {}, signal: new AbortController().signal });
+		const iter = s.run({
+			input: {},
+			ctx: {},
+			signal: new AbortController().signal,
+		});
 		await expect(iter.next()).rejects.toThrow();
 	});
 
@@ -72,7 +80,9 @@ describe("createSubscription", () => {
 
 		const s = createSubscription({
 			run: async function* (opts) {
-				opts.signal.addEventListener("abort", () => { aborted = true; });
+				opts.signal.addEventListener("abort", () => {
+					aborted = true;
+				});
 				yield "first";
 			},
 		});
@@ -90,7 +100,11 @@ describe("createSubscription", () => {
 				throw new RpcError("forbidden", "no access");
 			},
 		});
-		const iter = s.run({ input: {}, ctx: {}, signal: new AbortController().signal });
+		const iter = s.run({
+			input: {},
+			ctx: {},
+			signal: new AbortController().signal,
+		});
 		await expect(iter.next()).rejects.toThrow(RpcError);
 	});
 
@@ -98,7 +112,7 @@ describe("createSubscription", () => {
 		const { registry } = await import("../src/index.ts");
 		const s = createSubscription({
 			name: "test.onCreated",
-			run:  async function* () {},
+			run: async function* () {},
 		});
 		expect(registry.get(s.name)).toBe(s);
 	});

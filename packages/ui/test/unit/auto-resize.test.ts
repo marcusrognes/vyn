@@ -1,8 +1,10 @@
 // @vitest-environment happy-dom
-import { describe, expect, it, beforeEach } from "vyn:test";
+import { beforeEach, describe, expect, it } from "vyn:test";
 import "../../src/auto-resize.ts";
 
-beforeEach(() => { document.body.innerHTML = ""; });
+beforeEach(() => {
+	document.body.innerHTML = "";
+});
 
 describe("auto-resize", () => {
 	it("attaches an input listener and sets height on init", async () => {

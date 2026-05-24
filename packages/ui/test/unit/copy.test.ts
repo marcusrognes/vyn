@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { describe, expect, it, beforeEach, vi } from "vyn:test";
+import { beforeEach, describe, expect, it, vi } from "vyn:test";
 import "../../src/copy.ts";
 
 beforeEach(() => {
@@ -22,7 +22,9 @@ describe("copy", () => {
 		const btn = document.querySelector("button")!;
 		btn.click();
 		await new Promise((r) => setTimeout(r, 10));
-		expect((navigator.clipboard.writeText as any).mock.calls[0][0]).toBe("hello world");
+		expect((navigator.clipboard.writeText as any).mock.calls[0][0]).toBe(
+			"hello world",
+		);
 	});
 
 	it("flashes data-state='copied' for 1.5s", async () => {

@@ -15,11 +15,13 @@ export class Cache {
 	}
 
 	get<I, O>(callable: RpcCallable<I, O>, input: I): O | undefined {
-		return this.entries.get(this.keyFor(callable, input))?.value as O | undefined;
+		return this.entries.get(this.keyFor(callable, input))?.value as
+			| O
+			| undefined;
 	}
 
 	set<I, O>(callable: RpcCallable<I, O>, input: I, value: O) {
-		const key   = this.keyFor(callable, input);
+		const key = this.keyFor(callable, input);
 		const entry = this.entries.get(key) ?? { value, listeners: new Set() };
 		entry.value = value;
 		this.entries.set(key, entry);
@@ -47,10 +49,17 @@ export class Cache {
 		}
 	}
 
-	subscribe<I, O>(callable: RpcCallable<I, O>, listener: (value: O) => void, input?: I): () => void {
+	subscribe<I, O>(
+		callable: RpcCallable<I, O>,
+		listener: (value: O) => void,
+		input?: I,
+	): () => void {
 		const key = input !== undefined ? this.keyFor(callable, input) : `${(callable as any).__name}:` as Key;
 		let entry = this.entries.get(key);
-		if (!entry) { entry = { value: undefined, listeners: new Set() }; this.entries.set(key, entry); }
+		if (!entry) {
+			entry = { value: undefined, listeners: new Set() };
+			this.entries.set(key, entry);
+		}
 		entry.listeners.add(listener as (v: unknown) => void);
 		return () => entry!.listeners.delete(listener as (v: unknown) => void);
 	}

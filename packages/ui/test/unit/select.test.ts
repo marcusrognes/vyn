@@ -1,8 +1,10 @@
 // @vitest-environment happy-dom
-import { describe, expect, it, beforeEach } from "vyn:test";
+import { beforeEach, describe, expect, it } from "vyn:test";
 import "../../src/select.ts";
 
-beforeEach(() => { document.body.innerHTML = ""; });
+beforeEach(() => {
+	document.body.innerHTML = "";
+});
 
 describe("select", () => {
 	it("single mode: clicking an item sets data-value and aria-selected", async () => {
@@ -48,7 +50,9 @@ describe("select", () => {
 		await new Promise((r) => setTimeout(r, 0));
 		const ul = document.querySelector<HTMLElement>("[data-select]")!;
 		let received: unknown;
-		ul.addEventListener("change", (e) => { received = (e as CustomEvent).detail.value; });
+		ul.addEventListener("change", (e) => {
+			received = (e as CustomEvent).detail.value;
+		});
 		ul.querySelector<HTMLElement>("[data-value]")!.click();
 		expect(received).toBe("x");
 	});

@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { describe, expect, it, beforeEach } from "vyn:test";
+import { beforeEach, describe, expect, it } from "vyn:test";
 import "../../src/keyboard-nav.ts";
 
 function setup(html: string): HTMLElement {
@@ -13,7 +13,9 @@ function key(target: HTMLElement, k: string) {
 }
 
 describe("keyboard-nav", () => {
-	beforeEach(() => { document.body.innerHTML = ""; });
+	beforeEach(() => {
+		document.body.innerHTML = "";
+	});
 
 	it("sets initial roving tabindex", async () => {
 		const container = setup(`
@@ -80,7 +82,9 @@ describe("keyboard-nav", () => {
 		const items = container.querySelectorAll<HTMLElement>("li");
 		items[0].focus();
 		let activated: HTMLElement | null = null;
-		container.addEventListener("activate", (e) => { activated = (e as CustomEvent).detail.item; });
+		container.addEventListener("activate", (e) => {
+			activated = (e as CustomEvent).detail.item;
+		});
 		key(container, "Enter");
 		expect(activated).toBe(items[0]);
 	});

@@ -1,13 +1,13 @@
-import { createQuery, createMutation, createSubscription, v, RpcError } from "@vynjs/core";
-import { NoteSchema, type Note } from "./note.ts";
+import { createMutation, createQuery, createSubscription, RpcError, v } from "@vynjs/core";
+import { type Note, NoteSchema } from "./note.ts";
 import { requireSession } from "../auth/guards.ts";
 import type { Ctx } from "../../ctx.ts";
 
 export const list = createQuery({
-	name:        "notes.list",
+	name: "notes.list",
 	description: "List the current user's notes, newest first.",
-	input:       v.object({}),
-	output:      v.array(NoteSchema),
+	input: v.object({}),
+	output: v.array(NoteSchema),
 	run: async (opts: { input: {}; ctx: Ctx }) => {
 		const { userId } = requireSession(opts);
 		return opts.ctx.notes
@@ -17,23 +17,25 @@ export const list = createQuery({
 });
 
 export const get = createQuery({
-	name:        "notes.get",
+	name: "notes.get",
 	description: "Fetch a single note by id.",
-	input:       v.object({ _id: v.string().uuid() }),
-	output:      NoteSchema,
+	input: v.object({ _id: v.string().uuid() }),
+	output: NoteSchema,
 	run: async (opts: { input: { _id: string }; ctx: Ctx }) => {
 		const { userId } = requireSession(opts);
 		const note = opts.ctx.notes.get(opts.input._id);
-		if (!note || note.userId !== userId) throw new RpcError("not_found", "note not found");
+		if (!note || note.userId !== userId) {
+			throw new RpcError("not_found", "note not found");
+		}
 		return note;
 	},
 });
 
 export const onChanged = createSubscription({
-	name:        "notes.onChanged",
+	name: "notes.onChanged",
 	description: "Stream the current user's note changes.",
-	input:       v.object({}),
-	output:      v.object({ kind: v.string(), note: NoteSchema }),
+	input: v.object({}),
+	output: v.object({ kind: v.string(), note: NoteSchema }),
 	run: async function* (opts) {
 		const ctx = opts.ctx as Ctx;
 		requireSession({ ctx });
@@ -45,11 +47,14 @@ export const onChanged = createSubscription({
 });
 
 export const create = createMutation({
-	name:        "notes.create",
+	name: "notes.create",
 	description: "Create a note.",
-	input:       v.object({ title: v.string().optional(), body: v.string().optional() }),
-	output:      NoteSchema,
-	tool:        {},
+	input: v.object({
+		title: v.string().optional(),
+		body: v.string().optional(),
+	}),
+	output: NoteSchema,
+	tool: {},
 	run: async (opts: { input: { title?: string; body?: string }; ctx: Ctx }) => {
 		const { userId } = requireSession(opts);
 		const note = NoteSchema.create({ ...opts.input, userId });
@@ -60,19 +65,23 @@ export const create = createMutation({
 });
 
 export const update = createMutation({
-	name:        "notes.update",
+	name: "notes.update",
 	description: "Update a note.",
-	input:       v.object({
-		_id:   v.string().uuid(),
+	input: v.object({
+		_id: v.string().uuid(),
 		title: v.string().optional(),
-		body:  v.string().optional(),
+		body: v.string().optional(),
 	}),
-	output:      NoteSchema,
-	tool:        {},
-	run: async (opts: { input: { _id: string; title?: string; body?: string }; ctx: Ctx }) => {
+	output: NoteSchema,
+	tool: {},
+	run: async (
+		opts: { input: { _id: string; title?: string; body?: string }; ctx: Ctx },
+	) => {
 		const { userId } = requireSession(opts);
 		const existing = opts.ctx.notes.get(opts.input._id);
-		if (!existing || existing.userId !== userId) throw new RpcError("not_found", "note not found");
+		if (!existing || existing.userId !== userId) {
+			throw new RpcError("not_found", "note not found");
+		}
 		const updated = opts.ctx.notes.update(opts.input._id, {
 			...opts.input,
 			updatedAt: Date.now(),
@@ -83,14 +92,16 @@ export const update = createMutation({
 });
 
 export const remove = createMutation({
-	name:        "notes.remove",
+	name: "notes.remove",
 	description: "Delete a note.",
-	input:       v.object({ _id: v.string().uuid() }),
-	tool:        {},
+	input: v.object({ _id: v.string().uuid() }),
+	tool: {},
 	run: async (opts: { input: { _id: string }; ctx: Ctx }) => {
 		const { userId } = requireSession(opts);
 		const existing = opts.ctx.notes.get(opts.input._id);
-		if (!existing || existing.userId !== userId) throw new RpcError("not_found", "note not found");
+		if (!existing || existing.userId !== userId) {
+			throw new RpcError("not_found", "note not found");
+		}
 		opts.ctx.notes.delete(opts.input._id);
 		onChanged.emit({ kind: "removed", note: existing });
 	},

@@ -3,19 +3,22 @@
 // :invalid state to toggle description visibility.
 
 function init() {
-	document.querySelectorAll<HTMLElement>("[data-describedby]:not([data-db-wired])").forEach(wire);
+	document.querySelectorAll<HTMLElement>(
+		"[data-describedby]:not([data-db-wired])",
+	).forEach(wire);
 }
 
 function wire(el: HTMLElement) {
 	el.dataset.dbWired = "true";
-	const descId  = el.dataset.describedby!;
-	const desc    = document.getElementById(descId);
+	const descId = el.dataset.describedby!;
+	const desc = document.getElementById(descId);
 	if (!desc) return;
 
 	const invalidOnly = el.dataset.describedbyInvalidOnly === "true";
 
 	function update() {
-		const showWhenInvalid = invalidOnly && (el as HTMLInputElement).validity?.valid;
+		const showWhenInvalid = invalidOnly &&
+			(el as HTMLInputElement).validity?.valid;
 		if (showWhenInvalid) {
 			el.removeAttribute("aria-describedby");
 			desc!.dataset.state = "hidden";
@@ -25,14 +28,18 @@ function wire(el: HTMLElement) {
 		}
 	}
 	update();
-	el.addEventListener("input",  update);
-	el.addEventListener("blur",   update);
+	el.addEventListener("input", update);
+	el.addEventListener("blur", update);
 }
 
 if (typeof document !== "undefined") {
-	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
-	else init();
-	new MutationObserver(init).observe(document.body ?? document.documentElement, { childList: true, subtree: true });
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", init);
+	} else init();
+	new MutationObserver(init).observe(
+		document.body ?? document.documentElement,
+		{ childList: true, subtree: true },
+	);
 }
 
 export {};

@@ -1,8 +1,10 @@
 // @vitest-environment happy-dom
-import { describe, expect, it, beforeEach } from "vyn:test";
+import { beforeEach, describe, expect, it } from "vyn:test";
 import "../../src/sort.ts";
 
-beforeEach(() => { document.body.innerHTML = ""; });
+beforeEach(() => {
+	document.body.innerHTML = "";
+});
 
 describe("sort", () => {
 	it("clicking a header cycles asc → desc → unsorted", async () => {
@@ -15,10 +17,13 @@ describe("sort", () => {
 			</thead>
 		`;
 		await new Promise((r) => setTimeout(r, 0));
-		const head  = document.querySelector<HTMLElement>("[data-sort]")!;
-		const th    = head.querySelector<HTMLElement>('[data-sort-key="name"]')!;
+		const head = document.querySelector<HTMLElement>("[data-sort]")!;
+		const th = head.querySelector<HTMLElement>('[data-sort-key="name"]')!;
 		const events: unknown[] = [];
-		head.addEventListener("sort", (e) => events.push((e as CustomEvent).detail));
+		head.addEventListener(
+			"sort",
+			(e) => events.push((e as CustomEvent).detail),
+		);
 
 		th.click();
 		expect(th.getAttribute("aria-sort")).toBe("ascending");

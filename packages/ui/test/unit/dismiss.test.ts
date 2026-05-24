@@ -1,8 +1,10 @@
 // @vitest-environment happy-dom
-import { describe, expect, it, beforeEach } from "vyn:test";
+import { beforeEach, describe, expect, it } from "vyn:test";
 import "../../src/dismiss.ts";
 
-beforeEach(() => { document.body.innerHTML = ""; });
+beforeEach(() => {
+	document.body.innerHTML = "";
+});
 
 describe("dismiss", () => {
 	it("fires 'dismiss' with reason='escape' when Esc pressed inside the element", async () => {
@@ -11,7 +13,9 @@ describe("dismiss", () => {
 		const el = document.querySelector<HTMLElement>("[data-dismiss]")!;
 		el.focus();
 		let reason: string | undefined;
-		el.addEventListener("dismiss", (e) => { reason = (e as CustomEvent).detail.reason; });
+		el.addEventListener("dismiss", (e) => {
+			reason = (e as CustomEvent).detail.reason;
+		});
 		document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
 		expect(reason).toBe("escape");
 	});
@@ -25,7 +29,9 @@ describe("dismiss", () => {
 		const el = document.querySelector<HTMLElement>("[data-dismiss]")!;
 		const outside = document.getElementById("outside")!;
 		let reason: string | undefined;
-		el.addEventListener("dismiss", (e) => { reason = (e as CustomEvent).detail.reason; });
+		el.addEventListener("dismiss", (e) => {
+			reason = (e as CustomEvent).detail.reason;
+		});
 		outside.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
 		expect(reason).toBe("outside");
 	});
@@ -37,7 +43,9 @@ describe("dismiss", () => {
 		el.focus();
 		let dismissedFired = false;
 		el.addEventListener("dismiss", (e) => e.preventDefault());
-		el.addEventListener("dismissed", () => { dismissedFired = true; });
+		el.addEventListener("dismissed", () => {
+			dismissedFired = true;
+		});
 		document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
 		expect(dismissedFired).toBe(false);
 	});

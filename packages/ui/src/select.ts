@@ -18,13 +18,15 @@
 //   `change` on the container, detail = { value: string | string[] }
 
 function init() {
-	const containers = document.querySelectorAll<HTMLElement>("[data-select]:not([data-sel-wired])");
+	const containers = document.querySelectorAll<HTMLElement>(
+		"[data-select]:not([data-sel-wired])",
+	);
 	containers.forEach((c) => wire(c));
 }
 
 function wire(container: HTMLElement) {
 	container.dataset.selWired = "true";
-	const mode = container.dataset.select || "single";  // "single" | "multiple" | ""(=single)
+	const mode = container.dataset.select || "single"; // "single" | "multiple" | ""(=single)
 
 	function items(): HTMLElement[] {
 		return [...container.querySelectorAll<HTMLElement>("[data-value]")];
@@ -36,9 +38,11 @@ function wire(container: HTMLElement) {
 			const v = item.dataset.value!;
 			item.setAttribute("aria-selected", values.includes(v) ? "true" : "false");
 		}
-		container.dispatchEvent(new CustomEvent("change", {
-			detail: { value: mode === "multiple" ? values : values[0] },
-		}));
+		container.dispatchEvent(
+			new CustomEvent("change", {
+				detail: { value: mode === "multiple" ? values : values[0] },
+			}),
+		);
 	}
 
 	function current(): string[] {
@@ -63,8 +67,8 @@ function wire(container: HTMLElement) {
 		}
 
 		const list = items();
-		const cur  = new Set(current());
-		const me   = e as MouseEvent;
+		const cur = new Set(current());
+		const me = e as MouseEvent;
 		const ctrl = me.ctrlKey || me.metaKey;
 		const shift = me.shiftKey;
 
@@ -82,7 +86,8 @@ function wire(container: HTMLElement) {
 				for (let i = lo; i <= hi; i++) cur.add(list[i].dataset.value!);
 			}
 		} else if (ctrl) {
-			if (cur.has(v)) cur.delete(v); else cur.add(v);
+			if (cur.has(v)) cur.delete(v);
+			else cur.add(v);
 			container.dataset.selAnchor = v;
 		} else {
 			cur.clear();
@@ -100,7 +105,8 @@ function wire(container: HTMLElement) {
 		if (!v) return;
 		const cur = new Set(current());
 		if (mode === "multiple") {
-			if (cur.has(v)) cur.delete(v); else cur.add(v);
+			if (cur.has(v)) cur.delete(v);
+			else cur.add(v);
 			update([...cur]);
 			container.dataset.selAnchor = v;
 		} else {
@@ -111,9 +117,13 @@ function wire(container: HTMLElement) {
 }
 
 if (typeof document !== "undefined") {
-	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
-	else init();
-	new MutationObserver(init).observe(document.body ?? document.documentElement, { childList: true, subtree: true });
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", init);
+	} else init();
+	new MutationObserver(init).observe(
+		document.body ?? document.documentElement,
+		{ childList: true, subtree: true },
+	);
 }
 
 export {};

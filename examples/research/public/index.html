@@ -1,22 +1,37 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head>
-	<meta charset="utf-8">
-	<title>Research</title>
-	<script src="https://cdn.tailwindcss.com"></script>
-	<link rel="stylesheet" href="/style.css">
-</head>
-<body class="bg-slate-50 text-slate-900 min-h-screen">
-	<header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-		<h1 class="text-xl font-semibold tracking-tight">Research</h1>
-		<button id="bell" class="relative px-3 py-1.5 rounded-md hover:bg-slate-100" aria-haspopup="true" aria-expanded="false">
-			🔔 <span id="badge" class="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 hidden items-center justify-center"></span>
-		</button>
-	</header>
-	<aside id="inbox" class="fixed top-16 right-4 w-80 max-h-96 overflow-auto bg-white rounded-lg shadow-xl border border-slate-200 z-10" hidden></aside>
-	<main class="max-w-3xl mx-auto px-6 py-8">
-		<div id="route"></div>
-	</main>
-	<script type="module" src="/main.js"></script>
-</body>
+	<head>
+		<meta charset="utf-8">
+		<title>Research</title>
+		<script src="https://cdn.tailwindcss.com"></script>
+		<link rel="stylesheet" href="/style.css">
+	</head>
+	<body class="bg-slate-50 text-slate-900 min-h-screen">
+		<header
+			class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between"
+		>
+			<h1 class="text-xl font-semibold tracking-tight">Research</h1>
+			<button
+				id="bell"
+				class="relative px-3 py-1.5 rounded-md hover:bg-slate-100"
+				aria-haspopup="true"
+				aria-expanded="false"
+			>
+				🔔 <span
+					id="badge"
+					class="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 hidden items-center justify-center"
+				></span>
+			</button>
+		</header>
+		<aside
+			id="inbox"
+			class="fixed top-16 right-4 w-80 max-h-96 overflow-auto bg-white rounded-lg shadow-xl border border-slate-200 z-10"
+			hidden
+		>
+		</aside>
+		<main class="max-w-3xl mx-auto px-6 py-8">
+			<div id="route"></div>
+		</main>
+		<script type="module" src="/main.js"></script>
+	</body>
 </html>

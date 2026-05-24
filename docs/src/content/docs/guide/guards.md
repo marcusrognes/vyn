@@ -2,27 +2,21 @@
 title: Guards
 description: Authorization helpers called early in `run`. Same code path on every surface, narrows types for free, composes by writing TypeScript.
 sidebar:
-  order: 6
+    order: 6
 ---
 
-A **guard** is a small function you call near the top of an action's
-`run` to refuse the call early. Vyn does not ship a declarative
-"requires" field. The reason is straightforward: real-world auth gets
-complex fast (multi-tenant scoping, resource ownership, mixed token
-types, conditional gating), and any declarative list runs out of road.
-Plain TypeScript functions don't.
+A **guard** is a small function you call near the top of an action's `run` to refuse the call early. Vyn does not ship a declarative
+"requires" field. The reason is straightforward: real-world auth gets complex fast (multi-tenant scoping, resource ownership, mixed token
+types, conditional gating), and any declarative list runs out of road. Plain TypeScript functions don't.
 
-Because guards live inside `run`, they fire identically on every
-surface — typed RPC, agent tool calls, MCP, CLI, queue workers, and
-direct `.run()` from tests. There is no separate "middleware tier"
-that one surface could bypass. The action is the single place
-authorization is enforced.
+Because guards live inside `run`, they fire identically on every surface — typed RPC, agent tool calls, MCP, CLI, queue workers, and direct
+`.run()` from tests. There is no separate "middleware tier" that one surface could bypass. The action is the single place authorization is
+enforced.
 
 ## The pattern
 
-Guards are functions that either return (success) or throw an
-`RpcError` (failure). Use TypeScript's `asserts` clause to narrow
-types for everything that follows the call:
+Guards are functions that either return (success) or throw an `RpcError` (failure). Use TypeScript's `asserts` clause to narrow types for
+everything that follows the call:
 
 ```ts
 // features/auth/guards.ts
@@ -39,10 +33,8 @@ export function requireSession<C extends Ctx>(
 }
 ```
 
-The `asserts opts is ...` return type is the load-bearing trick. After
-calling `requireSession(opts)`, TypeScript knows `opts.ctx.session`
-is non-null for the rest of the function body. No `?.`, no manual
-casts.
+The `asserts opts is ...` return type is the load-bearing trick. After calling `requireSession(opts)`, TypeScript knows `opts.ctx.session`
+is non-null for the rest of the function body. No `?.`, no manual casts.
 
 Use it like this:
 
@@ -56,7 +48,7 @@ export const list = createQuery({
 	description: "List the current user's notes.",
 	input: v.object({}),
 	output: v.array(NoteSchema),
-	run: async opts => {
+	run: async (opts) => {
 		requireSession(opts);
 		// opts.ctx.session is now Session, not Session | null.
 		return opts.ctx.db
@@ -66,36 +58,26 @@ export const list = createQuery({
 });
 ```
 
-One line of guard, full type narrowing, identical behavior on every
-surface that calls the action.
+One line of guard, full type narrowing, identical behavior on every surface that calls the action.
 
 ## Why inline beats declarative
 
-A declarative `requires: [session, admin]` field reads cleanly until
-the requirements stop being a flat list. Real apps hit cases like:
+A declarative `requires: [session, admin]` field reads cleanly until the requirements stop being a flat list. Real apps hit cases like:
 
-- **Tenant-scoped checks** — "user must be a member of the tenant
-  named in `input.tenantId`."
-- **Resource ownership** — "user must own the note with id
-  `input._id`," requiring a DB query against the input.
-- **Conditional gating** — "this mutation requires admin only if
-  `input.deleteUser` is true."
-- **Mixed auth shapes** — "session cookie OR API bearer OR signed
-  webhook token, any of the three."
+- **Tenant-scoped checks** — "user must be a member of the tenant named in `input.tenantId`."
+- **Resource ownership** — "user must own the note with id `input._id`," requiring a DB query against the input.
+- **Conditional gating** — "this mutation requires admin only if `input.deleteUser` is true."
+- **Mixed auth shapes** — "session cookie OR API bearer OR signed webhook token, any of the three."
 
-A declarative list either grows into a DSL (with combinators, factories,
-and ordering rules) or papers over the complexity by hiding it inside
-guard implementations. Both make the action harder to read.
+A declarative list either grows into a DSL (with combinators, factories, and ordering rules) or papers over the complexity by hiding it
+inside guard implementations. Both make the action harder to read.
 
-Plain function calls in `run` make the check obvious at the call
-site. If two guards need to coordinate, you write two function calls.
-If a guard needs `input` to do its query, you pass `opts.input` to
-it. The control flow is the code.
+Plain function calls in `run` make the check obvious at the call site. If two guards need to coordinate, you write two function calls. If a
+guard needs `input` to do its query, you pass `opts.input` to it. The control flow is the code.
 
 ## Composing guards
 
-Guards compose by being TypeScript functions. There is no special
-combinator API — `if/else`, `||`, and `await` are the combinators.
+Guards compose by being TypeScript functions. There is no special combinator API — `if/else`, `||`, and `await` are the combinators.
 
 ### Multiple checks
 
@@ -114,7 +96,9 @@ run: async opts => {
 Try one, fall back to the other:
 
 ```ts
-function requireAuth(opts: { ctx: Ctx }): asserts opts is { ctx: Ctx & { session: Session } } {
+function requireAuth(
+	opts: { ctx: Ctx },
+): asserts opts is { ctx: Ctx & { session: Session } } {
 	if (opts.ctx.session) return;
 	const key = opts.ctx.req.headers.get("authorization");
 	if (key && verifyApiKey(key, opts.ctx.db)) return;
@@ -180,45 +164,36 @@ run: async opts => {
 },
 ```
 
-For the last pattern, the guard both checks access and attaches the
-loaded tenant to `ctx` so subsequent code doesn't re-query. This is
-where inline guards earn their keep — declarative would require a
-factory + a result-passing protocol; the function call just does it.
+For the last pattern, the guard both checks access and attaches the loaded tenant to `ctx` so subsequent code doesn't re-query. This is
+where inline guards earn their keep — declarative would require a factory + a result-passing protocol; the function call just does it.
 
 ## Errors that surfaces can map
 
-Throw `RpcError(category, message)` to signal the failure with a
-category the surface can translate:
+Throw `RpcError(category, message)` to signal the failure with a category the surface can translate:
 
-| Category | RPC HTTP | What it means |
-|---|---|---|
-| `unauthorized` | 401 | not signed in |
-| `forbidden`    | 403 | signed in, but not allowed |
-| `not_found`    | 404 | resource missing (or hidden from this caller) |
-| `conflict`     | 409 | precondition failed (duplicate email, optimistic-lock loss) |
-| `bad_request`  | 400 | invalid input the schema didn't catch |
-| `internal`     | 500 | bug |
+| Category       | RPC HTTP | What it means                                               |
+| -------------- | -------- | ----------------------------------------------------------- |
+| `unauthorized` | 401      | not signed in                                               |
+| `forbidden`    | 403      | signed in, but not allowed                                  |
+| `not_found`    | 404      | resource missing (or hidden from this caller)               |
+| `conflict`     | 409      | precondition failed (duplicate email, optimistic-lock loss) |
+| `bad_request`  | 400      | invalid input the schema didn't catch                       |
+| `internal`     | 500      | bug                                                         |
 
-The agent layer surfaces these as tool errors with the category
-attached, so the model can react sensibly to "you're forbidden" vs
-"the resource doesn't exist." MCP and CLI map them to their protocol
-shapes the same way.
+The agent layer surfaces these as tool errors with the category attached, so the model can react sensibly to "you're forbidden" vs "the
+resource doesn't exist." MCP and CLI map them to their protocol shapes the same way.
 
-See [Errors](/vyn/guide/errors/) (coming) for the full list and how each
-surface translates them.
+See [Errors](/vyn/guide/errors/) (coming) for the full list and how each surface translates them.
 
 ## When to extract a guard
 
-Inline a check the first time you write it. Extract to a named
-function when:
+Inline a check the first time you write it. Extract to a named function when:
 
 - The same check appears in three or more actions.
-- The check has a name worth attaching to errors and telemetry
-  (`requireSession`, `requireOwner`, `requireTenantMember`).
+- The check has a name worth attaching to errors and telemetry (`requireSession`, `requireOwner`, `requireTenantMember`).
 - The check narrows a type the rest of `run` will read.
 
-Until then, an inline `if (!opts.ctx.session) throw new RpcError(...)`
-in one action is honest. Don't extract until duplication forces it.
+Until then, an inline `if (!opts.ctx.session) throw new RpcError(...)` in one action is honest. Don't extract until duplication forces it.
 
 ## Testing guards
 
@@ -233,15 +208,11 @@ test("requireSession throws when session is null", () => {
 });
 ```
 
-For end-to-end action tests, build a ctx that either satisfies the
-guard or doesn't and call `action.run(opts)`. Same code path
-production runs.
+For end-to-end action tests, build a ctx that either satisfies the guard or doesn't and call `action.run(opts)`. Same code path production
+runs.
 
 ## See also
 
-- [Actions](/vyn/guide/actions/) — guards live inside `run`, not as an
-  action field
-- [Configuration](/vyn/guide/configuration/) — what's on `ctx` for guards
-  to read
-- [Errors](/vyn/guide/errors/) — `RpcError` categories and surface mapping
-  (coming)
+- [Actions](/vyn/guide/actions/) — guards live inside `run`, not as an action field
+- [Configuration](/vyn/guide/configuration/) — what's on `ctx` for guards to read
+- [Errors](/vyn/guide/errors/) — `RpcError` categories and surface mapping (coming)

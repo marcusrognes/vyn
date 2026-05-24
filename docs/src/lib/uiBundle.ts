@@ -27,7 +27,9 @@ function findUiSrc(): string {
 			dir = parent;
 		}
 	}
-	throw new Error("could not locate packages/ui/src relative to docs/ or import.meta.url");
+	throw new Error(
+		"could not locate packages/ui/src relative to docs/ or import.meta.url",
+	);
 }
 
 const UI_SRC = findUiSrc();
@@ -54,7 +56,9 @@ export async function bundleUi(name: string): Promise<string> {
 		target: ["es2022"],
 		platform: "browser",
 		logLevel: "silent",
-		footer: { js: `globalThis.__vynUi=globalThis.__vynUi||{};Object.assign(globalThis.__vynUi,__vynUi_${safe}||{});` },
+		footer: {
+			js: `globalThis.__vynUi=globalThis.__vynUi||{};Object.assign(globalThis.__vynUi,__vynUi_${safe}||{});`,
+		},
 	});
 
 	const text = result.outputFiles[0]?.text ?? "";
@@ -62,6 +66,8 @@ export async function bundleUi(name: string): Promise<string> {
 	return text;
 }
 
-export async function bundleManyUi(names: readonly string[]): Promise<string[]> {
+export async function bundleManyUi(
+	names: readonly string[],
+): Promise<string[]> {
 	return Promise.all(names.map(bundleUi));
 }

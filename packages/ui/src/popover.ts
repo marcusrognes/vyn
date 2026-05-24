@@ -3,7 +3,8 @@
 // for browsers that don't support CSS Anchor Positioning yet.
 
 function init() {
-	document.querySelectorAll<HTMLElement>("[data-popover]:not([data-pop-wired])").forEach(wire);
+	document.querySelectorAll<HTMLElement>("[data-popover]:not([data-pop-wired])")
+		.forEach(wire);
 }
 
 function wire(pop: HTMLElement) {
@@ -15,7 +16,7 @@ function wire(pop: HTMLElement) {
 	}
 
 	const triggerId = pop.dataset.popoverTrigger ?? pop.dataset.anchor;
-	const trigger   = triggerId ? document.getElementById(triggerId) : null;
+	const trigger = triggerId ? document.getElementById(triggerId) : null;
 	if (trigger) {
 		trigger.setAttribute("aria-haspopup", "true");
 		trigger.setAttribute("aria-controls", pop.id);
@@ -26,18 +27,26 @@ function wire(pop: HTMLElement) {
 	function toggle() {
 		const open = pop.dataset.open === "true";
 		if (open) close();
-		else      openIt();
+		else openIt();
 	}
 	function openIt() {
 		pop.dataset.open = "true";
 		trigger?.setAttribute("aria-expanded", "true");
-		if ("showPopover" in pop) { try { (pop as any).showPopover(); } catch { /* idempotent */ } }
+		if ("showPopover" in pop) {
+			try {
+				(pop as any).showPopover();
+			} catch { /* idempotent */ }
+		}
 		pop.dispatchEvent(new CustomEvent("open"));
 	}
 	function close() {
 		pop.dataset.open = "false";
 		trigger?.setAttribute("aria-expanded", "false");
-		if ("hidePopover" in pop) { try { (pop as any).hidePopover(); } catch { /* idempotent */ } }
+		if ("hidePopover" in pop) {
+			try {
+				(pop as any).hidePopover();
+			} catch { /* idempotent */ }
+		}
 		pop.dispatchEvent(new CustomEvent("close"));
 	}
 
@@ -57,9 +66,13 @@ function wire(pop: HTMLElement) {
 }
 
 if (typeof document !== "undefined") {
-	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
-	else init();
-	new MutationObserver(init).observe(document.body ?? document.documentElement, { childList: true, subtree: true });
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", init);
+	} else init();
+	new MutationObserver(init).observe(
+		document.body ?? document.documentElement,
+		{ childList: true, subtree: true },
+	);
 }
 
 export {};

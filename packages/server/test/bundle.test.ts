@@ -1,24 +1,30 @@
 import { afterAll, beforeAll, describe, expect, it } from "vyn:test";
-import { mkdtemp, mkdir, writeFile, rm, stat } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { makeTryBundle, loadManifest } from "../src/bundle.ts";
+import { loadManifest, makeTryBundle } from "../src/bundle.ts";
 
 describe("bundle (dev)", () => {
 	let root: string;
 	let publicDir: string;
 
 	beforeAll(async () => {
-		root      = await mkdtemp(join(tmpdir(), "vyn-bundle-"));
+		root = await mkdtemp(join(tmpdir(), "vyn-bundle-"));
 		publicDir = join(root, "public");
 		await mkdir(join(publicDir, "routes"), { recursive: true });
-		await writeFile(join(publicDir, "routes", "index.ts"), `
+		await writeFile(
+			join(publicDir, "routes", "index.ts"),
+			`
 			import { greet } from "./util.ts";
 			console.log(greet("world"));
-		`);
-		await writeFile(join(publicDir, "routes", "util.ts"), `
+		`,
+		);
+		await writeFile(
+			join(publicDir, "routes", "util.ts"),
+			`
 			export const greet = (name: string): string => \`hello \${name}\`;
-		`);
+		`,
+		);
 	});
 
 	afterAll(async () => {
@@ -60,9 +66,12 @@ describe("bundle (dev)", () => {
 
 		const utilPath = join(publicDir, "routes", "util.ts");
 		// Bump mtime by writing a different export.
-		await writeFile(utilPath, `
+		await writeFile(
+			utilPath,
+			`
 			export const greet = (name: string): string => \`hi \${name}\`;
-		`);
+		`,
+		);
 		// Ensure the mtime tick is visible (fs resolution can be coarse).
 		const future = new Date(Date.now() + 2000);
 		const { utimes } = await import("node:fs/promises");
@@ -90,10 +99,13 @@ describe("bundle (prod manifest)", () => {
 	let publicDir: string;
 
 	beforeAll(async () => {
-		root      = await mkdtemp(join(tmpdir(), "vyn-bundle-prod-"));
+		root = await mkdtemp(join(tmpdir(), "vyn-bundle-prod-"));
 		publicDir = join(root, "public");
 		await mkdir(join(publicDir, "dist", "routes"), { recursive: true });
-		await writeFile(join(publicDir, "dist", "routes", "index.abc123.js"), "console.log('built');");
+		await writeFile(
+			join(publicDir, "dist", "routes", "index.abc123.js"),
+			"console.log('built');",
+		);
 		await writeFile(
 			join(publicDir, "dist", "manifest.json"),
 			JSON.stringify({ "/routes/index.js": "/dist/routes/index.abc123.js" }),

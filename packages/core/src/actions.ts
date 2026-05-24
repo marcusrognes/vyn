@@ -5,34 +5,37 @@
 // (.run, .emit, .now, .at, .in, .send, etc) so apps can call them
 // directly from any surface.
 
-import { v, type Schema } from "./v.ts";
-import { registry, anonymousName, type Action, type ToolSpec } from "./registry.ts";
-import { RpcError, isPermanent } from "./errors.ts";
+import { type Schema, v } from "./v.ts";
+import { type Action, anonymousName, registry, type ToolSpec } from "./registry.ts";
+import { isPermanent, RpcError } from "./errors.ts";
 import { dispatchNotification } from "./notify-runtime.ts";
 import { publishViaTransport } from "./transport.ts";
 
 // ─── shared types ────────────────────────────────────────────────────
 
 export type RunOpts<I, C> = {
-	input:  I;
-	ctx:    C;
-	tick?:  (payload: unknown) => void;
+	input: I;
+	ctx: C;
+	tick?: (payload: unknown) => void;
 	signal?: AbortSignal;
-	job?:    { id: string; attempt: number; scheduledAt: Date };
+	job?: { id: string; attempt: number; scheduledAt: Date };
 	events?: AsyncIterable<unknown>;
 };
 
 type BaseDef<I, O, C> = {
-	name?:        string;
+	name?: string;
 	description?: string;
-	input?:       Schema<I>;
-	output?:      Schema<O>;
-	progress?:    Schema<unknown>;
-	tool?:        ToolSpec;
-	run:          (opts: RunOpts<I, C>) => Promise<O> | AsyncGenerator<O>;
+	input?: Schema<I>;
+	output?: Schema<O>;
+	progress?: Schema<unknown>;
+	tool?: ToolSpec;
+	run: (opts: RunOpts<I, C>) => Promise<O> | AsyncGenerator<O>;
 };
 
-function validateRequirements(def: { description?: string; output?: unknown; tool?: ToolSpec }, kind: string) {
+function validateRequirements(
+	def: { description?: string; output?: unknown; tool?: ToolSpec },
+	kind: string,
+) {
 	if (def.tool && !def.description) {
 		throw new Error(`@vynjs/core: ${kind} with tool requires a description`);
 	}
@@ -45,13 +48,19 @@ function validateRequirements(def: { description?: string; output?: unknown; too
 // (rather than stripping with v.object({})), so tests and callers
 // can supply arbitrary opts.input shapes.
 const PASSTHROUGH: Schema<unknown> = {
-	kind:        "passthrough",
-	schema:      {},
+	kind: "passthrough",
+	schema: {},
 	constraints: [],
 	parse: (v) => v,
-	optional() { return this as any; },
-	nullable() { return this as any; },
-	default()  { return this as any; },
+	optional() {
+		return this as any;
+	},
+	nullable() {
+		return this as any;
+	},
+	default() {
+		return this as any;
+	},
 };
 
 function defaultInput<I>(input: Schema<I> | undefined): Schema<I> {
@@ -92,23 +101,25 @@ function wrapRun<I, O, C>(
 export type QueryAction<I, O, C> = Action & {
 	kind: "query";
 	name: string;
-	run:  (opts: RunOpts<I, C>) => Promise<O>;
+	run: (opts: RunOpts<I, C>) => Promise<O>;
 };
 
-export function createQuery<I = unknown, O = unknown, C = unknown>(def: BaseDef<I, O, C>): QueryAction<I, O, C> {
+export function createQuery<I = unknown, O = unknown, C = unknown>(
+	def: BaseDef<I, O, C>,
+): QueryAction<I, O, C> {
 	validateRequirements(def, "createQuery");
-	const input  = defaultInput<I>(def.input);
+	const input = defaultInput<I>(def.input);
 	const output = def.output;
-	const name   = def.name ?? anonymousName("query");
+	const name = def.name ?? anonymousName("query");
 
 	const action: QueryAction<I, O, C> = {
-		kind:        "query",
+		kind: "query",
 		name,
 		description: def.description,
-		input:       input as Schema<unknown>,
-		output:      output as Schema<unknown> | undefined,
-		tool:        def.tool,
-		run:         wrapRun(def, input, output),
+		input: input as Schema<unknown>,
+		output: output as Schema<unknown> | undefined,
+		tool: def.tool,
+		run: wrapRun(def, input, output),
 	};
 
 	registry.register(action as Action);
@@ -120,28 +131,30 @@ export function createQuery<I = unknown, O = unknown, C = unknown>(def: BaseDef<
 export type MutationAction<I, O, C> = Action & {
 	kind: "mutation";
 	name: string;
-	run:  (opts: RunOpts<I, C>) => Promise<O>;
+	run: (opts: RunOpts<I, C>) => Promise<O>;
 };
 
 export function createMutation<I = unknown, O = unknown, C = unknown>(
 	def: BaseDef<I, O, C> & { invalidates?: never },
 ): MutationAction<I, O, C> {
 	if ((def as any).invalidates !== undefined) {
-		throw new Error("@vynjs/core: createMutation no longer accepts `invalidates`. Cache invalidation lives on the client.");
+		throw new Error(
+			"@vynjs/core: createMutation no longer accepts `invalidates`. Cache invalidation lives on the client.",
+		);
 	}
 	validateRequirements(def, "createMutation");
-	const input  = defaultInput<I>(def.input);
+	const input = defaultInput<I>(def.input);
 	const output = def.output;
-	const name   = def.name ?? anonymousName("mutation");
+	const name = def.name ?? anonymousName("mutation");
 
 	const action: MutationAction<I, O, C> = {
-		kind:        "mutation",
+		kind: "mutation",
 		name,
 		description: def.description,
-		input:       input as Schema<unknown>,
-		output:      output as Schema<unknown> | undefined,
-		tool:        def.tool,
-		run:         wrapRun(def, input, output),
+		input: input as Schema<unknown>,
+		output: output as Schema<unknown> | undefined,
+		tool: def.tool,
+		run: wrapRun(def, input, output),
 	};
 
 	registry.register(action as Action);
@@ -151,10 +164,10 @@ export function createMutation<I = unknown, O = unknown, C = unknown>(
 // ─── createSubscription ──────────────────────────────────────────────
 
 export type SubscriptionAction<I, O, C> = Action & {
-	kind:  "subscription";
-	name:  string;
-	run:   (opts: RunOpts<I, C>) => AsyncGenerator<O>;
-	emit:  (value: O) => void;
+	kind: "subscription";
+	name: string;
+	run: (opts: RunOpts<I, C>) => AsyncGenerator<O>;
+	emit: (value: O) => void;
 	// Push a value into local subscriber queues without invoking the
 	// transport publish hook. The server uses this to deliver values
 	// received from a remote process — calling emit() there would echo
@@ -163,20 +176,26 @@ export type SubscriptionAction<I, O, C> = Action & {
 };
 
 type SubscriptionDef<I, O, C> = Omit<BaseDef<I, O, C>, "run"> & {
-	run: (opts: RunOpts<I, C> & { events: AsyncIterable<O>; signal: AbortSignal }) => AsyncGenerator<O>;
+	run: (
+		opts: RunOpts<I, C> & { events: AsyncIterable<O>; signal: AbortSignal },
+	) => AsyncGenerator<O>;
 };
 
 export function createSubscription<I = unknown, O = unknown, C = unknown>(
 	def: SubscriptionDef<I, O, C>,
 ): SubscriptionAction<I, O, C> {
 	if ((def as any).match !== undefined) {
-		throw new Error("@vynjs/core: createSubscription no longer accepts `match`. Filter inside `run` instead.");
+		throw new Error(
+			"@vynjs/core: createSubscription no longer accepts `match`. Filter inside `run` instead.",
+		);
 	}
 	if ((def.run as any).constructor.name !== "AsyncGeneratorFunction") {
-		throw new Error("@vynjs/core: createSubscription run must be an async generator");
+		throw new Error(
+			"@vynjs/core: createSubscription run must be an async generator",
+		);
 	}
 	const input = defaultInput<I>(def.input);
-	const name  = def.name ?? anonymousName("subscription");
+	const name = def.name ?? anonymousName("subscription");
 
 	// Per-active-subscription event queues. Each .run() call gets its
 	// own queue so multiple subscribers don't fight for events.
@@ -195,12 +214,12 @@ export function createSubscription<I = unknown, O = unknown, C = unknown>(
 	};
 
 	const action: SubscriptionAction<I, O, C> = {
-		kind:        "subscription",
+		kind: "subscription",
 		name,
 		description: def.description,
-		input:       input as Schema<unknown>,
-		output:      def.output as Schema<unknown> | undefined,
-		tool:        def.tool,
+		input: input as Schema<unknown>,
+		output: def.output as Schema<unknown> | undefined,
+		tool: def.tool,
 		emit,
 		deliverLocal,
 
@@ -215,11 +234,19 @@ export function createSubscription<I = unknown, O = unknown, C = unknown>(
 			const handle = {
 				push: (v: O) => {
 					buffer.push(v);
-					if (resolve) { const r = resolve; resolve = null; r(); }
+					if (resolve) {
+						const r = resolve;
+						resolve = null;
+						r();
+					}
 				},
 				close: () => {
 					closed = true;
-					if (resolve) { const r = resolve; resolve = null; r(); }
+					if (resolve) {
+						const r = resolve;
+						resolve = null;
+						r();
+					}
 				},
 			};
 			queues.add(handle);
@@ -229,7 +256,9 @@ export function createSubscription<I = unknown, O = unknown, C = unknown>(
 					while (!closed) {
 						while (buffer.length) yield buffer.shift()!;
 						if (closed) break;
-						await new Promise<void>((r) => { resolve = r; });
+						await new Promise<void>((r) => {
+							resolve = r;
+						});
 					}
 				},
 			};
@@ -239,7 +268,9 @@ export function createSubscription<I = unknown, O = unknown, C = unknown>(
 
 			async function* outer(): AsyncGenerator<O> {
 				try {
-					const inner = def.run({ ...rawOpts, input: parsedInput, events, signal } as any);
+					const inner = def.run(
+						{ ...rawOpts, input: parsedInput, events, signal } as any,
+					);
 					for await (const v of inner) {
 						if (def.output) def.output.parse(v);
 						yield v;
@@ -258,19 +289,29 @@ export function createSubscription<I = unknown, O = unknown, C = unknown>(
 
 // ─── createJob ───────────────────────────────────────────────────────
 
-type CronOrInterval = { cron?: string; interval?: string | number; timezone?: string };
-type BackoffSpec = "exponential" | "linear" | { fn: (attempt: number) => number };
+type CronOrInterval = {
+	cron?: string;
+	interval?: string | number;
+	timezone?: string;
+};
+type BackoffSpec = "exponential" | "linear" | {
+	fn: (attempt: number) => number;
+};
 
 export type JobAction<I, C> = Action & {
-	kind:     "job";
-	name:     string;
-	retries:  number;
-	timeout:  number;
-	backoff:  BackoffSpec;
+	kind: "job";
+	name: string;
+	retries: number;
+	timeout: number;
+	backoff: BackoffSpec;
 	schedule?: CronOrInterval;
 	tickRetentionMs?: number;
 
-	run(opts: RunOpts<I, C> & { job?: { id: string; attempt: number; scheduledAt: Date } }): Promise<void>;
+	run(
+		opts: RunOpts<I, C> & {
+			job?: { id: string; attempt: number; scheduledAt: Date };
+		},
+	): Promise<void>;
 	now(input: I): Promise<string>;
 	at(date: Date, input: I): Promise<string>;
 	in(ms: number, input: I): Promise<string>;
@@ -285,21 +326,21 @@ export type JobAction<I, C> = Action & {
 };
 
 type JobDef<I, C> = Omit<BaseDef<I, void, C>, "output"> & {
-	retries?:        number;
-	timeout?:        number;
-	backoff?:        BackoffSpec;
-	schedule?:       CronOrInterval;
+	retries?: number;
+	timeout?: number;
+	backoff?: BackoffSpec;
+	schedule?: CronOrInterval;
 	tickRetentionMs?: number;
-	output?:         Schema<unknown>;
+	output?: Schema<unknown>;
 };
 
 export type JobStatus = {
-	state:       "queued" | "running" | "completed" | "failed" | "cancelled";
-	attempts:    number;
-	lastError?:  string;
-	lastTick?:   unknown;
+	state: "queued" | "running" | "completed" | "failed" | "cancelled";
+	attempts: number;
+	lastError?: string;
+	lastTick?: unknown;
 	scheduledAt?: Date;
-	result?:     unknown;
+	result?: unknown;
 };
 
 export type JobWatchEvent =
@@ -309,15 +350,15 @@ export type JobWatchEvent =
 
 // In-memory job store. Pluggable later via serve({ jobs: { store } }).
 type JobRecord = {
-	id:          string;
-	name:        string;
-	input:       unknown;
-	attempt:     number;
+	id: string;
+	name: string;
+	input: unknown;
+	attempt: number;
 	scheduledAt: Date;
-	state:       JobStatus["state"];
-	ticks:       unknown[];
-	error?:      Error;
-	result?:     unknown;
+	state: JobStatus["state"];
+	ticks: unknown[];
+	error?: Error;
+	result?: unknown;
 	completedAt?: Date;
 };
 
@@ -336,27 +377,29 @@ function backoffFor(spec: BackoffSpec, attempt: number): number {
 	return Math.min(ms, 5 * 60_000);
 }
 
-export function createJob<I = unknown, C = unknown>(def: JobDef<I, C>): JobAction<I, C> {
+export function createJob<I = unknown, C = unknown>(
+	def: JobDef<I, C>,
+): JobAction<I, C> {
 	validateRequirements(def, "createJob");
 	const input = defaultInput<I>(def.input);
-	const name  = def.name ?? anonymousName("job");
+	const name = def.name ?? anonymousName("job");
 
-	const retries  = def.retries ?? 0;
-	const timeout  = def.timeout ?? 30_000;
-	const backoff  = def.backoff ?? "exponential";
+	const retries = def.retries ?? 0;
+	const timeout = def.timeout ?? 30_000;
+	const backoff = def.backoff ?? "exponential";
 	const tickRetentionMs = def.tickRetentionMs ?? 5 * 60_000;
 
 	const action: JobAction<I, C> = {
-		kind:        "job",
+		kind: "job",
 		name,
 		description: def.description,
-		input:       input as Schema<unknown>,
-		output:      def.output as Schema<unknown> | undefined,
-		tool:        def.tool,
+		input: input as Schema<unknown>,
+		output: def.output as Schema<unknown> | undefined,
+		tool: def.tool,
 		retries,
 		timeout,
 		backoff,
-		schedule:    def.schedule,
+		schedule: def.schedule,
 		tickRetentionMs,
 
 		backoffFn(attempt) {
@@ -376,10 +419,19 @@ export function createJob<I = unknown, C = unknown>(def: JobDef<I, C>): JobActio
 
 			const work = def.run({ ...rawOpts, input: parsedInput, tick } as any);
 			const result = await new Promise<unknown>((resolve, reject) => {
-				const timer = setTimeout(() => reject(new Error(`timeout after ${timeout}ms`)), timeout);
+				const timer = setTimeout(
+					() => reject(new Error(`timeout after ${timeout}ms`)),
+					timeout,
+				);
 				Promise.resolve(work as Promise<unknown>).then(
-					(v) => { clearTimeout(timer); resolve(v); },
-					(e) => { clearTimeout(timer); reject(e); },
+					(v) => {
+						clearTimeout(timer);
+						resolve(v);
+					},
+					(e) => {
+						clearTimeout(timer);
+						reject(e);
+					},
 				);
 			});
 
@@ -407,12 +459,12 @@ export function createJob<I = unknown, C = unknown>(def: JobDef<I, C>): JobActio
 			const rec = jobStore.get(jobId);
 			if (!rec) throw new RpcError("not_found", `job ${jobId} not found`);
 			return {
-				state:       rec.state,
-				attempts:    rec.attempt,
-				lastError:   rec.error?.message,
-				lastTick:    rec.ticks[rec.ticks.length - 1],
+				state: rec.state,
+				attempts: rec.attempt,
+				lastError: rec.error?.message,
+				lastTick: rec.ticks[rec.ticks.length - 1],
 				scheduledAt: rec.scheduledAt,
-				result:      rec.result,
+				result: rec.result,
 			};
 		},
 
@@ -431,8 +483,11 @@ export function createJob<I = unknown, C = unknown>(def: JobDef<I, C>): JobActio
 			while (lastTickCount < rec.ticks.length) {
 				yield { kind: "tick", payload: rec.ticks[lastTickCount++] };
 			}
-			if (rec.state === "completed") yield { kind: "result", value: rec.result };
-			else if (rec.state === "failed" && rec.error) yield { kind: "error", error: rec.error };
+			if (rec.state === "completed") {
+				yield { kind: "result", value: rec.result };
+			} else if (rec.state === "failed" && rec.error) {
+				yield { kind: "error", error: rec.error };
+			}
 		},
 
 		async result(jobId) {
@@ -453,8 +508,12 @@ export function createJob<I = unknown, C = unknown>(def: JobDef<I, C>): JobActio
 // driven notifications can access staticContext + adapters even
 // though they don't run in a request.
 let backgroundCtx: object = {};
-export function installBackgroundCtx(ctx: object) { backgroundCtx = ctx; }
-export function getBackgroundCtx(): object { return backgroundCtx; }
+export function installBackgroundCtx(ctx: object) {
+	backgroundCtx = ctx;
+}
+export function getBackgroundCtx(): object {
+	return backgroundCtx;
+}
 
 // Registry of running cron schedules so we don't double-install on
 // HMR / multiple serve() calls.
@@ -472,7 +531,9 @@ export function startCronJobs(): void {
 		if (scheduledTimers.has(job.name)) continue;
 
 		if (typeof job.schedule.interval === "number") {
-			const t = setInterval(() => { void job.now({} as unknown); }, job.schedule.interval);
+			const t = setInterval(() => {
+				void job.now({} as unknown);
+			}, job.schedule.interval);
 			scheduledTimers.set(job.name, t);
 			continue;
 		}
@@ -502,16 +563,20 @@ export function stopCronJobs(): void {
 // In-process worker — runs immediately when enqueued.
 // In production this is a separate worker process; for testing,
 // we run synchronously after the scheduled time.
-async function enqueueJob<I, C>(action: JobAction<I, C>, input: I, scheduledAt: Date): Promise<string> {
+async function enqueueJob<I, C>(
+	action: JobAction<I, C>,
+	input: I,
+	scheduledAt: Date,
+): Promise<string> {
 	const id = nextJobId();
 	const rec: JobRecord = {
 		id,
-		name:    action.name,
+		name: action.name,
 		input,
 		attempt: 0,
 		scheduledAt,
-		state:   "queued",
-		ticks:   [],
+		state: "queued",
+		ticks: [],
 	};
 	jobStore.set(id, rec);
 
@@ -529,13 +594,17 @@ async function runJob<I, C>(action: JobAction<I, C>, rec: JobRecord) {
 
 	try {
 		const result = await action.run({
-			input:  rec.input as I,
-			ctx:    backgroundCtx as C,
-			job:    { id: rec.id, attempt: rec.attempt - 1, scheduledAt: rec.scheduledAt },
-			tick:   (payload: unknown) => rec.ticks.push(payload),
+			input: rec.input as I,
+			ctx: backgroundCtx as C,
+			job: {
+				id: rec.id,
+				attempt: rec.attempt - 1,
+				scheduledAt: rec.scheduledAt,
+			},
+			tick: (payload: unknown) => rec.ticks.push(payload),
 		} as any);
-		rec.state       = "completed";
-		rec.result      = result;
+		rec.state = "completed";
+		rec.result = result;
 		rec.completedAt = new Date();
 	} catch (e) {
 		const err = e as Error;
@@ -545,7 +614,7 @@ async function runJob<I, C>(action: JobAction<I, C>, rec: JobRecord) {
 			rec.state = "queued";
 			setTimeout(() => runJob(action, rec), delay);
 		} else {
-			rec.state       = "failed";
+			rec.state = "failed";
 			rec.completedAt = new Date();
 		}
 	}
@@ -558,58 +627,69 @@ type ChannelMode = "instant" | "deferred" | "digest";
 type ChannelFn = (opts: { input: unknown; ctx: unknown }) => Promise<unknown>;
 
 type ChannelDef = ChannelFn | {
-	mode?:           ChannelMode;
-	render?:         ChannelFn;
-	renderItem?:     ChannelFn;
-	renderDigest?:   (opts: { items: unknown[]; ctx: unknown; userId: string }) => Promise<unknown>;
-	renderBundle?:   (opts: { items: BundleItem[]; ctx: unknown; userId: string }) => Promise<unknown>;
-	delay?:          number;
-	digestKey?:      (input: unknown) => string;
-	defaultCron?:    string;
-	digestMaxAge?:   string;
+	mode?: ChannelMode;
+	render?: ChannelFn;
+	renderItem?: ChannelFn;
+	renderDigest?: (
+		opts: { items: unknown[]; ctx: unknown; userId: string },
+	) => Promise<unknown>;
+	renderBundle?: (
+		opts: { items: BundleItem[]; ctx: unknown; userId: string },
+	) => Promise<unknown>;
+	delay?: number;
+	digestKey?: (input: unknown) => string;
+	defaultCron?: string;
+	digestMaxAge?: string;
 };
 
 type ChannelConfig = {
-	mode:            ChannelMode;
-	render?:         ChannelFn;
-	renderItem?:     ChannelFn;
-	renderDigest?:   (opts: { items: unknown[]; ctx: unknown; userId: string }) => Promise<unknown>;
-	renderBundle?:   (opts: { items: BundleItem[]; ctx: unknown; userId: string }) => Promise<unknown>;
-	delay?:          number;
-	digestKey?:      (input: unknown) => string;
-	defaultCron?:    string;
-	digestMaxAge?:   string;
+	mode: ChannelMode;
+	render?: ChannelFn;
+	renderItem?: ChannelFn;
+	renderDigest?: (
+		opts: { items: unknown[]; ctx: unknown; userId: string },
+	) => Promise<unknown>;
+	renderBundle?: (
+		opts: { items: BundleItem[]; ctx: unknown; userId: string },
+	) => Promise<unknown>;
+	delay?: number;
+	digestKey?: (input: unknown) => string;
+	defaultCron?: string;
+	digestMaxAge?: string;
 };
 
 export type BundleItem = {
 	notification: string;
-	mode:         ChannelMode;
-	payload:      unknown;
+	mode: ChannelMode;
+	payload: unknown;
 };
 
 type NotificationDef<I, C> = {
-	name?:        string;
+	name?: string;
 	description?: string;
-	input?:       Schema<I>;
-	progress?:    Schema<unknown>;
-	tool?:        ToolSpec;
-	channels:     Record<string, ChannelDef>;
-	retries?:     number;
-	backoff?:     BackoffSpec;
-	schedule?:    CronOrInterval;
-	getUserId?:   ((input: I) => string) | null;
+	input?: Schema<I>;
+	progress?: Schema<unknown>;
+	tool?: ToolSpec;
+	channels: Record<string, ChannelDef>;
+	retries?: number;
+	backoff?: BackoffSpec;
+	schedule?: CronOrInterval;
+	getUserId?: ((input: I) => string) | null;
 };
 
 export type NotificationAction<I, C> = Action & {
-	kind:      "notification";
-	name:      string;
-	channels:  Record<string, ChannelConfig>;
-	retries:   number;
-	backoff:   BackoffSpec;
+	kind: "notification";
+	name: string;
+	channels: Record<string, ChannelConfig>;
+	retries: number;
+	backoff: BackoffSpec;
 	schedule?: CronOrInterval;
 	getUserId: ((input: I) => string) | null;
 
-	send(input: I, opts?: { channels?: string[]; ctx?: unknown }): Promise<Record<string, string>>;
+	send(
+		input: I,
+		opts?: { channels?: string[]; ctx?: unknown },
+	): Promise<Record<string, string>>;
 	preview(input: I): Promise<Record<string, unknown>>;
 	run(opts: RunOpts<I, C>): Promise<void>;
 	now(input: I): Promise<Record<string, string>>;
@@ -622,15 +702,15 @@ function normalizeChannel(def: ChannelDef): ChannelConfig {
 		return { mode: "instant", render: def };
 	}
 	return {
-		mode:           def.mode ?? "instant",
-		render:         def.render,
-		renderItem:     def.renderItem,
-		renderDigest:   def.renderDigest,
-		renderBundle:   def.renderBundle,
-		delay:          def.delay,
-		digestKey:      def.digestKey,
-		defaultCron:    def.defaultCron,
-		digestMaxAge:   def.digestMaxAge,
+		mode: def.mode ?? "instant",
+		render: def.render,
+		renderItem: def.renderItem,
+		renderDigest: def.renderDigest,
+		renderBundle: def.renderBundle,
+		delay: def.delay,
+		digestKey: def.digestKey,
+		defaultCron: def.defaultCron,
+		digestMaxAge: def.digestMaxAge,
 	};
 }
 
@@ -638,28 +718,27 @@ export function createNotification<I = unknown, C = unknown>(
 	def: NotificationDef<I, C>,
 ): NotificationAction<I, C> {
 	const input = defaultInput<I>(def.input);
-	const name  = def.name ?? anonymousName("notification");
+	const name = def.name ?? anonymousName("notification");
 
 	const channels: Record<string, ChannelConfig> = {};
 	for (const [k, ch] of Object.entries(def.channels)) {
 		channels[k] = normalizeChannel(ch);
 	}
 
-	const getUserId: ((input: I) => string) | null =
-		def.getUserId === undefined
-			? (input: I) => (input as Record<string, unknown>).userId as string
-			: def.getUserId;
+	const getUserId: ((input: I) => string) | null = def.getUserId === undefined
+		? (input: I) => (input as Record<string, unknown>).userId as string
+		: def.getUserId;
 
 	const action: NotificationAction<I, C> = {
-		kind:        "notification",
+		kind: "notification",
 		name,
 		description: def.description,
-		input:       input as Schema<unknown>,
-		tool:        def.tool,
+		input: input as Schema<unknown>,
+		tool: def.tool,
 		channels,
-		retries:     def.retries ?? 0,
-		backoff:     def.backoff ?? "exponential",
-		schedule:    def.schedule,
+		retries: def.retries ?? 0,
+		backoff: def.backoff ?? "exponential",
+		schedule: def.schedule,
 		getUserId,
 
 		async send(input, opts = {}) {
@@ -667,18 +746,24 @@ export function createNotification<I = unknown, C = unknown>(
 			return dispatchNotification({
 				notification: {
 					name,
-					channels:  channels as any,
+					channels: channels as any,
 					getUserId: getUserId as any,
 				},
-				input:    parsedInput,
-				ctx:      opts.ctx ?? {},
+				input: parsedInput,
+				ctx: opts.ctx ?? {},
 				channels: opts.channels,
 			});
 		},
 
-		async now(input) { return this.send(input); },
-		async at(_date, input) { return this.send(input); },
-		async in(_ms, input) { return this.send(input); },
+		async now(input) {
+			return this.send(input);
+		},
+		async at(_date, input) {
+			return this.send(input);
+		},
+		async in(_ms, input) {
+			return this.send(input);
+		},
 
 		async preview(input) {
 			const parsedInput = (input ? this.input!.parse(input) : input) as I;
@@ -708,29 +793,40 @@ type InboxOpts = {
 
 export type InboxAdapter = {
 	send(
-		payload: { payload?: unknown; notification?: string; groupedWith?: string[] },
-		ctx?:    { userId?: string },
+		payload: {
+			payload?: unknown;
+			notification?: string;
+			groupedWith?: string[];
+		},
+		ctx?: { userId?: string },
 	): Promise<{
-		_id:          string;
-		userId:       string;
+		_id: string;
+		userId: string;
 		notification: string;
-		payload:      unknown;
-		createdAt:    Date;
-		readAt:       Date | null;
+		payload: unknown;
+		createdAt: Date;
+		readAt: Date | null;
 		groupedWith?: string[];
 	}>;
 };
 
 export function inboxAdapter(opts: InboxOpts): InboxAdapter {
 	return {
-		async send(payload: { payload?: unknown; notification?: string; groupedWith?: string[] }, ctx: { userId?: string } = {}) {
+		async send(
+			payload: {
+				payload?: unknown;
+				notification?: string;
+				groupedWith?: string[];
+			},
+			ctx: { userId?: string } = {},
+		) {
 			const row = {
-				_id:          nextJobId(),
-				userId:       ctx.userId ?? "",
+				_id: nextJobId(),
+				userId: ctx.userId ?? "",
 				notification: payload.notification ?? "",
-				payload:      payload.payload,
-				createdAt:    new Date(),
-				readAt:       null,
+				payload: payload.payload,
+				createdAt: new Date(),
+				readAt: null,
 				...(payload.groupedWith && { groupedWith: payload.groupedWith }),
 			};
 

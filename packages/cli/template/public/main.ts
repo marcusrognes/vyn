@@ -7,7 +7,8 @@ import { createRouter } from "@vynjs/client";
 import { routes } from "../_vyn.gen.ts";
 
 createRouter({
-	mount:  "#app",
+	mount: "#app",
 	routes: [...routes],
-	notFound: '<section class="card"><header class="card-head"><h2>404 — Not found</h2><p class="hint">No route matched. <a href="/">Go home →</a></p></header></section>',
+	notFound:
+		'<section class="card"><header class="card-head"><h2>404 — Not found</h2><p class="hint">No route matched. <a href="/">Go home →</a></p></header></section>',
 });

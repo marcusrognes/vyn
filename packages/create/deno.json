@@ -3,7 +3,7 @@
 	"version": "0.2.1",
 	"description": "Vyn scaffolder. Run via `deno create jsr:@vynjs/create -- my-app`.",
 	"exports": {
-		".":       "./mod.ts",
+		".": "./mod.ts",
 		"./create": "./mod.ts"
 	},
 	"publish": {

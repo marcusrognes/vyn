@@ -8,11 +8,11 @@
 // Run with `deno task build:templates` from the repo root.
 
 import { walk } from "jsr:@std/fs@^1/walk";
-import { relative, fromFileUrl, join, dirname } from "jsr:@std/path@^1";
+import { dirname, fromFileUrl, join, relative } from "jsr:@std/path@^1";
 
-const ROOT       = dirname(dirname(fromFileUrl(import.meta.url)));      // packages/cli
-const TEMPLATE   = join(ROOT, "template");
-const OUT        = join(ROOT, "src", "templates.gen.ts");
+const ROOT = dirname(dirname(fromFileUrl(import.meta.url))); // packages/cli
+const TEMPLATE = join(ROOT, "template");
+const OUT = join(ROOT, "src", "templates.gen.ts");
 
 // Files generated at app boot or specific to the workspace; init()
 // emits its own versions or doesn't need them.
@@ -26,7 +26,12 @@ const SKIP_DIRS = new Set(["node_modules", "dist", ".deno"]);
 
 const entries: Array<[string, string]> = [];
 
-for await (const entry of walk(TEMPLATE, { includeDirs: false, skip: [/\/node_modules\//, /\/dist\//, /\/\.deno\//] })) {
+for await (
+	const entry of walk(TEMPLATE, {
+		includeDirs: false,
+		skip: [/\/node_modules\//, /\/dist\//, /\/\.deno\//],
+	})
+) {
 	const rel = relative(TEMPLATE, entry.path).replaceAll("\\", "/");
 	if (SKIP.has(rel)) continue;
 	if (rel.split("/").some((seg) => SKIP_DIRS.has(seg))) continue;

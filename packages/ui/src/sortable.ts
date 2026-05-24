@@ -8,15 +8,17 @@
 // commits.
 
 type Drag = {
-	node:          HTMLElement;
+	node: HTMLElement;
 	fromContainer: HTMLElement;
-	group?:        string;
+	group?: string;
 };
 
 let currentDrag: Drag | null = null;
 
 function init() {
-	document.querySelectorAll<HTMLElement>("[data-sortable]:not([data-sortable-wired])").forEach(wire);
+	document.querySelectorAll<HTMLElement>(
+		"[data-sortable]:not([data-sortable-wired])",
+	).forEach(wire);
 }
 
 function wire(container: HTMLElement) {
@@ -35,7 +37,9 @@ function wire(container: HTMLElement) {
 	}
 
 	function fireReorder(c: HTMLElement) {
-		c.dispatchEvent(new CustomEvent("reorder", { detail: { order: orderOf(c) } }));
+		c.dispatchEvent(
+			new CustomEvent("reorder", { detail: { order: orderOf(c) } }),
+		);
 	}
 
 	container.addEventListener("dragstart", (e) => {
@@ -50,14 +54,18 @@ function wire(container: HTMLElement) {
 		if (!currentDrag) return;
 
 		// Same container? Always accept. Different container? Only if groups match.
-		const sameContainer = currentDrag.fromContainer === container || currentDrag.node.parentElement === container;
-		const groupsMatch   = currentDrag.group !== undefined && currentDrag.group === group;
+		const sameContainer = currentDrag.fromContainer === container ||
+			currentDrag.node.parentElement === container;
+		const groupsMatch = currentDrag.group !== undefined &&
+			currentDrag.group === group;
 		if (!sameContainer && !groupsMatch) return;
 
 		e.preventDefault();
 
 		let target = e.target as HTMLElement | null;
-		while (target && target.parentElement !== container) target = target.parentElement;
+		while (target && target.parentElement !== container) {
+			target = target.parentElement;
+		}
 
 		const peers = items().filter((c) => c !== currentDrag!.node);
 
@@ -67,15 +75,21 @@ function wire(container: HTMLElement) {
 				return;
 			}
 			const firstRect = peers[0].getBoundingClientRect();
-			const lastRect  = peers[peers.length - 1].getBoundingClientRect();
-			if (e.clientY < firstRect.top)        container.insertBefore(currentDrag.node, peers[0]);
-			else if (e.clientY > lastRect.bottom) container.appendChild(currentDrag.node);
+			const lastRect = peers[peers.length - 1].getBoundingClientRect();
+			if (e.clientY < firstRect.top) {
+				container.insertBefore(currentDrag.node, peers[0]);
+			} else if (e.clientY > lastRect.bottom) {
+				container.appendChild(currentDrag.node);
+			}
 			return;
 		}
 
-		const rect  = target.getBoundingClientRect();
+		const rect = target.getBoundingClientRect();
 		const after = (e.clientY - rect.top) > rect.height / 2;
-		container.insertBefore(currentDrag.node, after ? target.nextSibling : target);
+		container.insertBefore(
+			currentDrag.node,
+			after ? target.nextSibling : target,
+		);
 	});
 
 	container.addEventListener("dragend", () => {
@@ -87,13 +101,15 @@ function wire(container: HTMLElement) {
 		if (dest && dest !== fromContainer) {
 			fireReorder(fromContainer);
 			fireReorder(dest);
-			dest.dispatchEvent(new CustomEvent("move", {
-				detail: {
-					id:   node.dataset.id ?? node.id,
-					from: fromContainer,
-					to:   dest,
-				},
-			}));
+			dest.dispatchEvent(
+				new CustomEvent("move", {
+					detail: {
+						id: node.dataset.id ?? node.id,
+						from: fromContainer,
+						to: dest,
+					},
+				}),
+			);
 		} else if (dest) {
 			fireReorder(dest);
 		}
@@ -106,7 +122,9 @@ function wire(container: HTMLElement) {
 	// Keyboard pickup.
 	container.addEventListener("keydown", (e) => {
 		const active = document.activeElement;
-		if (!(active instanceof HTMLElement) || active.parentElement !== container) return;
+		if (
+			!(active instanceof HTMLElement) || active.parentElement !== container
+		) return;
 
 		if (e.key === " " || e.key === "Enter") {
 			e.preventDefault();
@@ -124,7 +142,10 @@ function wire(container: HTMLElement) {
 			e.preventDefault();
 			const sibling = e.key === "ArrowUp" ? pickedKeyboard.previousElementSibling : pickedKeyboard.nextElementSibling;
 			if (sibling) {
-				container.insertBefore(pickedKeyboard, e.key === "ArrowUp" ? sibling : sibling.nextSibling);
+				container.insertBefore(
+					pickedKeyboard,
+					e.key === "ArrowUp" ? sibling : sibling.nextSibling,
+				);
 				pickedKeyboard.focus();
 			}
 		}
@@ -141,9 +162,13 @@ function wire(container: HTMLElement) {
 }
 
 if (typeof document !== "undefined") {
-	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
-	else init();
-	new MutationObserver(init).observe(document.body ?? document.documentElement, { childList: true, subtree: true });
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", init);
+	} else init();
+	new MutationObserver(init).observe(
+		document.body ?? document.documentElement,
+		{ childList: true, subtree: true },
+	);
 }
 
 export {};

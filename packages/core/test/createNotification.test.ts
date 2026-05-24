@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from "vyn:test";
+import { beforeEach, describe, expect, it } from "vyn:test";
 import { createNotification, registry } from "../src/index.ts";
 
 // Contracts from /guide/notifications/
@@ -17,7 +17,7 @@ describe("createNotification", () => {
 
 		it("registers itself in the global registry", () => {
 			const n = createNotification({
-				name:     "test.welcome",
+				name: "test.welcome",
 				channels: { inApp: async () => ({ body: "hi" }) },
 			});
 			expect(registry.get("test.welcome")).toBe(n);
@@ -38,9 +38,18 @@ describe("createNotification", () => {
 			const calls: string[] = [];
 			const n = createNotification({
 				channels: {
-					email: async () => { calls.push("email");  return { to: "x", subject: "s" }; },
-					push:  async () => { calls.push("push");   return { title: "t" }; },
-					inApp: async () => { calls.push("inApp");  return { kind: "x" }; },
+					email: async () => {
+						calls.push("email");
+						return { to: "x", subject: "s" };
+					},
+					push: async () => {
+						calls.push("push");
+						return { title: "t" };
+					},
+					inApp: async () => {
+						calls.push("inApp");
+						return { kind: "x" };
+					},
 				},
 			});
 			await n.send({});
@@ -51,8 +60,14 @@ describe("createNotification", () => {
 			const calls: string[] = [];
 			const n = createNotification({
 				channels: {
-					email: async () => { calls.push("email"); return { to: "x", subject: "s" }; },
-					push:  async () => { calls.push("push");  return { title: "t" }; },
+					email: async () => {
+						calls.push("email");
+						return { to: "x", subject: "s" };
+					},
+					push: async () => {
+						calls.push("push");
+						return { title: "t" };
+					},
 				},
 			});
 			await n.send({}, { channels: ["email"] });
@@ -63,7 +78,7 @@ describe("createNotification", () => {
 			const n = createNotification({
 				channels: {
 					email: async () => ({ to: "x", subject: "s" }),
-					push:  async () => ({ title: "t" }),
+					push: async () => ({ title: "t" }),
 				},
 			});
 			const result = await n.send({});
@@ -73,7 +88,9 @@ describe("createNotification", () => {
 	});
 
 	describe(".preview", () => {
-		it.todo("runs render and returns payloads but bypasses adapter dispatch — needs adapter layer in serve()");
+		it.todo(
+			"runs render and returns payloads but bypasses adapter dispatch — needs adapter layer in serve()",
+		);
 	});
 
 	describe("scheduling", () => {
@@ -81,7 +98,7 @@ describe("createNotification", () => {
 			const n = createNotification({
 				channels: { inApp: async () => ({ body: "x" }) },
 			});
-			const sent    = await n.send({});
+			const sent = await n.send({});
 			const sentNow = await n.now({});
 			expect(typeof sentNow.inApp).toBe("string");
 			expect(sent).toMatchObject({ inApp: expect.any(String) });
@@ -125,25 +142,34 @@ describe("createNotification", () => {
 		it("mode='deferred' enqueues a job with delay ms", async () => {
 			const n = createNotification({
 				channels: {
-					inApp: { mode: "deferred", delay: 60_000, render: async () => ({ body: "x" }) },
+					inApp: {
+						mode: "deferred",
+						delay: 60_000,
+						render: async () => ({ body: "x" }),
+					},
 				},
 			});
 			const result = await n.send({});
 			expect(typeof result.inApp).toBe("string");
 		});
 
-		it.todo("mode='digest' accumulates per digestKey; flush job runs renderDigest — needs digest worker in serve()");
+		it.todo(
+			"mode='digest' accumulates per digestKey; flush job runs renderDigest — needs digest worker in serve()",
+		);
 
 		it("digestMaxAge drops items older than the threshold", async () => {
 			const n = createNotification({
 				channels: {
 					email: {
-						mode:           "digest",
-						digestKey:      (input: any) => input.userId,
+						mode: "digest",
+						digestKey: (input: any) => input.userId,
 						digestSchedule: { interval: 60_000 },
-						digestMaxAge:   "1h",
-						renderItem:     async () => ({ x: 1 }),
-						renderDigest:   async ({ items }: any) => ({ to: "x", subject: `${items.length}` }),
+						digestMaxAge: "1h",
+						renderItem: async () => ({ x: 1 }),
+						renderDigest: async ({ items }: any) => ({
+							to: "x",
+							subject: `${items.length}`,
+						}),
 					},
 				},
 			});
@@ -152,27 +178,39 @@ describe("createNotification", () => {
 	});
 
 	describe("cross-notification bundling", () => {
-		it.todo("bundles non-instant deliveries due in the same coalescing window — needs bundling worker in serve()");
+		it.todo(
+			"bundles non-instant deliveries due in the same coalescing window — needs bundling worker in serve()",
+		);
 
 		it("bundles digest + deferred items at digest flush time", async () => {
 			// Digest user has email digest cron; a deferred item from a different notification
 			// becomes due within the coalesce window of the digest flush.
-			expect(true).toBe(true);   // placeholder; integration test
+			expect(true).toBe(true); // placeholder; integration test
 		});
 
-		it.todo("renderBundle override receives mixed-source items — needs bundling worker in serve()");
+		it.todo(
+			"renderBundle override receives mixed-source items — needs bundling worker in serve()",
+		);
 
 		it("each bundle item carries notification name + mode + payload", () => {
 			// Shape contract for renderBundle inputs.
-			const item = { notification: "x.y", mode: "digest", payload: { subject: "z" } };
+			const item = {
+				notification: "x.y",
+				mode: "digest",
+				payload: { subject: "z" },
+			};
 			expect(item).toHaveProperty("notification");
 			expect(item).toHaveProperty("mode");
 			expect(item).toHaveProperty("payload");
 		});
 
-		it.todo("instant deliveries are never bundled — needs adapter dispatch in serve()");
+		it.todo(
+			"instant deliveries are never bundled — needs adapter dispatch in serve()",
+		);
 
-		it.todo("push channels collapse multi-item bundles to a single 'N new' summary by default");
+		it.todo(
+			"push channels collapse multi-item bundles to a single 'N new' summary by default",
+		);
 		it.todo("coalesceWindowMs:0 disables bundling");
 	});
 
@@ -181,10 +219,10 @@ describe("createNotification", () => {
 			const n = createNotification({
 				channels: {
 					email: {
-						mode:         "digest",
-						digestKey:    (input: any) => input.userId,
-						defaultCron:  "0 9 * * *",
-						renderItem:   async () => ({ x: 1 }),
+						mode: "digest",
+						digestKey: (input: any) => input.userId,
+						defaultCron: "0 9 * * *",
+						renderItem: async () => ({ x: 1 }),
 						renderDigest: async () => ({ subject: "x" }),
 					},
 				},
@@ -198,10 +236,10 @@ describe("createNotification", () => {
 			const n = createNotification({
 				channels: {
 					email: {
-						mode:         "digest",
-						digestKey:    (input: any) => input.userId,
-						defaultCron:  "0 8 * * *",
-						renderItem:   async () => ({}),
+						mode: "digest",
+						digestKey: (input: any) => input.userId,
+						defaultCron: "0 8 * * *",
+						renderItem: async () => ({}),
 						renderDigest: async () => ({ subject: "x" }),
 					},
 				},
@@ -213,11 +251,11 @@ describe("createNotification", () => {
 			const n = createNotification({
 				channels: {
 					email: {
-						mode:         "digest",
-						digestKey:    (input: any) => input.userId,
-						defaultCron:  "0 8 * * *",
+						mode: "digest",
+						digestKey: (input: any) => input.userId,
+						defaultCron: "0 8 * * *",
 						digestMaxAge: "30d",
-						renderItem:   async () => ({}),
+						renderItem: async () => ({}),
 						renderDigest: async () => ({ subject: "x" }),
 					},
 				},
@@ -228,7 +266,7 @@ describe("createNotification", () => {
 		it("user cron preference overrides defaultCron", async () => {
 			// preferences resolver returns { email: { digest: { cron, timezone } } };
 			// framework uses that, not defaultCron.
-			expect(true).toBe(true);   // covered in preferences section once implemented
+			expect(true).toBe(true); // covered in preferences section once implemented
 		});
 
 		it("user setting digest=null disables the digest for that notification", () => {
@@ -243,7 +281,9 @@ describe("createNotification", () => {
 	describe("preferences", () => {
 		it.todo("preferences resolver called per (userId, notificationName)");
 		it.todo("preferences.enabled=false skips the channel");
-		it.todo("preferences.mode override flips the notification's default mode for the user");
+		it.todo(
+			"preferences.mode override flips the notification's default mode for the user",
+		);
 		it.todo("preferences.delay override adjusts deferred delay per user");
 	});
 
@@ -286,7 +326,7 @@ describe("createNotification", () => {
 	describe("synergy with createJob", () => {
 		it("shares retries field", () => {
 			const n = createNotification({
-				retries:  3,
+				retries: 3,
 				channels: { inApp: async () => ({ body: "x" }) },
 			});
 			expect(n.retries).toBe(3);
@@ -294,7 +334,7 @@ describe("createNotification", () => {
 
 		it("shares backoff field", () => {
 			const n = createNotification({
-				backoff:  "linear",
+				backoff: "linear",
 				channels: { inApp: async () => ({ body: "x" }) },
 			});
 			expect(n.backoff).toBe("linear");
@@ -311,7 +351,10 @@ describe("createNotification", () => {
 
 	describe("bus events", () => {
 		it.each([
-			"notify.sent", "notify.delivered", "notify.failed", "notify.skipped",
+			"notify.sent",
+			"notify.delivered",
+			"notify.failed",
+			"notify.skipped",
 		])("emits '%s'", (event) => {
 			expect(typeof event).toBe("string");
 		});

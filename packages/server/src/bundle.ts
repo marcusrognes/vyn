@@ -15,16 +15,18 @@
 import { readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 
-export type Manifest = Record<string, string>;  // srcUrl (e.g. "/routes/index.js") → hashed dist path ("/dist/routes/index.a1b2c3.js")
+export type Manifest = Record<string, string>; // srcUrl (e.g. "/routes/index.js") → hashed dist path ("/dist/routes/index.a1b2c3.js")
 
 export type BundleOpts = {
 	publicDir: string;
-	manifest?: Manifest | null;  // present in prod, null/undefined in dev
+	manifest?: Manifest | null; // present in prod, null/undefined in dev
 };
 
 type CacheEntry = { js: string; entryMtime: number };
 
-export function makeTryBundle(opts: BundleOpts): (pathname: string) => Promise<Response | null> {
+export function makeTryBundle(
+	opts: BundleOpts,
+): (pathname: string) => Promise<Response | null> {
 	const cache = new Map<string, CacheEntry>();
 
 	return async function tryBundle(pathname: string): Promise<Response | null> {
@@ -38,9 +40,9 @@ export function makeTryBundle(opts: BundleOpts): (pathname: string) => Promise<R
 			try {
 				const body = await readFile(join(opts.publicDir, hashed));
 				return new Response(new Uint8Array(body), {
-					status:  200,
+					status: 200,
 					headers: {
-						"content-type":  "text/javascript; charset=utf-8",
+						"content-type": "text/javascript; charset=utf-8",
 						"cache-control": "public, max-age=31536000, immutable",
 					},
 				});
@@ -72,19 +74,22 @@ export function makeTryBundle(opts: BundleOpts): (pathname: string) => Promise<R
 		} catch (e) {
 			const msg = (e as Error).message;
 			console.error(`[vyn] bundle ${tsPath} failed:\n${msg}`);
-			return new Response(`/* vyn bundle error\n${msg.replace(/\*\//g, "*\\/")}\n*/`, {
-				status:  500,
-				headers: { "content-type": "text/javascript; charset=utf-8" },
-			});
+			return new Response(
+				`/* vyn bundle error\n${msg.replace(/\*\//g, "*\\/")}\n*/`,
+				{
+					status: 500,
+					headers: { "content-type": "text/javascript; charset=utf-8" },
+				},
+			);
 		}
 	};
 }
 
 function jsResponse(js: string): Response {
 	return new Response(js, {
-		status:  200,
+		status: 200,
 		headers: {
-			"content-type":  "text/javascript; charset=utf-8",
+			"content-type": "text/javascript; charset=utf-8",
 			"cache-control": "no-cache",
 		},
 	});
@@ -109,9 +114,14 @@ async function bundleEntry(entryPath: string): Promise<string> {
 }
 
 // Read public/dist/manifest.json if present. Returns null in dev (no build run).
-export async function loadManifest(publicDir: string): Promise<Manifest | null> {
+export async function loadManifest(
+	publicDir: string,
+): Promise<Manifest | null> {
 	try {
-		const raw = await readFile(join(publicDir, "dist", "manifest.json"), "utf-8");
+		const raw = await readFile(
+			join(publicDir, "dist", "manifest.json"),
+			"utf-8",
+		);
 		return JSON.parse(raw) as Manifest;
 	} catch {
 		return null;

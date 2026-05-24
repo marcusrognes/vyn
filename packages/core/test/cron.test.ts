@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vyn:test";
-import { parseCron, previousTick, nextTick } from "../src/cron.ts";
+import { nextTick, parseCron, previousTick } from "../src/cron.ts";
 
 describe("parseCron", () => {
 	it("parses '0 8 * * *'", () => {
@@ -33,7 +33,7 @@ describe("parseCron", () => {
 
 	it("rejects invalid expressions", () => {
 		expect(() => parseCron("not cron")).toThrow();
-		expect(() => parseCron("0 25 * * *")).toThrow();      // hour out of range
+		expect(() => parseCron("0 25 * * *")).toThrow(); // hour out of range
 		expect(() => parseCron("0 8 * * *  extra")).toThrow();
 	});
 });
@@ -66,7 +66,7 @@ describe("previousTick / nextTick", () => {
 	});
 
 	it("returns undefined when no firing exists within the window", () => {
-		const cron = parseCron("0 9 31 2 *");   // never (Feb 31)
+		const cron = parseCron("0 9 31 2 *"); // never (Feb 31)
 		const t = new Date("2026-05-20T10:00:00Z");
 		expect(previousTick(cron, t, "UTC", 30 * 24 * 60 * 60_000)).toBeUndefined();
 	});

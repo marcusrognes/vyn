@@ -4,7 +4,8 @@
 import { live } from "./live.ts";
 
 function init() {
-	document.querySelectorAll<HTMLElement>("[data-copy]:not([data-copy-wired])").forEach(wire);
+	document.querySelectorAll<HTMLElement>("[data-copy]:not([data-copy-wired])")
+		.forEach(wire);
 }
 
 function wire(el: HTMLElement) {
@@ -26,9 +27,13 @@ function wire(el: HTMLElement) {
 }
 
 if (typeof document !== "undefined") {
-	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
-	else init();
-	new MutationObserver(init).observe(document.body ?? document.documentElement, { childList: true, subtree: true });
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", init);
+	} else init();
+	new MutationObserver(init).observe(
+		document.body ?? document.documentElement,
+		{ childList: true, subtree: true },
+	);
 }
 
 export {};

@@ -1,8 +1,10 @@
 // @vitest-environment happy-dom
-import { describe, expect, it, beforeEach } from "vyn:test";
+import { beforeEach, describe, expect, it } from "vyn:test";
 import "../../src/edit.ts";
 
-beforeEach(() => { document.body.innerHTML = ""; });
+beforeEach(() => {
+	document.body.innerHTML = "";
+});
 
 describe("edit", () => {
 	it("dblclick swaps text for an input", async () => {
@@ -18,7 +20,9 @@ describe("edit", () => {
 		await new Promise((r) => setTimeout(r, 10));
 		const cell = document.querySelector<HTMLElement>("[data-edit]")!;
 		let received: { value: string; previous: string } | undefined;
-		cell.addEventListener("change", (e) => { received = (e as CustomEvent).detail; });
+		cell.addEventListener("change", (e) => {
+			received = (e as CustomEvent).detail;
+		});
 		cell.dispatchEvent(new MouseEvent("dblclick"));
 		const input = cell.querySelector("input") as HTMLInputElement;
 		input.value = "new";

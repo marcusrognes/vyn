@@ -7,21 +7,21 @@
 // (`req`, response controls) must not be overridden.
 
 export type BaseCtx = {
-	req:        Request;
-	signal:     AbortSignal;
-	setStatus:  (code: number) => void;
-	setHeader:  (name: string, value: string) => void;
-	setCookie:  (name: string, value: string, opts?: CookieOpts) => void;
-	bus:        EventBus;
+	req: Request;
+	signal: AbortSignal;
+	setStatus: (code: number) => void;
+	setHeader: (name: string, value: string) => void;
+	setCookie: (name: string, value: string, opts?: CookieOpts) => void;
+	bus: EventBus;
 };
 
 export type CookieOpts = {
-	domain?:   string;
-	path?:     string;
-	expires?:  Date;
-	maxAge?:   number;
+	domain?: string;
+	path?: string;
+	expires?: Date;
+	maxAge?: number;
 	sameSite?: "lax" | "strict" | "none";
-	secure?:   boolean;
+	secure?: boolean;
 	httpOnly?: boolean;
 };
 
@@ -36,9 +36,14 @@ export class EventBus {
 
 	subscribe(name: string, handler: (value: unknown) => void): () => void {
 		let set = this.listeners.get(name);
-		if (!set) { set = new Set(); this.listeners.set(name, set); }
+		if (!set) {
+			set = new Set();
+			this.listeners.set(name, set);
+		}
 		set.add(handler);
-		return () => { set!.delete(handler); };
+		return () => {
+			set!.delete(handler);
+		};
 	}
 }
 

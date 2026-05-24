@@ -17,14 +17,14 @@ export class RpcError extends Error {
 	constructor(category: ErrorCategory, message: string, details?: unknown) {
 		super(message);
 		this.category = category;
-		this.details  = details;
-		this.name     = "RpcError";
+		this.details = details;
+		this.name = "RpcError";
 	}
 
 	toJSON(): { category: ErrorCategory; message: string; details?: unknown } {
 		return {
 			category: this.category,
-			message:  this.message,
+			message: this.message,
 			...(this.details !== undefined && { details: this.details }),
 		};
 	}
@@ -32,13 +32,20 @@ export class RpcError extends Error {
 
 export function categoryToStatus(category: ErrorCategory): number {
 	switch (category) {
-		case "unauthorized": return 401;
-		case "forbidden":    return 403;
-		case "not_found":    return 404;
-		case "conflict":     return 409;
-		case "bad_request":  return 400;
-		case "rate_limited": return 429;
-		case "internal":     return 500;
+		case "unauthorized":
+			return 401;
+		case "forbidden":
+			return 403;
+		case "not_found":
+			return 404;
+		case "conflict":
+			return 409;
+		case "bad_request":
+			return 400;
+		case "rate_limited":
+			return 429;
+		case "internal":
+			return 500;
 	}
 }
 
@@ -46,8 +53,8 @@ export function categoryToStatus(category: ErrorCategory): number {
 // transient errors retry.
 export function isPermanent(error: unknown): boolean {
 	if (!(error instanceof RpcError)) return false;
-	return error.category === "unauthorized"
-		|| error.category === "forbidden"
-		|| error.category === "not_found"
-		|| error.category === "bad_request";
+	return error.category === "unauthorized" ||
+		error.category === "forbidden" ||
+		error.category === "not_found" ||
+		error.category === "bad_request";
 }

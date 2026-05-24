@@ -3,7 +3,9 @@
 // listbox-style navigation.
 
 function init() {
-	document.querySelectorAll<HTMLElement>("[data-typeahead]:not([data-ta-wired])").forEach(wire);
+	document.querySelectorAll<HTMLElement>(
+		"[data-typeahead]:not([data-ta-wired])",
+	).forEach(wire);
 }
 
 function wire(container: HTMLElement) {
@@ -20,7 +22,7 @@ function wire(container: HTMLElement) {
 		if (e.key.length !== 1 || e.ctrlKey || e.metaKey || e.altKey) return;
 		const now = Date.now();
 		if (now - lastKey > timeoutMs) buffer = "";
-		buffer  += e.key.toLowerCase();
+		buffer += e.key.toLowerCase();
 		lastKey = now;
 
 		const list = items();
@@ -38,9 +40,13 @@ function wire(container: HTMLElement) {
 }
 
 if (typeof document !== "undefined") {
-	if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
-	else init();
-	new MutationObserver(init).observe(document.body ?? document.documentElement, { childList: true, subtree: true });
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", init);
+	} else init();
+	new MutationObserver(init).observe(
+		document.body ?? document.documentElement,
+		{ childList: true, subtree: true },
+	);
 }
 
 export {};

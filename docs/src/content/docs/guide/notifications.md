@@ -2,21 +2,16 @@
 title: Notifications
 description: Multi-channel notifications (email, push, in-app) as a fifth action primitive. Job-backed retries, per-channel render functions, pluggable adapters, per-user preferences.
 sidebar:
-  order: 9
+    order: 9
 ---
 
-A **notification** is a typed message delivered through one or more
-channels — email, web push, in-app. `createNotification` is the
-primitive; `.send(input)` dispatches it; the framework routes through
-each configured channel, with per-channel templating and adapter
+A **notification** is a typed message delivered through one or more channels — email, web push, in-app. `createNotification` is the
+primitive; `.send(input)` dispatches it; the framework routes through each configured channel, with per-channel templating and adapter
 delivery.
 
-Notifications are job-backed: each channel send becomes a retryable
-job under the hood. Failures retry with the same backoff semantics
-as [jobs](/vyn/guide/jobs/). The two primitives share enough that
-`createNotification` is structurally a [`createJob`](/vyn/guide/jobs/)
-specialization for the common "deliver this to a person through some
-channel" pattern.
+Notifications are job-backed: each channel send becomes a retryable job under the hood. Failures retry with the same backoff semantics as
+[jobs](/vyn/guide/jobs/). The two primitives share enough that `createNotification` is structurally a [`createJob`](/vyn/guide/jobs/)
+specialization for the common "deliver this to a person through some channel" pattern.
 
 ## A complete example
 
@@ -31,17 +26,17 @@ export const welcome = createNotification({
 		email: async (opts) => {
 			const user = await opts.ctx.db.users.get(opts.input.userId);
 			return {
-				to:      user.email,
+				to: user.email,
 				subject: "Welcome to Vyn",
-				html:    `<h1>Hi ${user.displayName}!</h1><p>…</p>`,
-				text:    `Hi ${user.displayName}! …`,
+				html: `<h1>Hi ${user.displayName}!</h1><p>…</p>`,
+				text: `Hi ${user.displayName}! …`,
 			};
 		},
 		push: async (opts) => ({
 			title: "Welcome!",
-			body:  "Your account is ready.",
-			icon:  "/icons/welcome.png",
-			data:  { userId: opts.input.userId },
+			body: "Your account is ready.",
+			icon: "/icons/welcome.png",
+			data: { userId: opts.input.userId },
 		}),
 		inApp: async (opts) => ({
 			kind: "welcome",
@@ -70,20 +65,16 @@ export const signup = createMutation({
 
 What happens:
 
-1. `welcome.send({ userId })` validates input, then enqueues one job
-   per channel (`welcome.email`, `welcome.push`, `welcome.inApp`).
-2. Workers pull each job. The matching channel render function runs,
-   producing the channel's payload.
-3. The channel adapter (Postmark, Web Push, an in-app subscription)
-   delivers the payload.
+1. `welcome.send({ userId })` validates input, then enqueues one job per channel (`welcome.email`, `welcome.push`, `welcome.inApp`).
+2. Workers pull each job. The matching channel render function runs, producing the channel's payload.
+3. The channel adapter (Postmark, Web Push, an in-app subscription) delivers the payload.
 4. On failure, the framework retries with backoff per the job semantics.
 
 Each channel is independent — a push failure doesn't block the email.
 
 ## The primitive
 
-The short form uses one render function per channel — every channel
-sends instantly:
+The short form uses one render function per channel — every channel sends instantly:
 
 ```ts
 createNotification({
@@ -98,39 +89,48 @@ createNotification({
 });
 ```
 
-The richer form picks **mode per channel** — same notification fires
-instantly through push, batched into a daily digest email, and
-deferred 30 minutes for an in-app reminder, all from one `.send()`:
+The richer form picks **mode per channel** — same notification fires instantly through push, batched into a daily digest email, and deferred
+30 minutes for an in-app reminder, all from one `.send()`:
 
 ```ts
 createNotification({
 	description: "Someone commented on your note.",
-	input: v.object({ noteId: v.string(), commentId: v.string(), recipientId: v.string() }),
+	input: v.object({
+		noteId: v.string(),
+		commentId: v.string(),
+		recipientId: v.string(),
+	}),
 
 	channels: {
 		push: {
-			mode:   "instant",
-			render: async (opts) => ({ title: "New comment", body: await preview(opts) }),
+			mode: "instant",
+			render: async (opts) => ({
+				title: "New comment",
+				body: await preview(opts),
+			}),
 		},
 
 		email: {
-			mode:         "digest",
-			digestKey:    (input) => input.recipientId,    // accumulate per user
-			defaultCron:  "0 8 * * *",                       // fallback when a user has no preference
-			renderItem:   async (opts) => ({ noteId: opts.input.noteId, commentId: opts.input.commentId }),
+			mode: "digest",
+			digestKey: (input) => input.recipientId, // accumulate per user
+			defaultCron: "0 8 * * *", // fallback when a user has no preference
+			renderItem: async (opts) => ({
+				noteId: opts.input.noteId,
+				commentId: opts.input.commentId,
+			}),
 			renderDigest: async ({ items, ctx, userId }) => {
 				const user = await ctx.db.users.get(userId);
 				return {
-					to:      user.email,
+					to: user.email,
 					subject: `${items.length} new comments`,
-					html:    digestHtml(items),
+					html: digestHtml(items),
 				};
 			},
 		},
 
 		inApp: {
-			mode:   "deferred",
-			delay:  30 * 60 * 1000,    // 30 minutes
+			mode: "deferred",
+			delay: 30 * 60 * 1000, // 30 minutes
 			render: async (opts) => ({ kind: "comment", noteId: opts.input.noteId }),
 		},
 	},
@@ -139,57 +139,43 @@ createNotification({
 });
 ```
 
-One `.send()` call fans out to three channels with three different
-delivery modes. The user gets the push immediately, a single
-digest email at *their* preferred time (default 08:00 daily in their
-timezone — `defaultCron`), and an in-app reminder card 30 minutes
-after each event.
+One `.send()` call fans out to three channels with three different delivery modes. The user gets the push immediately, a single digest email
+at _their_ preferred time (default 08:00 daily in their timezone — `defaultCron`), and an in-app reminder card 30 minutes after each event.
 
-Digest delivery time is **always a user preference**. The
-notification declares a `defaultCron` for users who haven't picked
-one; each user can override with their own cron + timezone — daily,
-weekly, twice a day, weekdays only, never. See
+Digest delivery time is **always a user preference**. The notification declares a `defaultCron` for users who haven't picked one; each user
+can override with their own cron + timezone — daily, weekly, twice a day, weekdays only, never. See
 [Delivery time is a user preference](#delivery-time-is-a-user-preference).
 
 ## Delivery modes
 
-| Mode | Behavior |
-|---|---|
-| `instant` (default) | Render and dispatch via the adapter immediately. One adapter call per `.send()` |
-| `deferred` | Enqueue a job that runs `delay` ms later (or at a specific time via `.at()`). Same render-and-dispatch shape; just time-shifted |
-| `digest`  | Accumulate per `digestKey`; a scheduled flush job calls `renderDigest({ items, ctx, userId })` to produce one payload per group |
+| Mode                | Behavior                                                                                                                        |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `instant` (default) | Render and dispatch via the adapter immediately. One adapter call per `.send()`                                                 |
+| `deferred`          | Enqueue a job that runs `delay` ms later (or at a specific time via `.at()`). Same render-and-dispatch shape; just time-shifted |
+| `digest`            | Accumulate per `digestKey`; a scheduled flush job calls `renderDigest({ items, ctx, userId })` to produce one payload per group |
 
 A channel using `digest` mode must declare:
 
 - `digestKey(input)` — what to group by (usually `recipientId`)
-- `renderItem(opts)` — what to record per event (minimal — just
-  enough to render the digest later)
-- `renderDigest({ items, ctx, userId })` — what the combined message
-  looks like
+- `renderItem(opts)` — what to record per event (minimal — just enough to render the digest later)
+- `renderDigest({ items, ctx, userId })` — what the combined message looks like
 
 Optional fields:
 
-- `defaultCron` — fallback delivery schedule for users who haven't
-  picked their own. Default: `"0 8 * * *"` (daily 08:00 UTC). Has
-  no effect on users who DO have a preference.
-- `digestMaxAge` — hard cap on how long an item may live in the
-  digest queue before being dropped. By default the framework
-  computes per-user retention from each user's cron (a daily-cron
-  user keeps items ~1 day; a weekly-cron user keeps items ~7 days);
-  `digestMaxAge` caps that at a maximum regardless. Use for data-
-  retention or privacy reasons (`"30d"`, etc.). Omit it and the
-  framework's per-user-cron retention is the only ceiling.
+- `defaultCron` — fallback delivery schedule for users who haven't picked their own. Default: `"0 8 * * *"` (daily 08:00 UTC). Has no effect
+  on users who DO have a preference.
+- `digestMaxAge` — hard cap on how long an item may live in the digest queue before being dropped. By default the framework computes
+  per-user retention from each user's cron (a daily-cron user keeps items ~1 day; a weekly-cron user keeps items ~7 days); `digestMaxAge`
+  caps that at a maximum regardless. Use for data- retention or privacy reasons (`"30d"`, etc.). Omit it and the framework's per-user-cron
+  retention is the only ceiling.
 
-What the channel does **not** declare: when each individual user's
-digest is delivered. That's user preference territory. Each user
-provides a cron expression and a timezone; the framework polls every
-minute and dispatches whenever a user's next cron tick has elapsed
-since their last digest send.
+What the channel does **not** declare: when each individual user's digest is delivered. That's user preference territory. Each user provides
+a cron expression and a timezone; the framework polls every minute and dispatches whenever a user's next cron tick has elapsed since their
+last digest send.
 
 ### Delivery time is a user preference
 
-Each user has a per-notification, per-channel cron + timezone in
-their preferences:
+Each user has a per-notification, per-channel cron + timezone in their preferences:
 
 ```ts
 preferences: {
@@ -201,19 +187,18 @@ preferences: {
 
 The cron syntax is standard 5-field cron. Common pickers map to:
 
-| Picker option | Cron |
-|---|---|
-| Daily at 09:00            | `0 9 * * *` |
-| Weekly on Monday at 09:00 | `0 9 * * 1` |
-| Twice daily (09 + 17)     | `0 9,17 * * *` |
-| Weekdays only at 08:00    | `0 8 * * 1-5` |
-| First of every month, 09:00 | `0 9 1 * *` |
-| Never                     | omitted (channel disabled in prefs) |
+| Picker option               | Cron                                |
+| --------------------------- | ----------------------------------- |
+| Daily at 09:00              | `0 9 * * *`                         |
+| Weekly on Monday at 09:00   | `0 9 * * 1`                         |
+| Twice daily (09 + 17)       | `0 9,17 * * *`                      |
+| Weekdays only at 08:00      | `0 8 * * 1-5`                       |
+| First of every month, 09:00 | `0 9 1 * *`                         |
+| Never                       | omitted (channel disabled in prefs) |
 
-Your settings UI generates the cron string from a friendly picker
-(see [the research-notebook tutorial](/vyn/tutorials/build-a-research-notebook/5-ui/)
-for one); users with custom needs can paste a raw cron string into
-an advanced field.
+Your settings UI generates the cron string from a friendly picker (see
+[the research-notebook tutorial](/vyn/tutorials/build-a-research-notebook/5-ui/) for one); users with custom needs can paste a raw cron
+string into an advanced field.
 
 ### How the framework dispatches
 
@@ -232,49 +217,40 @@ email: {
 
 Internally, the framework:
 
-1. **Polls every minute.** A built-in `_digest-flush` job pulls every
-   group with pending items.
-2. **Resolves each user's cron.** The preferences resolver returns
-   the user's cron + timezone for this notification + channel; if
-   absent, `defaultCron` is used (in UTC).
+1. **Polls every minute.** A built-in `_digest-flush` job pulls every group with pending items.
+2. **Resolves each user's cron.** The preferences resolver returns the user's cron + timezone for this notification + channel; if absent,
+   `defaultCron` is used (in UTC).
 3. **Computes the previous cron tick** given the cron + timezone.
-4. **Compares to `lastFlushAt`** (persisted by the framework per
-   `digestKey`). If `lastFlushAt < previous tick`, the digest is
-   due — render and dispatch, update `lastFlushAt`.
+4. **Compares to `lastFlushAt`** (persisted by the framework per `digestKey`). If `lastFlushAt < previous tick`, the digest is due — render
+   and dispatch, update `lastFlushAt`.
 5. **Otherwise**, the items stay in the queue.
 
-`digestMaxAge` drops items older than the threshold so a weekly
-user doesn't see two-week-old items even if their last cron tick
-got skipped.
+`digestMaxAge` drops items older than the threshold so a weekly user doesn't see two-week-old items even if their last cron tick got
+skipped.
 
 ### Preference shape
 
 ```ts
 type DigestPreference = {
-	cron:     string;   // 5-field cron expression
-	timezone: string;   // IANA tz, e.g. "Europe/Oslo"
+	cron: string; // 5-field cron expression
+	timezone: string; // IANA tz, e.g. "Europe/Oslo"
 };
 ```
 
-Set to `null` (or omit the channel) to disable the digest for that
-user.
+Set to `null` (or omit the channel) to disable the digest for that user.
 
 ## Cross-notification bundling
 
-When a non-instant delivery is about to fire for a user+channel, the
-framework looks at everything else **due** for the same user+channel
-across every notification and bundles them into one delivery. Three
-deferred items + a digest's worth of items, all arriving in the same
-flush window, become **one email**, **one in-app entry**, or **one
-collapsed push** — never three.
+When a non-instant delivery is about to fire for a user+channel, the framework looks at everything else **due** for the same user+channel
+across every notification and bundles them into one delivery. Three deferred items + a digest's worth of items, all arriving in the same
+flush window, become **one email**, **one in-app entry**, or **one collapsed push** — never three.
 
 The framework defines "due" as:
 
 - Digest items whose cron tick has elapsed since `lastFlushAt`
 - Deferred items whose `delay` has elapsed
-- Either of the above plus a small **coalescing window** (default
-  **60 seconds**) so a deferred item arriving 30s after a digest
-  fires still rides along
+- Either of the above plus a small **coalescing window** (default **60 seconds**) so a deferred item arriving 30s after a digest fires still
+  rides along
 
 ```
                        T+0           T+30s          T+60s
@@ -286,27 +262,22 @@ digest fires at T+30s      │             │            │  ← bundling fire
 
 ### How adapters see the bundle
 
-Each item in the bundle carries the notification it originated
-from. Adapters receive an array, with one element per source:
+Each item in the bundle carries the notification it originated from. Adapters receive an array, with one element per source:
 
 ```ts
 type BundleItem = {
-	notification: string;             // e.g. "comments.posted"
-	mode:         "digest" | "deferred";
-	payload:      unknown;            // whatever the channel's renderItem (digest) or render (deferred) returned
+	notification: string; // e.g. "comments.posted"
+	mode: "digest" | "deferred";
+	payload: unknown; // whatever the channel's renderItem (digest) or render (deferred) returned
 };
 ```
 
-For channels where bundling makes sense (email, in-app), the
-adapter is called once with the full array. For channels where it
-doesn't (push — limited content, in some platforms unbundle-able),
-the framework collapses to a single "N new items" summary by
-default.
+For channels where bundling makes sense (email, in-app), the adapter is called once with the full array. For channels where it doesn't (push
+— limited content, in some platforms unbundle-able), the framework collapses to a single "N new items" summary by default.
 
 ### Custom bundle renderer
 
-A channel can opt into a custom bundle renderer. It receives the
-mixed-source array and produces a single channel payload:
+A channel can opt into a custom bundle renderer. It receives the mixed-source array and produces a single channel payload:
 
 ```ts
 email: {
@@ -330,12 +301,9 @@ email: {
 
 If `renderBundle` is omitted, the framework uses a default:
 
-- **Single-source bundle** (every item from the same notification):
-  call `renderDigest` (digest mode) or concatenate `render` payloads
+- **Single-source bundle** (every item from the same notification): call `renderDigest` (digest mode) or concatenate `render` payloads
   (deferred mode).
-- **Multi-source bundle**: concatenate each notification's
-  `renderDigest` output, with the notification's `description` as
-  a section header.
+- **Multi-source bundle**: concatenate each notification's `renderDigest` output, with the notification's `description` as a section header.
 
 Most apps don't need to override. The default is reasonable.
 
@@ -347,27 +315,21 @@ Configure on `serve({ notify })`:
 serve({
 	notify: {
 		// ... adapters
-		coalesceWindowMs: 60_000,    // bundle items arriving within this window
+		coalesceWindowMs: 60_000, // bundle items arriving within this window
 	},
 });
 ```
 
-Set to `0` to disable bundling. Set higher to tolerate more delay
-in exchange for fewer deliveries.
+Set to `0` to disable bundling. Set higher to tolerate more delay in exchange for fewer deliveries.
 
 ## In-app inbox
 
-The in-app channel is more than an event stream — it's typically
-also a persisted notification list the user reads in a bell
-dropdown. There is no `@vynjs/notify-inbox` package — the inbox is a
-**recipe**: ~50 lines of code apps copy into their own `features/`
-folder and wire to their own store. The
-[`research` example](https://github.com/marcusrognes/vyn/tree/main/examples/research/features/inbox)
-ships the canonical version; copy it as a starting point.
+The in-app channel is more than an event stream — it's typically also a persisted notification list the user reads in a bell dropdown. There
+is no `@vynjs/notify-inbox` package — the inbox is a **recipe**: ~50 lines of code apps copy into their own `features/` folder and wire to
+their own store. The [`research` example](https://github.com/marcusrognes/vyn/tree/main/examples/research/features/inbox) ships the
+canonical version; copy it as a starting point.
 
-The adapter both emits to a subscription (for live badge updates)
-and persists each notification to a collection (for the dropdown
-list):
+The adapter both emits to a subscription (for live badge updates) and persists each notification to a collection (for the dropdown list):
 
 ```ts
 // features/inbox/inbox.ts (copied from the recipe)
@@ -377,8 +339,8 @@ serve({
 	notify: {
 		// ...
 		inApp: inboxAdapter({
-			collection: notes,                   // any store with insertOne()
-			subscription: onNotification,        // your existing subscription
+			collection: notes, // any store with insertOne()
+			subscription: onNotification, // your existing subscription
 		}),
 	},
 });
@@ -388,42 +350,36 @@ The adapter persists each delivery as a row:
 
 ```ts
 type InboxRow = {
-	_id:          string;
-	userId:       string;
-	notification: string;            // notification name
-	payload:      unknown;            // the renderItem / render output
-	createdAt:    Date;
-	readAt:       Date | null;
-	groupedWith?: string[];           // ids of bundled siblings (when the delivery was a bundle)
+	_id: string;
+	userId: string;
+	notification: string; // notification name
+	payload: unknown; // the renderItem / render output
+	createdAt: Date;
+	readAt: Date | null;
+	groupedWith?: string[]; // ids of bundled siblings (when the delivery was a bundle)
 };
 ```
 
-The recipe also includes a set of actions you register under your
-own action root:
+The recipe also includes a set of actions you register under your own action root:
 
 ```ts
 // features/inbox/inbox.actions.ts
-import {
-	list, count, markRead, markAllRead, onNew,
-} from "./inbox.actions.ts";
+import { count, list, markAllRead, markRead, onNew } from "./inbox.actions.ts";
 ```
 
-These are pre-built `createQuery` / `createMutation` /
-`createSubscription` declarations under `inbox.*`:
+These are pre-built `createQuery` / `createMutation` / `createSubscription` declarations under `inbox.*`:
 
-| Action | What it does |
-|---|---|
-| `rpc.inbox.list({ unreadOnly?, limit?, before? })` | Paginated; newest first |
-| `rpc.inbox.count({ unreadOnly?: true })` | For the bell badge |
-| `rpc.inbox.markRead({ _id })` | Sets `readAt` |
-| `rpc.inbox.markAllRead({})` | Bulk |
-| `rpc.inbox.onNew.listen()` | Fires when a new row is inserted |
+| Action                                             | What it does                     |
+| -------------------------------------------------- | -------------------------------- |
+| `rpc.inbox.list({ unreadOnly?, limit?, before? })` | Paginated; newest first          |
+| `rpc.inbox.count({ unreadOnly?: true })`           | For the bell badge               |
+| `rpc.inbox.markRead({ _id })`                      | Sets `readAt`                    |
+| `rpc.inbox.markAllRead({})`                        | Bulk                             |
+| `rpc.inbox.onNew.listen()`                         | Fires when a new row is inserted |
 
 ### The bell dropdown
 
-The standard UI: a bell icon with an unread count, a dropdown
-showing recent items, a "mark all read" footer. Build it as a
-component:
+The standard UI: a bell icon with an unread count, a dropdown showing recent items, a "mark all read" footer. Build it as a component:
 
 ```html
 <!-- features/inbox/bell.component.html (optional — could be inline) -->
@@ -436,9 +392,9 @@ component:
 ```ts
 // public/routes/_bell.ts (route-local helper)
 import { $, html, render } from "@vynjs/client";
-import { rpc, cache } from "./_app.ts";
+import { cache, rpc } from "./_app.ts";
 
-const badge    = $<HTMLSpanElement>("#badge");
+const badge = $<HTMLSpanElement>("#badge");
 const dropdown = $<HTMLDivElement>("#dropdown");
 
 cache.subscribe(rpc.inbox.count, ({ count }) => {
@@ -456,18 +412,25 @@ $<HTMLButtonElement>("#bell").addEventListener("click", async () => {
 	dropdown.hidden = !dropdown.hidden;
 	if (!dropdown.hidden) {
 		const items = await rpc.inbox.list.query({ limit: 20 });
-		render(dropdown, items.map((row) => html`
-			<a href="${row.payload.url ?? "#"}" data-id="${row._id}">
-				<strong>${row.payload.title ?? row.notification}</strong>
-				<p>${row.payload.body ?? ""}</p>
-				<small>${row.createdAt.toLocaleString()}</small>
-			</a>
-		`));
+		render(
+			dropdown,
+			items.map((row) =>
+				html`
+					<a href="${row.payload.url ?? "#"}" data-id="${row._id}">
+						<strong>${row.payload.title ?? row.notification}</strong>
+						<p>${row.payload.body ?? ""}</p>
+						<small>${row.createdAt.toLocaleString()}</small>
+					</a>
+				`
+			),
+		);
 	}
 });
 
 dropdown.addEventListener("click", async (e) => {
-	const link = (e.target as HTMLElement).closest<HTMLAnchorElement>("a[data-id]");
+	const link = (e.target as HTMLElement).closest<HTMLAnchorElement>(
+		"a[data-id]",
+	);
 	if (!link) return;
 	await rpc.inbox.markRead.mutate({ _id: link.dataset.id! });
 	cache.patch(rpc.inbox.count, (c) => ({ count: Math.max(0, c.count - 1) }));
@@ -476,14 +439,12 @@ dropdown.addEventListener("click", async (e) => {
 void rpc.inbox.count.query({ unreadOnly: true });
 ```
 
-That's the whole bell. The framework provides the persistence + the
-actions; the app provides 20 lines of UI.
+That's the whole bell. The framework provides the persistence + the actions; the app provides 20 lines of UI.
 
 ### Bundle-aware in-app rendering
 
-When a bundle delivery hits the in-app channel, the adapter creates
-one row whose `groupedWith` lists the other source notifications.
-The default payload is:
+When a bundle delivery hits the in-app channel, the adapter creates one row whose `groupedWith` lists the other source notifications. The
+default payload is:
 
 ```ts
 {
@@ -493,13 +454,11 @@ The default payload is:
 }
 ```
 
-Override per-channel via `renderBundle` (above) for richer custom
-shapes.
+Override per-channel via `renderBundle` (above) for richer custom shapes.
 
 ## Per-user preferences override the mode
 
-A user might prefer instant email even though the notification's
-default is digest. Preferences can override the mode per channel:
+A user might prefer instant email even though the notification's default is digest. Preferences can override the mode per channel:
 
 ```ts
 serve({
@@ -510,7 +469,7 @@ serve({
 				"SELECT * FROM user_prefs WHERE userId = ? AND notification = ?",
 			).get(userId, notificationName);
 			return {
-				push:  row?.push  ?? { enabled: true, mode: "instant" },
+				push: row?.push ?? { enabled: true, mode: "instant" },
 				email: row?.email ?? { enabled: true, mode: "digest" },
 				inApp: row?.inApp ?? { enabled: true, mode: "instant" },
 			};
@@ -524,48 +483,43 @@ The preference shape per channel:
 ```ts
 type ChannelPreference = {
 	enabled: boolean;
-	mode?:   "instant" | "deferred" | "digest";   // override the notification's default
-	delay?:  number;                              // override for deferred mode
-	digest?: DigestPreference | null;              // for digest mode: per-user schedule
+	mode?: "instant" | "deferred" | "digest"; // override the notification's default
+	delay?: number; // override for deferred mode
+	digest?: DigestPreference | null; // for digest mode: per-user schedule
 };
 
 type DigestPreference = {
-	cron:     string;   // standard 5-field cron expression
-	timezone: string;   // IANA tz, e.g. "Europe/Oslo"
+	cron: string; // standard 5-field cron expression
+	timezone: string; // IANA tz, e.g. "Europe/Oslo"
 };
 ```
 
 - `enabled: false` skips the channel entirely.
-- `mode: "digest"` flips an instant channel into digest mode using
-  the channel's `renderDigest` (which must therefore be defined).
-- `digest: { cron, timezone }` overrides the channel's `defaultCron`
-  for this user.
-- `digest: null` disables the digest for this user (same as
-  `enabled: false`, but more specific).
+- `mode: "digest"` flips an instant channel into digest mode using the channel's `renderDigest` (which must therefore be defined).
+- `digest: { cron, timezone }` overrides the channel's `defaultCron` for this user.
+- `digest: null` disables the digest for this user (same as `enabled: false`, but more specific).
 - Missing `mode` keeps the notification's declared default.
 
 ## Channels keys match adapter names
 
-`channels` keys match adapter names configured in `serve({ notify })`.
-Each render function (or `renderItem` / `renderDigest`) receives the
-same `opts` other actions get (`opts.input`, `opts.ctx`) and returns
-the payload the adapter expects for that channel.
+`channels` keys match adapter names configured in `serve({ notify })`. Each render function (or `renderItem` / `renderDigest`) receives the
+same `opts` other actions get (`opts.input`, `opts.ctx`) and returns the payload the adapter expects for that channel.
 
 ## Methods on the typed reference
 
-| Method | What it does |
-|---|---|
-| `notification.send(input, opts?)` | Dispatch via configured channels. Returns `{ <channel>: jobId }` |
-| `notification.preview(input)` | Run every channel's render function without sending; returns `{ <channel>: payload }` |
-| `notification.run(opts)` | Direct call — useful for testing render functions |
-| `notification.now(input)` | Same as `send` (alias for symmetry with `createJob`) |
-| `notification.at(date, input)` | Schedule for a specific time |
-| `notification.in(ms, input)` | Sugar for `at(new Date(Date.now() + ms), input)` |
+| Method                            | What it does                                                                          |
+| --------------------------------- | ------------------------------------------------------------------------------------- |
+| `notification.send(input, opts?)` | Dispatch via configured channels. Returns `{ <channel>: jobId }`                      |
+| `notification.preview(input)`     | Run every channel's render function without sending; returns `{ <channel>: payload }` |
+| `notification.run(opts)`          | Direct call — useful for testing render functions                                     |
+| `notification.now(input)`         | Same as `send` (alias for symmetry with `createJob`)                                  |
+| `notification.at(date, input)`    | Schedule for a specific time                                                          |
+| `notification.in(ms, input)`      | Sugar for `at(new Date(Date.now() + ms), input)`                                      |
 
 ```ts
 notification.send({ userId: "u-1" });
 
-notification.send({ userId: "u-1" }, { channels: ["email"] });        // restrict
+notification.send({ userId: "u-1" }, { channels: ["email"] }); // restrict
 notification.send({ userId: "u-1" }, { channels: ["email", "push"] });
 
 notification.at(new Date("2026-12-25T09:00Z"), { userId: "u-1" });
@@ -581,15 +535,19 @@ Configure adapters once on `serve()`:
 ```ts
 import { serve } from "@vynjs/server";
 import { postmarkAdapter } from "@vynjs/notify-postmark";
-import { webPushAdapter }  from "@vynjs/notify-web-push";
-import { onNotification }  from "./features/inbox/inbox.actions.ts";
+import { webPushAdapter } from "@vynjs/notify-web-push";
+import { onNotification } from "./features/inbox/inbox.actions.ts";
 
 serve({
 	port: env.PORT,
-	jobs: { /* ... */ },     // notifications require a job store
+	jobs: {/* ... */}, // notifications require a job store
 	notify: {
 		email: postmarkAdapter({ token: env.POSTMARK_TOKEN, from: env.EMAIL_FROM }),
-		push:  webPushAdapter({ publicKey: env.VAPID_PUBLIC, privateKey: env.VAPID_PRIVATE, contact: env.VAPID_CONTACT }),
+		push: webPushAdapter({
+			publicKey: env.VAPID_PUBLIC,
+			privateKey: env.VAPID_PRIVATE,
+			contact: env.VAPID_CONTACT,
+		}),
 		inApp: { subscription: onNotification },
 	},
 });
@@ -599,27 +557,28 @@ serve({
 
 ```ts
 export interface NotificationAdapter<TPayload> {
-	send(payload: TPayload, ctx: BaseCtx & Record<string, unknown>): Promise<void>;
+	send(
+		payload: TPayload,
+		ctx: BaseCtx & Record<string, unknown>,
+	): Promise<void>;
 	name?: string;
 }
 ```
 
-The framework ships adapters as separate packages so you only pay for
-what you use:
+The framework ships adapters as separate packages so you only pay for what you use:
 
-| Package | Channel |
-|---|---|
-| `@vynjs/notify-postmark` | Email via Postmark |
-| `@vynjs/notify-ses`      | Email via Amazon SES |
-| `@vynjs/notify-sendgrid` | Email via SendGrid |
-| `@vynjs/notify-smtp`     | Email via any SMTP host |
+| Package                  | Channel                          |
+| ------------------------ | -------------------------------- |
+| `@vynjs/notify-postmark` | Email via Postmark               |
+| `@vynjs/notify-ses`      | Email via Amazon SES             |
+| `@vynjs/notify-sendgrid` | Email via SendGrid               |
+| `@vynjs/notify-smtp`     | Email via any SMTP host          |
 | `@vynjs/notify-web-push` | Web Push (browser notifications) |
-| `@vynjs/notify-fcm`      | Firebase Cloud Messaging |
-| `@vynjs/notify-apns`     | Apple Push Notification service |
+| `@vynjs/notify-fcm`      | Firebase Cloud Messaging         |
+| `@vynjs/notify-apns`     | Apple Push Notification service  |
 
-In-app uses an existing subscription as the channel — no separate
-package. Mutations call `notification.send(...)`; the framework
-emits to the subscription, which connected clients listen to.
+In-app uses an existing subscription as the channel — no separate package. Mutations call `notification.send(...)`; the framework emits to
+the subscription, which connected clients listen to.
 
 Custom channels (SMS, Slack, internal hooks) are one function:
 
@@ -628,7 +587,7 @@ export const slackAdapter = (opts) => ({
 	send: async (payload, ctx) => {
 		await fetch(`https://hooks.slack.com/services/${opts.webhook}`, {
 			method: "POST",
-			body:   JSON.stringify(payload),
+			body: JSON.stringify(payload),
 		});
 	},
 });
@@ -640,9 +599,8 @@ serve({
 
 ## Per-user preferences
 
-The framework looks up user preferences before fanning out to
-channels. A preference object is `{ <channel>: boolean }`; missing
-entries default to `true`.
+The framework looks up user preferences before fanning out to channels. A preference object is `{ <channel>: boolean }`; missing entries
+default to `true`.
 
 Provide a preference reader at config time:
 
@@ -660,12 +618,10 @@ serve({
 });
 ```
 
-The notification's render functions still run for every channel
-(useful for `preview()`), but only the channels the user opted into
-actually send.
+The notification's render functions still run for every channel (useful for `preview()`), but only the channels the user opted into actually
+send.
 
-To find the user, the framework looks up `opts.input.userId` by
-convention. Override per-notification:
+To find the user, the framework looks up `opts.input.userId` by convention. Override per-notification:
 
 ```ts
 createNotification({
@@ -674,13 +630,11 @@ createNotification({
 });
 ```
 
-For notifications that don't target a specific user (a server-wide
-alert), set `getUserId: null` and the preference check is skipped.
+For notifications that don't target a specific user (a server-wide alert), set `getUserId: null` and the preference check is skipped.
 
 ## Templates with shared rendering
 
-For notifications that share copy across channels, render once and
-re-use:
+For notifications that share copy across channels, render once and re-use:
 
 ```ts
 function digestBody(items: Array<{ title: string; url: string }>) {
@@ -688,27 +642,28 @@ function digestBody(items: Array<{ title: string; url: string }>) {
 }
 
 export const dailyDigest = createNotification({
-	input: v.object({ userId: v.string(), items: v.array(/* ... */) }),
+	input: v.object({ userId: v.string(), items: v.array() /* ... */ }),
 	channels: {
 		email: async (opts) => ({
 			subject: `Your daily digest`,
-			text:    digestBody(opts.input.items),
-			html:    digestBody(opts.input.items).replace(/\n/g, "<br>"),
+			text: digestBody(opts.input.items),
+			html: digestBody(opts.input.items).replace(/\n/g, "<br>"),
 		}),
-		inApp: async (opts) => ({ kind: "digest", body: digestBody(opts.input.items) }),
+		inApp: async (opts) => ({
+			kind: "digest",
+			body: digestBody(opts.input.items),
+		}),
 	},
-	schedule: { cron: "0 9 * * *" },   // every morning
+	schedule: { cron: "0 9 * * *" }, // every morning
 });
 ```
 
-For richer templating (MJML for email, JSX-like trees), import a
-library inside the render function. Vyn doesn't bundle a templating
-engine — that's app-specific.
+For richer templating (MJML for email, JSX-like trees), import a library inside the render function. Vyn doesn't bundle a templating engine
+— that's app-specific.
 
 ## Synergy with `createJob`
 
-A notification is structurally a job that fans out to channels. The
-two primitives share:
+A notification is structurally a job that fans out to channels. The two primitives share:
 
 - `input` validation
 - `retries`, `backoff`, `timeout`
@@ -726,10 +681,8 @@ What `createNotification` adds:
 - `.send()` semantics with channel filtering
 - `.preview()` for inspecting rendered output
 
-Use `createNotification` when delivery has multiple channels or
-needs per-user preferences. Use `createJob` for everything else
-deferred or scheduled (cleanup, indexing, report generation, batch
-work).
+Use `createNotification` when delivery has multiple channels or needs per-user preferences. Use `createJob` for everything else deferred or
+scheduled (cleanup, indexing, report generation, batch work).
 
 ## CLI
 
@@ -742,16 +695,14 @@ vyn notify retry <jobId>
 
 ## Observability
 
-The framework emits events through `ctx.bus` for every notification
-lifecycle step:
+The framework emits events through `ctx.bus` for every notification lifecycle step:
 
 - `notify.sent` `{ name, channel, userId, jobId }`
 - `notify.delivered` `{ name, channel, userId, jobId, providerId? }`
 - `notify.failed` `{ name, channel, userId, jobId, error }`
 - `notify.skipped` `{ name, channel, userId, reason: "preference" }`
 
-Pipe through your transport / logger / analytics like any other
-bus event.
+Pipe through your transport / logger / analytics like any other bus event.
 
 ## See also
 
