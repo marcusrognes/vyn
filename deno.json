@@ -10,19 +10,24 @@
 		"./packages/cli/template"
 	],
 	"tasks": {
-		"test":         "deno test -A --no-check --unstable-node-globals --unstable-bare-node-builtins packages/",
-		"test:core":    "deno test -A --no-check --unstable-node-globals --unstable-bare-node-builtins packages/core/test/",
-		"test:watch":   "deno test -A --no-check --unstable-node-globals --unstable-bare-node-builtins --watch packages/",
-		"check":        "deno check packages/core/src/ packages/server/src/ packages/client/src/",
-		"fmt":          "deno fmt packages/",
-		"lint":         "deno lint packages/",
-		"publish:dry":  "deno publish --dry-run",
-		"publish:jsr":     "deno publish",
-		"template":        "cd packages/cli/template && deno task dev",
+		"test": "deno test -A --no-check --unstable-node-globals --unstable-bare-node-builtins packages/",
+		"test:core": "deno test -A --no-check --unstable-node-globals --unstable-bare-node-builtins packages/core/test/",
+		"test:watch": "deno test -A --no-check --unstable-node-globals --unstable-bare-node-builtins --watch packages/",
+		"check": "deno check packages/core/src/ packages/server/src/ packages/client/src/",
+		"fmt": "deno fmt packages/",
+		"lint": "deno lint packages/",
+		"publish:dry": "deno publish --dry-run",
+		"publish:jsr": "deno publish",
+		"template": "cd packages/cli/template && deno task dev",
 		"build:templates": "deno run -A packages/cli/scripts/build-templates.ts"
 	},
 	"imports": {
 		"vyn:test": "./test/_bdd.ts"
+	},
+	"fmt": {
+		"useTabs": true,
+		"indentWidth": 4,
+		"lineWidth": 140
 	},
 	"nodeModulesDir": "auto",
 	"compilerOptions": {
