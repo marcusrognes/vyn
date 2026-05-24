@@ -1,2 +1,249 @@
-body { font-family: system-ui, sans-serif; padding: 2rem; max-width: 40rem; margin: 0 auto; }
-h1 { margin: 0 0 0.5rem; }
+/* ── Theme tokens ────────────────────────────────────────────────
+   `html` keeps `data-theme="system|light|dark"` so JS knows the
+   user's choice. The `.dark` class on `html` is the actual switch
+   that applies dark tokens — set by inline boot script + by the
+   <theme-toggle> component.                                       */
+:root {
+	color-scheme: light;
+	--bg:        #fbfbff;
+	--bg-soft:   #f3f4ff;
+	--surface:   #ffffff;
+	--surface-2: #f7f8fc;
+	--text:      #0f172a;
+	--text-soft: #334155;
+	--muted:     #64748b;
+	--border:    #e6e8f1;
+	--border-strong: #cbd5e1;
+	--accent:        #4f46e5;
+	--accent-hover:  #4338ca;
+	--accent-soft:   #eef2ff;
+	--danger:        #dc2626;
+	--done:          #94a3b8;
+	--glow:          rgb(99 102 241 / 0.18);
+	--shadow-sm:     0 1px 2px rgb(15 23 42 / 0.05);
+	--shadow-card:   0 1px 2px rgb(15 23 42 / 0.04), 0 14px 38px -14px rgb(15 23 42 / 0.16);
+	--mesh-1:        radial-gradient(ellipse 80% 60% at 50% -10%, rgb(99 102 241 / 0.18), transparent 70%);
+	--mesh-2:        radial-gradient(ellipse 60% 50% at 90% 20%, rgb(168 85 247 / 0.10), transparent 60%);
+}
+
+html.dark {
+	color-scheme: dark;
+	--bg:        #0a0e1f;
+	--bg-soft:   #0f1430;
+	--surface:   #11163a;
+	--surface-2: #161c45;
+	--text:      #e6eaf6;
+	--text-soft: #c7cde2;
+	--muted:     #8b93b5;
+	--border:    #232a55;
+	--border-strong: #2e3766;
+	--accent:        #818cf8;
+	--accent-hover:  #a5b4fc;
+	--accent-soft:   #1e1b4b;
+	--danger:        #ef4444;
+	--done:          #4a5278;
+	--glow:          rgb(129 140 248 / 0.28);
+	--shadow-sm:     0 1px 2px rgb(0 0 0 / 0.3);
+	--shadow-card:   0 1px 2px rgb(0 0 0 / 0.3), 0 18px 44px -16px rgb(0 0 0 / 0.55);
+	--mesh-1:        radial-gradient(ellipse 80% 60% at 50% -10%, rgb(99 102 241 / 0.28), transparent 70%);
+	--mesh-2:        radial-gradient(ellipse 60% 50% at 90% 20%, rgb(168 85 247 / 0.16), transparent 60%);
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+body {
+	margin: 0;
+	font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	background: var(--bg); color: var(--text);
+	min-height: 100vh;
+	background-image: var(--mesh-1), var(--mesh-2);
+	background-attachment: fixed;
+}
+
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+/* ── Top nav ──────────────────────────────────────────────────── */
+.topbar {
+	position: sticky; top: 0; z-index: 5;
+	display: flex; align-items: center; gap: 1rem;
+	padding: 0.7rem 1.25rem;
+	background: color-mix(in srgb, var(--surface) 80%, transparent);
+	backdrop-filter: saturate(180%) blur(10px);
+	-webkit-backdrop-filter: saturate(180%) blur(10px);
+	border-bottom: 1px solid var(--border);
+}
+.brand {
+	display: inline-flex; align-items: center; gap: 0.5rem;
+	color: var(--text); text-decoration: none; font-weight: 600;
+}
+.links { display: flex; gap: 0.25rem; flex: 1; }
+.links a {
+	padding: 0.4rem 0.7rem; border-radius: 8px;
+	color: var(--text-soft); text-decoration: none; font-size: 0.9rem;
+	transition: background 120ms, color 120ms;
+}
+.links a:hover { background: var(--surface-2); color: var(--text); }
+
+/* ── Theme toggle ─────────────────────────────────────────────── */
+.theme-toggle {
+	display: inline-flex; align-items: center; justify-content: center;
+	width: 2.25rem; height: 2.25rem;
+	background: var(--surface); color: var(--text-soft);
+	border: 1px solid var(--border);
+	border-radius: 999px;
+	cursor: pointer;
+	box-shadow: var(--shadow-sm);
+	transition: background 120ms, color 120ms, transform 120ms;
+}
+.theme-toggle:hover { color: var(--text); transform: translateY(-1px); }
+.theme-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.theme-toggle .i { display: none; }
+.theme-toggle[data-mode="system"] .i-system,
+.theme-toggle[data-mode="light"]  .i-light,
+.theme-toggle[data-mode="dark"]   .i-dark { display: block; }
+
+/* ── Main view container ─────────────────────────────────────── */
+#app {
+	display: flex; flex-direction: column; align-items: center;
+	padding: 2.5rem 1rem 4rem;
+	gap: 2rem;
+}
+
+/* ── Hero ─────────────────────────────────────────────────────── */
+.hero { max-width: 44rem; text-align: center; padding: 2.5rem 1rem 0.5rem; }
+.logo {
+	display: inline-block;
+	filter: drop-shadow(0 12px 28px var(--glow));
+	transition: transform 240ms cubic-bezier(.2,.8,.2,1);
+}
+.logo:hover { transform: rotate(-6deg) scale(1.05); }
+.hero h1 {
+	margin: 1rem 0 0.5rem;
+	font-size: clamp(3rem, 8vw, 4.5rem);
+	font-weight: 800;
+	letter-spacing: -0.04em;
+	line-height: 1;
+	background: linear-gradient(135deg, var(--accent) 0%, #a855f7 60%, #ec4899 100%);
+	-webkit-background-clip: text; background-clip: text;
+	-webkit-text-fill-color: transparent; color: transparent;
+}
+.tagline {
+	margin: 0 auto 1.5rem; max-width: 32rem;
+	color: var(--text-soft); font-size: 1.05rem; line-height: 1.55;
+}
+
+.pills {
+	display: inline-flex; flex-wrap: wrap; justify-content: center;
+	gap: 0.4rem; margin-bottom: 1.5rem;
+}
+.pill {
+	display: inline-flex; align-items: center; gap: 0.35rem;
+	padding: 0.35rem 0.7rem;
+	background: var(--surface); color: var(--text-soft);
+	border: 1px solid var(--border); border-radius: 999px;
+	font-size: 0.78rem; font-weight: 500;
+}
+.pill svg { color: var(--accent); }
+
+.ctas { display: inline-flex; gap: 0.5rem; margin: 0 auto 1.25rem; flex-wrap: wrap; justify-content: center; }
+.btn {
+	display: inline-flex; align-items: center; gap: 0.4rem;
+	padding: 0.6rem 1.1rem;
+	background: var(--surface); color: var(--text);
+	border: 1px solid var(--border-strong); border-radius: 10px;
+	font: inherit; font-weight: 500; text-decoration: none;
+	cursor: pointer;
+	transition: background 120ms, border-color 120ms, transform 120ms;
+}
+.btn:hover { background: var(--surface-2); border-color: var(--accent); transform: translateY(-1px); }
+.btn-primary {
+	background: var(--accent); color: white; border-color: var(--accent);
+}
+.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+.quickstart {
+	display: inline-block;
+	margin: 0 auto;
+	padding: 0.65rem 1rem;
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	font: 0.85rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	color: var(--text-soft);
+	box-shadow: var(--shadow-sm);
+}
+
+/* ── Card (used by /todos and /404) ────────────────────────── */
+.card {
+	width: 100%; max-width: 32rem;
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: 18px;
+	padding: 1.5rem 1.6rem 1.2rem;
+	box-shadow: var(--shadow-card);
+}
+.card-head h2 { margin: 0; font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; }
+.card-head .hint { margin: 0.4rem 0 1.1rem; color: var(--muted); font-size: 0.825rem; line-height: 1.5; }
+code {
+	background: var(--accent-soft); color: var(--accent);
+	padding: 0.1em 0.35em; border-radius: 4px;
+	font: 0.85em ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+#new-form { display: flex; gap: 0.4rem; margin-bottom: 1rem; }
+#new-title {
+	flex: 1; padding: 0.6rem 0.8rem;
+	font: inherit; line-height: 1.3;
+	background: var(--bg-soft); color: var(--text);
+	border: 1px solid var(--border); border-radius: 10px;
+	transition: border-color 120ms, box-shadow 120ms;
+}
+#new-title:focus {
+	outline: 0; border-color: var(--accent);
+	box-shadow: 0 0 0 4px var(--glow);
+}
+#new-form button {
+	padding: 0.6rem 1.1rem; font: inherit; font-weight: 500;
+	background: var(--accent); color: white;
+	border: 0; border-radius: 10px; cursor: pointer;
+	transition: background 120ms;
+}
+#new-form button:hover { background: var(--accent-hover); }
+
+#todos { list-style: none; margin: 0; padding: 0; }
+#todos li { margin: 0; padding: 0; }
+todo-row {
+	display: flex; align-items: center; gap: 0.55rem;
+	padding: 0.55rem 0.6rem;
+	border-radius: 10px;
+	transition: background 120ms;
+}
+todo-row:hover { background: var(--surface-2); }
+todo-row label { flex: 1; display: flex; align-items: center; gap: 0.65rem; cursor: pointer; min-width: 0; }
+todo-row label span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+todo-row label span a { color: var(--accent); text-decoration: none; }
+todo-row label span a:hover { text-decoration: underline; }
+todo-row input[type=checkbox] {
+	width: 1.15rem; height: 1.15rem;
+	accent-color: var(--accent);
+	cursor: pointer;
+}
+todo-row.done span { color: var(--done); text-decoration: line-through; }
+.remove {
+	background: transparent; border: 0;
+	color: var(--muted); font: 1.25rem/1 system-ui; cursor: pointer;
+	padding: 0.15rem 0.5rem; border-radius: 6px; opacity: 0;
+	transition: opacity 120ms, background 120ms, color 120ms;
+}
+todo-row:hover .remove, todo-row:focus-within .remove { opacity: 1; }
+.remove:hover { color: var(--danger); background: color-mix(in srgb, var(--danger) 14%, transparent); }
+
+.card-foot {
+	display: flex; justify-content: space-between; align-items: center;
+	margin-top: 0.85rem; padding-top: 0.85rem;
+	border-top: 1px solid var(--border);
+	font-size: 0.8rem; color: var(--muted);
+}
+.card-foot a { color: var(--accent); text-decoration: none; font-weight: 500; }
+.card-foot a:hover { text-decoration: underline; }

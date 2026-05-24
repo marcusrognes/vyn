@@ -1,0 +1,19 @@
+<section class="card">
+	<header class="card-head">
+		<h2>Live todos</h2>
+		<p class="hint">Edit <code>features/todos/todos.actions.ts</code> and save.
+			Updates stream to every connected client over a WebSocket.</p>
+	</header>
+
+	<form id="new-form" autocomplete="off">
+		<input id="new-title" type="text" placeholder="Add a todo…" autofocus>
+		<button>Add</button>
+	</form>
+
+	<ul id="todos" aria-live="polite"></ul>
+
+	<footer class="card-foot">
+		<span id="count"></span>
+		<a href="/">← Home</a>
+	</footer>
+</section>

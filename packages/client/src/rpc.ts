@@ -28,7 +28,12 @@ export type SubscriptionHandlers<O> = {
 // at the `input`/`output` fields. The original `O` survives in `run`'s
 // return type, so we infer from there. Same for `I` via run's opts.input.
 type RunInput<T>  = T extends { run: (opts: { input: infer I } & Record<string, unknown>) => unknown } ? I : unknown;
-type RunOutput<T> = T extends { run: (...args: never[]) => Promise<infer O> } ? O : unknown;
+type RunOutput<T> = T extends { run: (...args: never[]) => infer R }
+	? R extends Promise<infer P> ? P
+	: R extends AsyncGenerator<infer G> ? G
+	: R extends AsyncIterable<infer A> ? A
+	: unknown
+	: unknown;
 
 export type RpcClient<R> = {
 	[K in keyof R]:

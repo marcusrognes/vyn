@@ -1,6 +1,13 @@
-import { createApp, $ } from "@vynjs/client";
-import type { AppRouter } from "../_vyn.gen.ts";
+// Boot the SPA. Both gen barrels:
+//   _vyn.client.gen.ts → registers every *.component.ts under public/
+//   _vyn.gen.ts        → routes table (HTML views + lazy controllers)
 
-const { rpc } = createApp<AppRouter>();
-const greeting = await rpc.hello.greet.query({ name: "you" });
-$("#greeting").textContent = greeting;
+import "../_vyn.client.gen.ts";
+import { createRouter } from "@vynjs/client";
+import { routes } from "../_vyn.gen.ts";
+
+createRouter({
+	mount:  "#app",
+	routes: [...routes],
+	notFound: '<section class="card"><header class="card-head"><h2>404 — Not found</h2><p class="hint">No route matched. <a href="/">Go home →</a></p></header></section>',
+});
