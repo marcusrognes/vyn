@@ -9,7 +9,11 @@ class VComboboxElement extends HTMLElement {
 	static formAssociated = true;
 	#input!:    HTMLInputElement;
 	#listbox!:  HTMLUListElement;
-	#suggestions: Suggestion[] = [];
+	// Source list (every option the component knows about) and the
+	// query-filtered subset that's actually displayed + navigated.
+	// Highlight is an index into #filtered, not #source.
+	#source: Suggestion[] = [];
+	#filtered: Suggestion[] = [];
 	#highlight = 0;
 
 	connectedCallback() {
@@ -33,9 +37,14 @@ class VComboboxElement extends HTMLElement {
 		if (initial) this.#input.value = initial;
 
 		const raw = this.getAttribute("data-suggestions");
-		if (raw) { try { this.#suggestions = JSON.parse(raw); } catch { /* ignore */ } }
+		if (raw) { try { this.#source = JSON.parse(raw); } catch { /* ignore */ } }
+		this.#filtered = this.#source;
 
 		this.#input.addEventListener("input", () => {
+			// Local substring filter against label or value. Caller can
+			// still listen to `fetch` and replace the whole list via
+			// setSuggestions() for async / server-driven sources.
+			this.#applyFilter();
 			this.dispatchEvent(new CustomEvent("fetch", { detail: { query: this.#input.value } }));
 			this.#open();
 		});
@@ -50,15 +59,29 @@ class VComboboxElement extends HTMLElement {
 	}
 
 	setSuggestions(s: Suggestion[]) {
-		this.#suggestions = s;
-		this.#render();
+		this.#source = s;
+		this.#applyFilter();
 	}
 
 	get value() { return this.#input?.value ?? ""; }
 	set value(v: string) { if (this.#input) this.#input.value = v; }
 
-	#open() {
+	#applyFilter() {
+		const q = this.#input.value.trim().toLowerCase();
+		this.#filtered = q
+			? this.#source.filter((s) => {
+				const hay = (s.label ?? s.value).toLowerCase();
+				return hay.includes(q) || s.value.toLowerCase().includes(q);
+			})
+			: this.#source;
+		// Reset highlight to the first visible option so Enter picks
+		// something the user can see, not a stale index that may now
+		// point past the end (or to a different option).
+		this.#highlight = 0;
 		this.#render();
+	}
+	#open() {
+		if (this.#listbox.hidden) this.#render();
 		this.#listbox.hidden = false;
 		this.#input.setAttribute("aria-expanded", "true");
 	}
@@ -67,7 +90,9 @@ class VComboboxElement extends HTMLElement {
 		this.#input.setAttribute("aria-expanded", "false");
 	}
 	#render() {
-		this.#listbox.innerHTML = this.#suggestions.map((s, i) => `
+		// Clamp highlight after a list change (e.g. async refresh).
+		if (this.#highlight >= this.#filtered.length) this.#highlight = 0;
+		this.#listbox.innerHTML = this.#filtered.map((s, i) => `
 			<li role="option" data-value="${escape(s.value)}"
 			    aria-selected="${i === this.#highlight}"
 			    style="padding:0.5rem 0.75rem;cursor:pointer;${i === this.#highlight ? "background:#eef2ff" : ""}">
@@ -78,14 +103,15 @@ class VComboboxElement extends HTMLElement {
 	#onKey(e: KeyboardEvent) {
 		if (e.key === "ArrowDown") {
 			e.preventDefault();
-			this.#highlight = Math.min(this.#highlight + 1, this.#suggestions.length - 1);
+			if (this.#filtered.length === 0) return;
+			this.#highlight = Math.min(this.#highlight + 1, this.#filtered.length - 1);
 			this.#render();
 		} else if (e.key === "ArrowUp") {
 			e.preventDefault();
 			this.#highlight = Math.max(this.#highlight - 1, 0);
 			this.#render();
 		} else if (e.key === "Enter") {
-			const s = this.#suggestions[this.#highlight];
+			const s = this.#filtered[this.#highlight];
 			if (s) { e.preventDefault(); this.#select(s.value); }
 		} else if (e.key === "Escape") {
 			this.#close();
