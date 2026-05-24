@@ -238,28 +238,12 @@ written back to the cache. No network round-trip.
 
 ## Multi-instance deployments
 
-In a single process, the default in-memory transport delivers `emit()`
-calls to every active subscription instance locally. Across instances
-(or for data-source-derived events, durable delivery, or cross-cutting
-observability), swap the transport:
-
-```ts
-import { serve } from "@vynjs/server";
-import { redisTransport } from "@vynjs/transport-redis";
-
-serve({
-	port: 8000,
-	transport: redisTransport({ url: env.REDIS_URL }),
-});
-```
-
-Your `subscription.emit(...)` calls do not change. The transport
-adapter handles cross-instance fan-out keyed by the subscription's
-registry name. Vyn ships transports for Redis, NATS, Postgres
-LISTEN/NOTIFY, MongoDB change streams, Postgres logical replication,
-Kafka, Redis Streams, and NATS JetStream — see [Transport](/vyn/guide/transport/)
-for the full set, composable wrappers (logging, retry, multi-backend
-fan-out), and how to write a custom one.
+`subscription.emit(...)` is in-process: it pushes to every active
+subscriber queue on the current Deno instance. Vyn does not ship a
+built-in cross-process fan-out — but the primitive is small enough
+that wrapping it yourself takes ~30 lines. See
+[Custom transports](/vyn/guide/transport/) for a Redis pub/sub
+example.
 
 ## File-based discovery
 

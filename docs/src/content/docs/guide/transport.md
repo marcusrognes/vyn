@@ -1,416 +1,250 @@
 ---
-title: Transport
-description: How subscription events move between processes. One small interface; multiple backends — in-memory, Redis, NATS, MongoDB oplog, Postgres LISTEN/NOTIFY, Kafka. Composable wrappers for logging and filtering.
+title: Custom transports
+description: How to fan out subscription events across processes. Vyn's emit() is in-process; this guide shows how to bridge it to Redis pub/sub (or any other broker) without framework changes.
 sidebar:
   order: 6
 ---
 
-When a mutation calls `subscription.emit(value)`, the event needs to
-reach every active subscriber — possibly across instances, possibly
-durably, possibly derived from a database change. Vyn handles all of
-this through one small interface: **the transport**. Pick a transport
-that matches the deployment shape; the rest of your code does not
-change.
+`subscription.emit(value)` is in-process. It pushes `value` onto
+every active subscriber queue on the current Deno instance. That's
+the entire shape Vyn ships today — no `Transport` interface, no
+`serve({ transport })` option, no built-in adapters.
 
-## The interface
+For most apps that's fine. Single Deno process, one WebSocket per
+client, fan-out happens locally. When you need to run multiple
+instances (load balancer, blue/green, scale-out behind Fly/Render),
+you bridge `emit` to a broker yourself.
+
+This guide builds that bridge with **Redis pub/sub** as the example.
+The pattern transfers directly to NATS, Postgres LISTEN/NOTIFY,
+Kafka — anything with a publish/subscribe primitive.
+
+## The pattern
+
+Two wires:
+
+1. **Publish:** after every local `emit`, also publish to the broker.
+2. **Subscribe:** on boot, subscribe to the broker; on each message
+   received, call the local `emit` on the matching action.
+
+The broker is the only thing that crosses processes. Local
+`emit` continues to drive local queues — exactly as before — so
+your action code does not change.
+
+```
+                ┌──────────────┐                ┌──────────────┐
+   mutation ──► │  instance A  │ ── publish ──► │    Redis     │
+                │  emit(value) │                │   pub/sub    │
+                └──────┬───────┘                └──────┬───────┘
+                       │                               │
+                  local queues                    subscribe
+                       │                               │
+                       ▼                               ▼
+                 client A's WS                ┌──────────────┐
+                                              │  instance B  │
+                                              │  emit(value) │
+                                              └──────┬───────┘
+                                                     │
+                                                local queues
+                                                     │
+                                                     ▼
+                                              client B's WS
+```
+
+## Step 1: define the subscription as usual
+
+Nothing transport-specific. Action code is identical to the
+single-process case.
 
 ```ts
-export interface Transport {
-	publish(name: string, value: unknown): void | Promise<void>;
-	subscribe(name: string, handler: (value: unknown) => void): () => void;
-	close?(): void | Promise<void>;
+// features/todos/todos.actions.ts
+import { createSubscription, v } from "@vynjs/core";
+
+const TodoSchema = v.object({
+  id:    v.string(),
+  title: v.string(),
+  done:  v.boolean(),
+});
+
+export const watch = createSubscription({
+  input:  v.object({}),
+  output: TodoSchema,
+  async *run({ events }) {
+    for await (const todo of events) yield todo;
+  },
+});
+```
+
+## Step 2: write the bridge
+
+A single module that knows about every action you want to fan out.
+Each entry maps a registry name to the action's `emit` and to a
+schema (so cross-process payloads are validated, not blindly
+trusted).
+
+```ts
+// lib/transport-redis.ts
+import { connect, type Redis } from "jsr:@db/redis";   // any Redis client
+import { watch as todosWatch } from "../features/todos/todos.actions.ts";
+
+// Every subscription that should fan out across instances.
+// Add one entry per action.
+const bridges = [
+  { channel: "todos.watch", emit: todosWatch.emit, parse: (v: unknown) => todosWatch.output?.parse(v) ?? v },
+] as const;
+
+export type RedisTransport = {
+  publish: (channel: string, value: unknown) => Promise<void>;
+  close:   () => Promise<void>;
+};
+
+export async function startRedisTransport(url: string): Promise<RedisTransport> {
+  const pub = await connect({ hostname: new URL(url).hostname });
+  const sub = await connect({ hostname: new URL(url).hostname });
+  const instanceId = crypto.randomUUID();
+
+  // Listen on every bridge channel. Skip messages we sent (so we
+  // don't double-emit on the originating instance — the local emit
+  // already happened).
+  for (const b of bridges) {
+    const iter = await sub.subscribe(b.channel);
+    (async () => {
+      for await (const { message } of iter.receive()) {
+        const env = JSON.parse(message) as { from: string; payload: unknown };
+        if (env.from === instanceId) continue;
+        b.emit(b.parse(env.payload));
+      }
+    })();
+  }
+
+  return {
+    async publish(channel, value) {
+      await pub.publish(channel, JSON.stringify({ from: instanceId, payload: value }));
+    },
+    async close() {
+      await Promise.all([pub.close(), sub.close()]);
+    },
+  };
 }
 ```
 
-- **`name`** is the subscription's registry name — `notes.onCreated`,
-  `threads.onMessages`, derived from the file path. Same key on both
-  sides; no topic-string drift.
-- **`publish(name, value)`** delivers `value` to every active local
-  `subscribe(name, ...)` and forwards across processes if the transport
-  spans multiple nodes.
-- **`subscribe(name, handler)`** registers a local listener and
-  returns an unsubscribe function the framework calls on disconnect.
-- **`close()`** runs on graceful shutdown — close pools, flush
-  buffers, drop connections.
+The `from` field on the envelope is the deduplication trick: the
+instance that called `emit()` locally also publishes to Redis, then
+**ignores** the echo when Redis delivers its own message back. Every
+other instance treats the message as authoritative and calls its
+local `emit()`.
 
-The framework calls `transport.publish(...)` inside `subscription.emit(...)`
-and `transport.subscribe(...)` when a subscription's `run` starts
-consuming `opts.events`. Apps never call the transport directly.
+## Step 3: wrap `emit` to also publish
 
-## Configuration
+You need every `action.emit(value)` to also hit Redis. The cleanest
+spot is a wrapper at boot:
+
+```ts
+// lib/transport-redis.ts (continued)
+export function wireEmit(transport: RedisTransport): void {
+  for (const b of bridges) {
+    const original = b.emit;
+    // Re-bind in place. The action's `emit` is just a function ref;
+    // we capture it, replace it with a publish-then-emit wrapper.
+    (b as { emit: typeof original }).emit = (value) => {
+      void transport.publish(b.channel, value);
+      original(value);
+    };
+  }
+}
+```
+
+A cleaner alternative if you control the action site: call
+`transport.publish(...)` inside the mutation alongside `emit()`.
+Slightly more boilerplate, no monkey-patching.
+
+```ts
+// features/todos/todos.actions.ts
+import { transport } from "../../lib/transport-redis.ts";
+
+export const add = createMutation({
+  input:  v.object({ title: v.string().min(1) }),
+  output: TodoSchema,
+  async run({ input }) {
+    const todo = { id: crypto.randomUUID(), title: input.title, done: false };
+    todos.push(todo);
+    watch.emit(todo);
+    await transport.publish("todos.watch", todo);
+    return todo;
+  },
+});
+```
+
+Pick one approach and stick with it. Mixing both will cause
+double-emits.
+
+## Step 4: boot the transport
 
 ```ts
 // server.ts
 import { serve } from "@vynjs/server";
-import { redisTransport } from "@vynjs/transport-redis";
+import { startRedisTransport, wireEmit } from "./lib/transport-redis.ts";
+import "./_vyn.gen.ts";
 
-serve({
-	port: Number(env.PORT),
-	transport: redisTransport({ url: env.REDIS_URL }),
+const transport = await startRedisTransport(Deno.env.get("REDIS_URL")!);
+wireEmit(transport);
+
+const handle = await serve({ port: 8000 });
+
+Deno.addSignalListener("SIGTERM", async () => {
+  await handle.close();
+  await transport.close();
 });
 ```
 
-Omit the field and Vyn uses `inMemoryTransport()` — a synchronous Map
-of listeners. Fast, fine for development and single-process
-production, no extra dependencies.
+## Delivery guarantees
 
-## Built-in transports
+Pub/sub is **at-most-once**. If Redis drops the message (network
+blip, subscriber not yet connected), it's gone — the broker does
+not buffer or replay.
 
-Vyn ships a small set of transports as separate packages so you only
-pay for what you import.
+For at-least-once delivery, use Redis Streams, Kafka, or a database
+log. Same shape: subscribe on boot → call local `emit` on each
+message; publish after local `emit`. The bridge gains an
+acknowledgment / offset step, the action code does not change.
 
-### `inMemoryTransport()` (default)
+## Ordering
 
-```ts
-import { inMemoryTransport } from "@vynjs/core";
+Per-publisher ordering is preserved by every common broker.
+Cross-publisher ordering is not — if two instances `emit` at
+overlapping times, downstream order is the broker's call.
 
-serve({ transport: inMemoryTransport() });  // explicit; same as omitting
-```
-
-- Single process. No external dependencies.
-- Synchronous: `publish` returns before all handlers finish (unless a
-  handler awaits internally).
-- Listeners are tracked in a `Map<name, Set<handler>>`.
-- Preserved across HMR reloads in dev mode — subscriptions don't drop
-  when a file changes.
-
-When to use: dev, single-instance production, anything that doesn't
-need to fan out across nodes.
-
-### Pub/sub transports
-
-Standard publish/subscribe protocols. Every node subscribes to every
-relevant name; publishes broadcast.
-
-| Package | Backend | Notes |
-|---|---|---|
-| `@vynjs/transport-redis` | Redis pub/sub | Lowest latency, no durability |
-| `@vynjs/transport-nats`  | NATS          | Lower-latency than Redis, optional auth |
-| `@vynjs/transport-postgres` | Postgres LISTEN/NOTIFY | Reuses your existing DB connection |
-
-```ts
-import { redisTransport } from "@vynjs/transport-redis";
-serve({ transport: redisTransport({ url: env.REDIS_URL, prefix: "myapp" }) });
-
-import { natsTransport } from "@vynjs/transport-nats";
-serve({ transport: natsTransport({ servers: env.NATS_URL.split(",") }) });
-
-import { postgresTransport } from "@vynjs/transport-postgres";
-serve({ transport: postgresTransport({ url: env.DATABASE_URL }) });
-```
-
-All three implement the `Transport` interface identically. Swap one
-for another by changing the import — your subscription `emit` calls
-do not change.
-
-When to use: multi-instance deployments where you want events to fan
-out across nodes but don't need durability or replay.
-
-### Data-source transports
-
-The data layer itself is the event source. Mutations don't need to
-call `.emit()` — the database's write-ahead log (or change stream, or
-logical replication slot) produces events, and the transport maps
-them to subscription names.
-
-```ts
-import { mongoOplogTransport } from "@vynjs/transport-mongo";
-import { onCreated, onUpdated, onDeleted } from "./features/notes/notes.actions.ts";
-
-serve({
-	transport: mongoOplogTransport({
-		url: env.MONGO_URL,
-		mappings: [
-			{ collection: "notes", op: "insert", emits: onCreated },
-			{ collection: "notes", op: "update", emits: onUpdated, transform: doc => doc.fullDocument },
-			{ collection: "notes", op: "delete", emits: onDeleted, transform: doc => doc.documentKey },
-		],
-	}),
-});
-```
-
-The `emits` reference is the typed subscription. Renaming or moving
-the subscription updates this mapping at the type level — the wire is
-the registry name regardless. `transform` shapes the raw change-stream
-document into the subscription's `output` shape.
-
-For events that aren't data-derived (a chat user typing, a presence
-heartbeat), data-source transports fall back to a parallel pub/sub
-channel — mutations still call `.emit()` and it works as expected.
-
-| Package | Source |
-|---|---|
-| `@vynjs/transport-mongo` | MongoDB change streams (replica set required) |
-| `@vynjs/transport-postgres-cdc` | Postgres logical replication |
-
-When to use: apps where most realtime events ARE data changes. The
-mutation side simplifies; the DB becomes the source of truth for "did
-this happen?"
-
-### Durable transports
-
-Same `publish` / `subscribe`, but the transport persists events. Late
-subscribers can replay from an offset; downtime doesn't drop events.
-
-```ts
-import { kafkaTransport } from "@vynjs/transport-kafka";
-
-serve({
-	transport: kafkaTransport({
-		brokers: env.KAFKA_BROKERS.split(","),
-		replayFromConnect: "last-hour",   // or "earliest" | "none" | { offset: ... }
-	}),
-});
-```
-
-The subscription's `run` receives replayed events the same as live
-ones — `opts.events` does not distinguish. For apps that care about
-the difference, an optional per-event marker lands on the value:
-
-```ts
-for await (const event of opts.events) {
-	if (event._meta?.replay) /* ... */;
-	yield stripMeta(event);
-}
-```
-
-| Package | Backend | Replay model |
-|---|---|---|
-| `@vynjs/transport-kafka` | Kafka | Offset-based, durable |
-| `@vynjs/transport-redis-streams` | Redis Streams | Consumer-group ack, capped retention |
-| `@vynjs/transport-nats-jetstream` | NATS JetStream | Stream-based, configurable retention |
-
-When to use: apps that cannot lose events on restart or network blip,
-or that want "show me what happened in the last hour" on reconnect.
-
-## Composable wrappers
-
-A wrapper is a `Transport` that takes another `Transport` and
-modifies the behavior. Useful for cross-cutting concerns without
-modifying the underlying implementation.
-
-### `logged(transport, opts)`
-
-Records every publish and subscribe to a sink. Lightweight observability.
-
-```ts
-import { logged } from "@vynjs/core";
-
-serve({
-	transport: logged(redisTransport({ url }), {
-		sink: (e) => logger.info({ kind: "subscription.event", ...e }),
-		include: ["publish", "subscribe", "unsubscribe"],
-	}),
-});
-```
-
-### `filtered(transport, predicate)`
-
-Drops publishes (or deliveries) not matching a predicate. Per-tenant
-routing, debug toggles, feature flags.
-
-```ts
-import { filtered } from "@vynjs/core";
-
-serve({
-	transport: filtered(redisTransport({ url }), {
-		publish:   (name, value) => isAllowedForTenant(name, value),
-		subscribe: (name, ctx)   => ctx.tenant?.realtime !== false,
-	}),
-});
-```
-
-### `withRetry(transport, opts)`
-
-Retries publishes with backoff. The transport's failure semantics
-become eventual-success for transient errors.
-
-```ts
-import { withRetry } from "@vynjs/core";
-
-serve({
-	transport: withRetry(redisTransport({ url }), {
-		maxAttempts: 5,
-		backoffMs:   (attempt) => Math.min(100 * 2 ** attempt, 5_000),
-	}),
-});
-```
-
-### `multi(...transports)`
-
-Fan-out to multiple backends. Useful for "Redis for fast fan-out, also
-log to Kafka for audit/replay."
-
-```ts
-import { multi } from "@vynjs/core";
-
-serve({
-	transport: multi(
-		redisTransport({ url: env.REDIS_URL }),
-		kafkaTransport({ brokers: env.KAFKA_BROKERS.split(",") }),
-	),
-});
-```
-
-Publishes go to every transport. Subscribes register on every
-transport; the first one to deliver wins (`once`-style dedup is the
-caller's job if they care).
-
-Wrappers compose freely:
-
-```ts
-serve({
-	transport: logged(
-		withRetry(
-			multi(
-				redisTransport({ url: env.REDIS_URL }),
-				kafkaTransport({ brokers: env.KAFKA_BROKERS.split(",") }),
-			),
-			{ maxAttempts: 3 },
-		),
-		{ sink: console.log },
-	),
-});
-```
-
-## Writing a custom transport
-
-Implement the three-method interface. Vyn does not impose any
-constraints on serialization, ordering, or durability — the transport
-is the source of truth for those properties.
-
-```ts
-import type { Transport } from "@vynjs/core";
-
-export function memcachedTransport(opts: { servers: string[] }): Transport {
-	// hypothetical example — memcached lacks pub/sub natively, so this
-	// would need polling. Just a shape demonstration.
-	const listeners = new Map<string, Set<(v: unknown) => void>>();
-	let timer: ReturnType<typeof setInterval> | undefined;
-	const client = createMemcachedClient(opts.servers);
-
-	function startPolling() {
-		if (timer) return;
-		timer = setInterval(async () => {
-			for (const name of listeners.keys()) {
-				const items = await client.dequeue(name);
-				for (const v of items) listeners.get(name)?.forEach(fn => fn(v));
-			}
-		}, 100);
-	}
-
-	return {
-		publish(name, value) {
-			return client.enqueue(name, value);
-		},
-		subscribe(name, fn) {
-			if (!listeners.has(name)) listeners.set(name, new Set());
-			listeners.get(name)!.add(fn);
-			startPolling();
-			return () => listeners.get(name)?.delete(fn);
-		},
-		async close() {
-			if (timer) clearInterval(timer);
-			await client.disconnect();
-		},
-	};
-}
-```
-
-The transport package can ship its own configuration shape; only the
-three methods are framework-visible.
-
-## Delivery semantics
-
-Vyn does not enforce or guarantee any delivery semantics — those come
-from the transport you choose:
-
-| Transport family | Delivery | Ordering |
-|---|---|---|
-| `inMemoryTransport` | At-most-once | Per-publish order, single thread |
-| Pub/sub (Redis, NATS, Postgres) | At-most-once | Per-publisher order; no cross-publisher ordering |
-| Data-source (MongoDB oplog, Postgres CDC) | At-least-once (with resume token) | Replication-log order |
-| Durable (Kafka, Streams, JetStream) | At-least-once | Per-partition order, configurable |
-
-Your subscription `run` should be **idempotent** when using
-at-least-once transports — a value may arrive twice if a consumer
-restarted between receive and ack. Most realtime UIs are naturally
-idempotent (replacing the same DOM with the same data is fine);
-mutations triggered by subscriptions need explicit dedup.
+If your UI cares about strict order, attach a monotonic sequence
+number to the payload and resolve on the client. The framework will
+not.
 
 ## Multi-tenant routing
 
-For apps where every event belongs to a tenant, two options:
+Two ways to keep tenant A's events from reaching tenant B's
+subscribers:
 
-**1. Per-tenant names.** Prefix the subscription name at boot, so
-tenant A and tenant B never share a topic:
+1. **Per-tenant channel.** `bridges` becomes
+   `{ channel: \`tenant-\${tenantId}.todos.watch\`, ... }`. One
+   bridge per active tenant. Cheap when tenants count in hundreds.
+2. **Filter in `run`.** Single channel, every node receives every
+   tenant's events, the action's `run` drops events that don't
+   match the request's tenant. Cheaper at scale.
 
-```ts
-serve({
-	transport: filtered(redisTransport({ url }), {
-		nameOf: (name, ctx) => ctx.tenantId ? `${ctx.tenantId}.${name}` : name,
-	}),
-});
-```
+The trade-off is fewer channels (less subscription overhead) vs
+fewer delivered-then-discarded events (less wasted bandwidth). The
+right answer depends on the shape of your data.
 
-The cost: every active tenant adds one subscription per topic. Fine
-for hundreds of tenants, expensive for thousands.
+## When you outgrow this
 
-**2. Filter in `match` inside `run`.** Use a single topic, filter on
-the subscriber side. Cheaper at scale but every node sees every
-tenant's events.
-
-The trade-off is "fewer subscriptions, more delivered-then-discarded
-events" vs "more subscriptions, less wasted bandwidth." Pick per the
-shape of your data.
-
-## Lifecycle
-
-The transport is built once during boot, before the server binds the
-port. It lives for the lifetime of the process. On shutdown:
-
-1. `serve()` calls `transport.close?()` after every WS connection has
-   drained.
-2. The framework awaits the close before exiting.
-3. Subscriptions clean up their local handlers via the unsub returned
-   from `transport.subscribe(...)`.
-
-For long-lived transports (connection pools, change-stream cursors),
-implement `close()` to release them. The framework will not exit
-cleanly otherwise.
-
-## HMR
-
-In dev mode, the framework preserves the transport across module
-reloads. Subscriptions opened by route modules are torn down and
-re-opened when their files change, but the transport itself — and its
-backing connection — stays. This means a Redis connection isn't
-re-handshaked every time you save a file.
-
-If your transport is sensitive to module re-imports (it holds a
-reference to a re-loaded `env`, for example), close it explicitly in
-the module's HMR dispose hook.
-
-## Open questions
-
-- **Backpressure across transports.** A slow Kafka publisher should
-  apply backpressure to the mutation that called `.emit()`; the
-  current interface doesn't expose this. Open whether `publish()`
-  should return a Promise that resolves only when the transport
-  considers the event delivered.
-- **Ordering across emit + return.** `mutation.emit(); return value;`
-  guarantees the value is published before the return reaches the
-  client only for synchronous transports. For async transports, the
-  client could in theory see the mutation response before the
-  subscription event. The framework could optionally `await` the
-  publish; the cost is latency.
-- **Cross-transport replay.** Apps that want "Redis for live, Kafka
-  for replay-from-last-hour-on-reconnect" don't have a clean
-  primitive yet. `multi()` fans out publishes but doesn't route
-  subscribes to the right backend.
+If you find yourself wiring more than two or three transports, or
+need composable wrappers (retry, observability, cross-backend
+replay), the bridge will start to feel like a half-built framework
+feature. Open an issue describing the shape — there's a real
+chance it lands in `@vynjs/server` after enough real-world
+patterns shake out.
 
 ## See also
 
-- [Realtime](/vyn/guide/realtime/) — subscriptions and the `.emit()` shape
+- [Realtime](/vyn/guide/realtime/) — subscriptions and the `emit()` shape
 - [Configuration](/vyn/guide/configuration/) — `serve()` options
-- [Actions](/vyn/guide/actions/) — the registry that produces transport names
+- [Actions](/vyn/guide/actions/) — the registry that produces the names you bridge
